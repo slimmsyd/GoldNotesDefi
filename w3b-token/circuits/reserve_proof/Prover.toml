@@ -1,0 +1,14 @@
+# Prover.toml - Production-Grade Inputs
+# Generated at: 2026-01-19T17:29:46.441Z
+#
+# Contains SHA256 hashes of 20 Goldback serial numbers.
+# Hashes are sorted in ascending order for O(n) uniqueness verification.
+
+# Private inputs (never revealed in the proof)
+serials = ["0x023d7275412cf4ce78f3e8cf5d8f250fa1594246ac33e5d51783915ded0c92", "0x08f2f2acbd40bf33d5a08698b5531c98ce4ed85492d2fea267075137c7ab48", "0x1968829554d8ef0fbeac317ae26b20aef06f202cf4b41dcb5b165af7b22b70", "0x21ec13650355c9f8db8a10a2607a6fbecc79d6de58cfc38898940bdf803fdb", "0x30e67e1daec16ffdb63a84f0c68b0a63c5b5e619071513f0b95006e3083c4d", "0x4aa702778dbbec75893cebbdcc1228d1ffed4650b7808004b2ac9687e17b18", "0x4ad5da144a6637f644f198faa90e0cc583a6ead00092de53feb955bb1a5ff4", "0x4e23637b095a3f408b1a54186181ced54cf3133a0003d4d30b14382d8e96ed", "0x532b36cdc4150a46be1698bc69c1cc0eb9922492966cadfe549c2c7cdcba70", "0x837aae475327826f41b1b147ef12b3447cb1a239a0ec1ecef21c1069157cc6", "0x8b3ea1f75944ebc58c1767f41fdcb11641db8cdbbebb1a21243001324d5957", "0x8bf7d3344593979226a6b874ff2830d45d3de8ed3b8ed6083e67e617adcfac", "0x8fba11a8594e64766f25ed00aba499fceb7fb6ad1f50532baa47c64aabd94b", "0x9e40187fd8caa90843566dd9388c99dfe7eca1d02eaf5871e991c8b592f91a", "0xb1665c9d49c840f513eaa9bedff5110db0b5df7b0280ab0bb4730ac8557c11", "0xb3a94225a84482c2481c92283bbea23e303293070be85734fd237d58f47709", "0xdee358bceb2bf79d271cb3212c95021d214517c370a24ae1e543eaff67e1c5", "0xe61197e04f339eaf28ba2e75a1908e14e82dd58fe742472ebb2e279fae3d45", "0xf2884e209fab37ac40988ce95ce41c7a1d2a17653c28300a0acc97e10aed4e", "0xfa808af9da225679ee423eb7248ec6e26b48966933f9d61319d1d4c64b6f63"]
+active_count = "20"
+
+# Public inputs (visible on-chain)
+# NOTE: Run "nargo test --show-output" to get the correct merkle_root value
+merkle_root = "0x0aa9d42476461eced77cad420287ec898bad4fa6e17da2e2e3fc0a5af29f5c47"
+total_supply = "20"

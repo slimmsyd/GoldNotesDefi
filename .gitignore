@@ -1,0 +1,12 @@
+# Exclude ContextHub as requested
+ContextHub/
+
+# Standard ignores
+.DS_Store
+node_modules/
+.env
+.env.local
+.env.*.local
+dist/
+build/
+.next/

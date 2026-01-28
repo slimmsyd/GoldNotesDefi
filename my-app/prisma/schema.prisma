@@ -1,0 +1,147 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model GoldPackage {
+  id          String   @id
+  name        String
+  price       String
+  description String
+  features    String[]
+  image       String
+  stock       Int
+  minQty      Int      @default(3)
+  isPopular   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  reviews     Review[]
+}
+
+// ============================================
+// Product Review System
+// ============================================
+
+// Review left by a user on a GoldPackage product
+model Review {
+  id            String        @id @default(cuid())
+  rating        Int           // 1-5 star rating
+  comment       String?       // Optional review text
+  userName      String?       // Display name (optional, defaults to "Anonymous")
+  userWallet    String?       // Solana wallet address of reviewer (optional)
+  
+  // Relation to product
+  productId     String
+  product       GoldPackage   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // Moderation status: PENDING, APPROVED, REJECTED
+  status        String        @default("APPROVED")
+  
+  // Review images
+  images        ReviewImage[]
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([productId])
+  @@index([status])
+}
+
+// Images attached to a review
+model ReviewImage {
+  id        String   @id @default(cuid())
+  url       String   // Supabase storage URL
+  
+  // Relation to review
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+
+  @@index([reviewId])
+}
+
+// Site settings for admin-configurable values
+model SiteSettings {
+  id                 String   @id @default("main")
+  goldbackRatePer1GB Float    @default(9.02) // Direct Goldback rate for 1 GB
+  updatedAt          DateTime @updatedAt
+}
+
+// ============================================
+// SP3ND Integration Models
+// ============================================
+
+// Amazon GoldBack products scraped from Amazon
+model AmazonGoldBack {
+  id          String   @id @default(cuid())
+  asin        String   @unique // Amazon Standard Identification Number
+  amazonUrl   String
+  title       String
+  price       Decimal  @db.Decimal(10, 2)
+  imageUrl    String?
+  inStock     Boolean  @default(true)
+  lastScraped DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// SP3ND orders placed through the partner API
+model SP3NDOrder {
+  id               String   @id @default(cuid())
+  sp3ndOrderId     String   @unique // SP3ND's internal order ID
+  sp3ndOrderNumber String   // SP3ND's order number (e.g., ORD-12345)
+  userWallet       String   // Customer's Solana wallet address
+  customerEmail    String
+  totalAmount      Decimal  @db.Decimal(10, 2)
+  status           String   @default("Created") // Created, Paid, Ordered, Shipped, Delivered, Cancelled
+  trackingNumber   String?
+  shippingAddress  Json?    // Store shipping address as JSON
+  items            Json?    // Store order items as JSON
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// ============================================
+// User Profile System
+// ============================================
+
+// User profile linked to Solana wallet address
+model UserProfile {
+  id              String   @id @default(cuid())
+  walletAddress   String   @unique  // Solana wallet address (primary identifier)
+  email           String?            // Optional email for notifications
+
+  // Shipping Information
+  shippingName    String?
+  shippingAddress String?
+  shippingCity    String?
+  shippingState   String?
+  shippingZip     String?
+  shippingCountry String   @default("US")
+  isInternational Boolean  @default(false)
+
+  // Notification Preferences
+  emailOrderUpdates Boolean @default(true)
+  emailPromotions   Boolean @default(false)
+
+  // Saved Cart (JSON array of CartItem objects)
+  savedCart       Json?
+
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
