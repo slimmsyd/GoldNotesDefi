@@ -32,7 +32,7 @@ export function BackedBy() {
             </Link>
 
             {/* Preeminent Professional Services Logo */}
-            <Link
+            {/* <Link
               href="https://www.prmntpro.com/"
               target="_blank"
               rel="noopener noreferrer"
@@ -45,7 +45,7 @@ export function BackedBy() {
                 height={40}
                 className="object-contain grayscale group-hover:grayscale-0 transition-all duration-300"
               />
-            </Link>
+            </Link> */}
             {/* GoldBack Logo */}
             <Link
               href="#"
