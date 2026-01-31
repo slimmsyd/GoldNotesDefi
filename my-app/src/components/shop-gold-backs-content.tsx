@@ -44,17 +44,37 @@ interface ShopGoldBacksContentProps {
 }
 
 /**
- * Extract gold content denomination from features (1, 5, 10, etc.)
- * Matches patterns like "1/1000th oz" and returns the numerator
+ * Extract gold content denomination from features or name (1, 5, 10, 25, etc.)
+ * Matches patterns like "1/1000th oz" in features, or "(25 GB)" / "(25GB)" in name
  */
-function getGoldDenomination(features: string[]): number | null {
-    const regex = /(\d+)\/1000(?:th)?\s*oz/i;
+function getGoldDenomination(features: string[], name?: string): number | null {
+    // First, try to match "X/1000th oz" pattern in features
+    const featureRegex = /(\d+)\/1000(?:th)?\s*oz/i;
     for (const feature of features) {
-        const match = feature.match(regex);
+        const match = feature.match(featureRegex);
         if (match) {
             return parseInt(match[1], 10);
         }
     }
+    
+    // Try to match "X GB" or "XGB" pattern in features
+    const gbFeatureRegex = /(\d+)\s*GB/i;
+    for (const feature of features) {
+        const match = feature.match(gbFeatureRegex);
+        if (match) {
+            return parseInt(match[1], 10);
+        }
+    }
+    
+    // Fallback: try to extract from product name (e.g., "HEAVYWEIGHT (25 GB)" or "W3B SEED (1GB)")
+    if (name) {
+        const nameRegex = /\((\d+)\s*GB\)/i;
+        const match = name.match(nameRegex);
+        if (match) {
+            return parseInt(match[1], 10);
+        }
+    }
+    
     return null;
 }
 
@@ -63,7 +83,7 @@ function getGoldDenomination(features: string[]): number | null {
  * price = goldbackRate × denomination (e.g., $9.02 × 5 = $45.10)
  */
 function getDisplayPrice(pkg: GoldPackage, goldbackRate: number): string {
-    const denomination = getGoldDenomination(pkg.features);
+    const denomination = getGoldDenomination(pkg.features, pkg.name);
     if (denomination) {
         const price = goldbackRate * denomination;
         return `$${price.toFixed(2)}`;

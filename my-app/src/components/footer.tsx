@@ -1,17 +1,4 @@
-'use client';
-
 import Image from 'next/image';
-
-// Smooth scroll function
-const scrollToSection = (sectionId: string) => {
-  const element = document.getElementById(sectionId);
-  if (element) {
-    element.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
-  }
-};
 
 export function Footer() {
   return (
@@ -79,12 +66,12 @@ export function Footer() {
             <h4 className="font-bold text-white mb-4">Product</h4>
             <ul className="space-y-2">
               <li>
-                <button
-                  onClick={() => scrollToSection('features')}
+                <a
+                  href="/shop-gold-backs"
                   className="text-gray-400 hover:text-white hover:underline hover:decoration-2 hover:underline-offset-4 transition-all text-left"
                 >
-                  Buy $BW3B
-                </button>
+                  Buy Goldbacks
+                </a>
               </li>
 
             </ul>
@@ -95,36 +82,36 @@ export function Footer() {
             <h4 className="font-bold text-white mb-4">Learn</h4>
             <ul className="space-y-2">
               <li>
-                <button
-                  onClick={() => scrollToSection('hero')}
-                  className="text-gray-400 hover:text-white hover:underline hover:decoration-2 hover:underline-offset-4 transition-all text-left"
+                <a
+                  href="/#hero"
+                  className="text-gray-400 hover:text-white hover:underline hover:decoration-2 hover:underline-offset-4 transition-all"
                 >
                   What is BlackW3B?
-                </button>
+                </a>
               </li>
               <li>
-                <button
-                  onClick={() => scrollToSection('features')}
-                  className="text-gray-400 hover:text-white hover:underline hover:decoration-2 hover:underline-offset-4 transition-all text-left"
+                <a
+                  href="/#features"
+                  className="text-gray-400 hover:text-white hover:underline hover:decoration-2 hover:underline-offset-4 transition-all"
                 >
                   BlackW3B Coins
-                </button>
+                </a>
               </li>
               <li>
-                <button
-                  onClick={() => scrollToSection('how-it-works')}
-                  className="text-gray-400 hover:text-white hover:underline hover:decoration-2 hover:underline-offset-4 transition-all text-left"
+                <a
+                  href="/#how-it-works"
+                  className="text-gray-400 hover:text-white hover:underline hover:decoration-2 hover:underline-offset-4 transition-all"
                 >
-                  Join BlackW3B
-                </button>
+                  How It Works
+                </a>
               </li>
               <li>
-                <button
-                  onClick={() => scrollToSection('learn-more')}
-                  className="text-gray-400 hover:text-white hover:underline hover:decoration-2 hover:underline-offset-4 transition-all text-left"
+                <a
+                  href="/#learn-more"
+                  className="text-gray-400 hover:text-white hover:underline hover:decoration-2 hover:underline-offset-4 transition-all"
                 >
                   Documentation
-                </button>
+                </a>
               </li>
             </ul>
           </div>
@@ -155,12 +142,22 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <button
-                  onClick={() => scrollToSection('faq')}
-                  className="text-gray-400 hover:text-white hover:underline transition-all text-left"
+                <a
+                  href="/#faq"
+                  className="text-gray-400 hover:text-white hover:underline transition-all"
                 >
                   FAQ
-                </button>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://discord.gg/MvZkyQzC"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white hover:underline transition-all"
+                >
+                  Join Discord
+                </a>
               </li>
             </ul>
           </div>
