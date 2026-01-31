@@ -35,6 +35,7 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          formType: 'waitlist',
           name: formData.name || undefined,
           email: formData.email,
           submittedAt: new Date().toISOString(),
