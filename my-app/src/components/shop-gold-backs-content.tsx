@@ -44,6 +44,10 @@ interface ShopGoldBacksContentProps {
 }
 
 /**
+ * 
+ * 
+ * 
+ * 
  * Extract gold content denomination from features or name (1, 5, 10, 25, etc.)
  * Matches patterns like "1/1000th oz" in features, or "(25 GB)" / "(25GB)" in name
  */
