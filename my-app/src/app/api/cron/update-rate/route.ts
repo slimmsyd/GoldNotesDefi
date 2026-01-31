@@ -1,5 +1,5 @@
-
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import { getCurrentGoldbackRate } from '@/lib/goldback-scraper';
 
@@ -56,6 +56,9 @@ export async function GET(request: Request) {
                 goldbackRatePer1GB: newRate,
             },
         });
+
+        // 5. Revalidate the shop page cache so users see the new price
+        revalidatePath('/shop-gold-backs');
 
         return NextResponse.json({
             success: true,
