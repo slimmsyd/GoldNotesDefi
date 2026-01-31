@@ -57,6 +57,12 @@
   font-display: swap;
 }
 
+html {
+  scroll-behavior: smooth;
+  /* Offset for fixed header when scrolling to anchor links */
+  scroll-padding-top: 100px;
+}
+
 :root {
   --background: #0a0a0a;
   --foreground: #ededed;
