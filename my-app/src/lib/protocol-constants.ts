@@ -173,15 +173,21 @@ export interface ProtocolData {
   currentMerkleRoot: string;
   isPaused: boolean;
   treasuryBalance: number; // W3B tokens available in treasury
-  
+
   // Derived
   isSolvent: boolean;
   solvencyRatio: number; // reserves / supply (or Infinity if supply is 0)
-  
+
   // Off-chain data (Supabase)
   lastAuditRecord: MerkleRootRecord | null;
   totalBatches: number;
-  
+
+  // Goldback/W3B Price Data
+  goldbackPrice: number | null;           // Current Goldback rate (W3B is 1:1)
+  goldbackPriceUpdatedAt: Date | null;    // When the price was last updated
+  goldbackPrice24hChange: number | null;  // 24h price change percentage
+  isGoldbackPriceStale: boolean;          // True if price is >30 min old
+
   // Meta
   lastFetched: Date;
   isLoading: boolean;

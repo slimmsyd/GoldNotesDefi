@@ -57,6 +57,11 @@ export function SwapInterface() {
   const [solPrice, setSolPrice] = useState<number | null>(null);
   const [w3bPriceUsd, setW3bPriceUsd] = useState<number>(DEFAULT_W3B_PRICE_USD);
 
+  // Price verification state
+  const [priceVerifiedAt, setPriceVerifiedAt] = useState<Date | null>(null);
+  const [isPriceVerifying, setIsPriceVerifying] = useState(false);
+  const [priceMinutesSinceUpdate, setPriceMinutesSinceUpdate] = useState<number | null>(null);
+
   // Fetch W3B/Goldback price from database
   useEffect(() => {
     const fetchGoldbackRate = async () => {
@@ -65,6 +70,7 @@ export function SwapInterface() {
         const data = await res.json();
         if (data.success && data.rate) {
           setW3bPriceUsd(data.rate);
+          setPriceMinutesSinceUpdate(data.minutesSinceUpdate);
         }
       } catch (err) {
         console.error('Failed to fetch Goldback rate, using default');
@@ -72,6 +78,42 @@ export function SwapInterface() {
     };
     fetchGoldbackRate();
   }, []);
+
+  // Verify price before swap - fetches fresh data and checks staleness
+  const verifyPriceBeforeSwap = async (): Promise<{ verified: boolean; rate: number | null; error: string | null }> => {
+    setIsPriceVerifying(true);
+    try {
+      const res = await fetch('/api/goldback-rate');
+      const data = await res.json();
+
+      if (!data.success || !data.rate) {
+        return { verified: false, rate: null, error: 'Unable to verify current W3B price. Please try again.' };
+      }
+
+      const minutesSinceUpdate = data.minutesSinceUpdate ?? Infinity;
+
+      // Block if price is more than 60 minutes stale
+      if (minutesSinceUpdate > 60) {
+        return {
+          verified: false,
+          rate: data.rate,
+          error: `Price data is ${minutesSinceUpdate} minutes old. Swap blocked for safety. Please try again later.`
+        };
+      }
+
+      // Update state with verified price
+      setW3bPriceUsd(data.rate);
+      setPriceVerifiedAt(new Date());
+      setPriceMinutesSinceUpdate(minutesSinceUpdate);
+
+      return { verified: true, rate: data.rate, error: null };
+    } catch (err) {
+      console.error('Price verification failed:', err);
+      return { verified: false, rate: null, error: 'Failed to verify price. Please check your connection.' };
+    } finally {
+      setIsPriceVerifying(false);
+    }
+  };
 
   // Fetch SOL price when needed
   useEffect(() => {
@@ -178,6 +220,13 @@ export function SwapInterface() {
     setError(null);
 
     try {
+      // CRITICAL: Verify price freshness before swap
+      const priceCheck = await verifyPriceBeforeSwap();
+      if (!priceCheck.verified) {
+        setError(priceCheck.error || 'Price verification failed');
+        setIsLoading(false);
+        return;
+      }
       // Fetch on-chain data
       const [solReceiver, priceLamports] = await Promise.all([
         fetchSolReceiver(connection),
@@ -465,6 +514,20 @@ export function SwapInterface() {
                   <span className="text-white">1 W3B = {w3bPriceUsd} USD</span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-gray-400">Price Age</span>
+                  <span className={`${
+                    priceMinutesSinceUpdate !== null && priceMinutesSinceUpdate > 30
+                      ? 'text-yellow-400'
+                      : 'text-green-400'
+                  }`}>
+                    {priceMinutesSinceUpdate !== null
+                      ? priceMinutesSinceUpdate < 1
+                        ? 'Updated just now'
+                        : `${priceMinutesSinceUpdate} min ago`
+                      : 'Verifying...'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-gray-400">Network Fee</span>
                   <span className="text-white">~0.00005 SOL</span>
                 </div>
@@ -475,6 +538,16 @@ export function SwapInterface() {
                   </span>
                 </div>
               </div>
+
+              {/* Price staleness warning */}
+              {priceMinutesSinceUpdate !== null && priceMinutesSinceUpdate > 30 && (
+                <div className="bg-yellow-900/30 border border-yellow-800 rounded-xl p-3 text-yellow-400 text-sm flex items-center gap-2">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>Price data is {priceMinutesSinceUpdate} minutes old. Fresh verification will occur before swap.</span>
+                </div>
+              )}
 
               {error && (
                 <div className="bg-red-900/30 border border-red-800 rounded-xl p-3 text-red-400 text-sm">
@@ -491,16 +564,16 @@ export function SwapInterface() {
                 </button>
                 <button
                   onClick={handleSwap}
-                  disabled={isLoading}
+                  disabled={isLoading || isPriceVerifying}
                   className="flex-[2] cursor-pointer bg-amber-500 text-black font-bold py-3 rounded-xl hover:bg-amber-400 disabled:opacity-80 transition-all shadow-lg shadow-amber-500/20 relative"
                 >
-                  {isLoading ? (
+                  {isLoading || isPriceVerifying ? (
                     <span className="flex items-center justify-center gap-2">
                       <svg className="animate-spin h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Swapping...
+                      {isPriceVerifying ? 'Verifying Price...' : 'Swapping...'}
                     </span>
                   ) : (
                     'Confirm Swap'

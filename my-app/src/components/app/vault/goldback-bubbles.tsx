@@ -236,59 +236,59 @@ export function GoldbackBubbles() {
 
   const totalSerials = batches.reduce((sum, b) => sum + b.serialCount, 0);
 
-  return (
-    <div className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden">
-      {/* Header */}
-      <div className="p-6 border-b border-gray-800 flex justify-between items-start">
-        <div>
-          <h3 className="text-white font-semibold text-lg flex items-center gap-2">
-            <span className="text-2xl">✨</span>
-            Goldback Constellation
-          </h3>
-          <p className="text-gray-500 text-sm mt-1">
-            Each bubble represents a verified batch orbiting the vault
-          </p>
-        </div>
+  // return (
+  //   <div className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden">
+  //     {/* Header */}
+  //     <div className="p-6 border-b border-gray-800 flex justify-between items-start">
+  //       <div>
+  //         <h3 className="text-white font-semibold text-lg flex items-center gap-2">
+  //           <span className="text-2xl">✨</span>
+  //           Goldback Constellation
+  //         </h3>
+  //         <p className="text-gray-500 text-sm mt-1">
+  //           Each bubble represents a verified batch orbiting the vault
+  //         </p>
+  //       </div>
 
-        <div className="text-right">
-          <div className="text-3xl font-bold text-amber-500">{batches.length}</div>
-          <div className="text-gray-500 text-xs uppercase tracking-wider">Batches</div>
-        </div>
-      </div>
+  //       <div className="text-right">
+  //         <div className="text-3xl font-bold text-amber-500">{batches.length}</div>
+  //         <div className="text-gray-500 text-xs uppercase tracking-wider">Batches</div>
+  //       </div>
+  //     </div>
 
-      {/* Selected Batch Info */}
-      {selectedBatch && (
-        <div className="absolute top-32 left-1/2 -translate-x-1/2 z-20 bg-gray-800/95 backdrop-blur border border-gray-700 rounded-xl p-4 shadow-2xl min-w-[200px]">
-          <div className="text-amber-500 font-bold text-lg">{selectedBatch.serialCount} Goldbacks</div>
-          <div className="text-gray-400 text-xs mt-1">Batch ID: {selectedBatch.id.split('-').pop()}</div>
-          <div className="text-gray-500 text-[10px] mt-1">
-            {new Date(selectedBatch.latestReceived).toLocaleString()}
-          </div>
-        </div>
-      )}
+  //     {/* Selected Batch Info */}
+  //     {selectedBatch && (
+  //       <div className="absolute top-32 left-1/2 -translate-x-1/2 z-20 bg-gray-800/95 backdrop-blur border border-gray-700 rounded-xl p-4 shadow-2xl min-w-[200px]">
+  //         <div className="text-amber-500 font-bold text-lg">{selectedBatch.serialCount} Goldbacks</div>
+  //         <div className="text-gray-400 text-xs mt-1">Batch ID: {selectedBatch.id.split('-').pop()}</div>
+  //         <div className="text-gray-500 text-[10px] mt-1">
+  //           {new Date(selectedBatch.latestReceived).toLocaleString()}
+  //         </div>
+  //       </div>
+  //     )}
 
-      {/* Visualization */}
-      <div ref={containerRef} className="relative">
-        <svg ref={svgRef} className="w-full" />
-      </div>
+  //     {/* Visualization */}
+  //     <div ref={containerRef} className="relative">
+  //       <svg ref={svgRef} className="w-full" />
+  //     </div>
 
-      {/* Footer Stats */}
-      <div className="p-4 border-t border-gray-800 flex justify-around text-center">
-        <div>
-          <div className="text-xl font-bold text-white">{totalSerials.toLocaleString()}</div>
-          <div className="text-gray-500 text-xs">Total Goldbacks</div>
-        </div>
-        <div>
-          <div className="text-xl font-bold text-white">{batches.length}</div>
-          <div className="text-gray-500 text-xs">Verified Batches</div>
-        </div>
-        <div>
-          <div className="text-xl font-bold text-white">
-            ${(totalSerials * 9.18).toLocaleString()}
-          </div>
-          <div className="text-gray-500 text-xs">Est. Value (USD)</div>
-        </div>
-      </div>
-    </div>
-  );
+  //     {/* Footer Stats */}
+  //     <div className="p-4 border-t border-gray-800 flex justify-around text-center">
+  //       <div>
+  //         <div className="text-xl font-bold text-white">{totalSerials.toLocaleString()}</div>
+  //         <div className="text-gray-500 text-xs">Total Goldbacks</div>
+  //       </div>
+  //       <div>
+  //         <div className="text-xl font-bold text-white">{batches.length}</div>
+  //         <div className="text-gray-500 text-xs">Verified Batches</div>
+  //       </div>
+  //       <div>
+  //         <div className="text-xl font-bold text-white">
+  //           ${(totalSerials * 9.18).toLocaleString()}
+  //         </div>
+  //         <div className="text-gray-500 text-xs">Est. Value (USD)</div>
+  //       </div>
+  //     </div>
+  //   </div>
+  // );
 }

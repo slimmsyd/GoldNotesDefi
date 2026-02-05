@@ -6,8 +6,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { MerkleRootRecord, GoldbackSerialRecord, SUPABASE_CONFIG } from './protocol-constants';
 
-// Constants
-const GOLDBACK_PRICE_USD = 9.18; // Fixed peg price (1 Goldback = ~$9.18 USD)
+// Note: Goldback price is now fetched dynamically from /api/goldback-rate
+// The price is stored in the database via the cron job and updated every 15 minutes
 
 // Create Supabase client for the Blockchain project
 
@@ -122,7 +122,7 @@ export async function fetchTotalSerials(): Promise<number> {
 export interface BatchStats {
   batchId: string;
   serialCount: number;
-  totalValueUsd: number;
+  totalValueUsd: number | null; // Calculated dynamically in UI using current goldback price
   latestReceived: string;
   earliestReceived: string;
   isAnchored: boolean;
@@ -182,7 +182,7 @@ export async function fetchBatchStats(): Promise<BatchStats[]> {
   return sortedBatches.map(([batchId, stats]) => ({
     batchId,
     serialCount: stats.count,
-    totalValueUsd: stats.count * GOLDBACK_PRICE_USD,
+    totalValueUsd: null, // Calculated dynamically in UI with current goldback price
     latestReceived: stats.latest,
     earliestReceived: stats.earliest,
     isAnchored: stats.anchoredRoot !== null,

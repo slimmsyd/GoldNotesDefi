@@ -81,6 +81,15 @@ model SiteSettings {
   updatedAt          DateTime @updatedAt
 }
 
+// Goldback price history for 24h change tracking
+model GoldbackPriceHistory {
+  id        String   @id @default(cuid())
+  price     Float    // Goldback rate at this point in time
+  timestamp DateTime @default(now())
+
+  @@index([timestamp])
+}
+
 // ============================================
 // SP3ND Integration Models
 // ============================================

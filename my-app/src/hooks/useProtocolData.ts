@@ -53,6 +53,38 @@ async function fetchTreasuryBalance(): Promise<number> {
   }
 }
 
+/**
+ * Goldback price data from API
+ */
+interface GoldbackPriceData {
+  rate: number;
+  updatedAt: string | null;
+  change24h: number | null;
+  isStale: boolean;
+}
+
+/**
+ * Fetch Goldback/W3B price from API
+ */
+async function fetchGoldbackPrice(): Promise<GoldbackPriceData | null> {
+  try {
+    const response = await fetch('/api/goldback-rate');
+    if (!response.ok) {
+      throw new Error('Failed to fetch goldback rate');
+    }
+    const data = await response.json();
+    return {
+      rate: data.rate,
+      updatedAt: data.updatedAt,
+      change24h: data.change24h,
+      isStale: data.isStale,
+    };
+  } catch (err) {
+    console.error('Failed to fetch goldback price:', err);
+    return null;
+  }
+}
+
 export function useProtocolData(
   options: UseProtocolDataOptions = {}
 ): UseProtocolDataReturn {
@@ -68,11 +100,12 @@ export function useProtocolData(
 
     try {
       // Fetch on-chain and off-chain data in parallel
-      const [protocolState, latestMerkleRoot, batchCount, treasuryBalance] = await Promise.all([
+      const [protocolState, latestMerkleRoot, batchCount, treasuryBalance, goldbackPrice] = await Promise.all([
         fetchProtocolStateRaw(),
         fetchLatestMerkleRoot(),
         fetchBatchCount(),
         fetchTreasuryBalance(),
+        fetchGoldbackPrice(),
       ]);
 
       if (!protocolState) {
@@ -100,6 +133,12 @@ export function useProtocolData(
         // Off-chain data
         lastAuditRecord: latestMerkleRoot,
         totalBatches: batchCount,
+
+        // Goldback/W3B Price
+        goldbackPrice: goldbackPrice?.rate ?? null,
+        goldbackPriceUpdatedAt: goldbackPrice?.updatedAt ? new Date(goldbackPrice.updatedAt) : null,
+        goldbackPrice24hChange: goldbackPrice?.change24h ?? null,
+        isGoldbackPriceStale: goldbackPrice?.isStale ?? true,
 
         // Meta
         lastFetched: new Date(),

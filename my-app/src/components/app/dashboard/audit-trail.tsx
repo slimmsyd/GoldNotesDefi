@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * Audit Trail Component
+ * GoldBack Design System Implementation
+ *
+ * Displays ZK proof history with links to Solana explorer
+ */
+
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MerkleRootRecord } from '@/lib/protocol-constants';
@@ -23,17 +30,17 @@ export function AuditTrail() {
     load();
   }, []);
 
-  const getStatusColor = (status: string) => {
+  const getStatusConfig = (status: string) => {
     switch (status) {
       case 'anchored':
       case 'confirmed':
-        return 'bg-green-500';
+        return { color: 'bg-green-500', text: 'text-green-400', bg: 'bg-green-500/20' };
       case 'unconfirmed':
-        return 'bg-yellow-500';
+        return { color: 'bg-yellow-500', text: 'text-yellow-400', bg: 'bg-yellow-500/20' };
       case 'failed':
-        return 'bg-red-500';
+        return { color: 'bg-red-500', text: 'text-red-400', bg: 'bg-red-500/20' };
       default:
-        return 'bg-gray-500';
+        return { color: 'bg-gray-500', text: 'text-gray-400', bg: 'bg-gray-500/20' };
     }
   };
 
@@ -42,96 +49,152 @@ export function AuditTrail() {
     return `https://solscan.io/tx/${txHash}?cluster=devnet`;
   };
 
+  const formatTimeAgo = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.7 }}
-      className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 h-full flex flex-col"
+      transition={{ delay: 0.3, duration: 0.4 }}
+      className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden"
     >
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-gray-400 text-sm font-medium uppercase tracking-wider flex items-center gap-2">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
-          </svg>
-          ZK Proof History
-        </h3>
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-gray-800/50 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
+            <svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-white font-semibold">Proof History</h3>
+            <p className="text-gray-500 text-xs">ZK-verified merkle roots</p>
+          </div>
+        </div>
+        <span className="text-xs text-gray-500 bg-gray-800/50 px-3 py-1 rounded-full">
+          {roots.length} records
+        </span>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-16 bg-gray-800 rounded-lg animate-pulse" />
-          ))}
-        </div>
-      ) : roots.length === 0 ? (
-        <div className="text-center text-gray-600 py-8 italic">
-          No proofs submitted yet
-        </div>
-      ) : (
-        <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          {roots.map((root, index) => {
-            const explorerUrl = getExplorerUrl(root.solana_tx_hash);
-            const Wrapper = explorerUrl ? 'a' : 'div';
-            const wrapperProps = explorerUrl ? {
-              href: explorerUrl,
-              target: '_blank',
-              rel: 'noopener noreferrer'
-            } : {};
+      {/* Content */}
+      <div className="p-4">
+        {isLoading ? (
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-20 bg-gray-800/50 rounded-xl animate-pulse" />
+            ))}
+          </div>
+        ) : roots.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-500/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <p className="text-white font-medium mb-1">Building Proof History</p>
+            <p className="text-gray-500 text-sm mb-3">ZK-verified merkle roots will be recorded here for transparent auditing</p>
+            <div className="inline-flex items-center gap-2 text-xs text-gray-500 bg-gray-800/50 px-3 py-1.5 rounded-full">
+              <svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Proofs are submitted daily
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-700 [&::-webkit-scrollbar-thumb]:rounded-full">
+            {roots.map((root, index) => {
+              const explorerUrl = getExplorerUrl(root.solana_tx_hash);
+              const statusConfig = getStatusConfig(root.status);
+              const Wrapper = explorerUrl ? 'a' : 'div';
+              const wrapperProps = explorerUrl
+                ? {
+                    href: explorerUrl,
+                    target: '_blank',
+                    rel: 'noopener noreferrer',
+                  }
+                : {};
 
-            return (
-              <motion.div
-                key={root.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Wrapper
-                  {...wrapperProps}
-                  className={`block bg-gray-800/50 rounded-lg p-4 border border-gray-700/50 transition-all ${
-                    explorerUrl 
-                      ? 'hover:bg-gray-800 hover:border-gray-600 cursor-pointer group' 
-                      : ''
-                  }`}
+              return (
+                <motion.div
+                  key={root.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.08, duration: 0.3 }}
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`w-2 h-2 rounded-full ${getStatusColor(root.status)}`} />
-                        <span className="text-white text-sm font-medium capitalize">
-                          {root.status}
-                        </span>
-                        {explorerUrl && (
-                          <svg className="w-3 h-3 text-gray-600 group-hover:text-gray-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  <Wrapper
+                    {...wrapperProps}
+                    className={`block bg-gray-800/30 rounded-xl p-4 border border-gray-800/50 transition-all duration-200 ${
+                      explorerUrl ? 'hover:bg-gray-800/50 hover:border-gray-600 hover:translate-y-[-2px] hover:shadow-lg cursor-pointer group focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900' : ''
+                    }`}
+                  >
+                    <div className="flex items-start gap-4">
+                      {/* Status Icon */}
+                      <div className={`w-10 h-10 ${statusConfig.bg} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                        {root.status === 'anchored' || root.status === 'confirmed' ? (
+                          <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : root.status === 'unconfirmed' ? (
+                          <svg className="w-5 h-5 text-yellow-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         )}
                       </div>
-                      <p className="text-gray-500 text-xs font-mono truncate" title={root.root_hash}>
-                        Root: {root.root_hash}
-                      </p>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}>
+                            <span className={`w-1 h-1 rounded-full ${statusConfig.color}`} />
+                            {root.status.charAt(0).toUpperCase() + root.status.slice(1)}
+                          </span>
+                          <span className="text-gray-500 text-xs">{formatTimeAgo(root.anchored_at)}</span>
+                        </div>
+                        <p className="text-gray-500 text-xs font-mono truncate" title={root.root_hash}>
+                          {root.root_hash.slice(0, 20)}...{root.root_hash.slice(-8)}
+                        </p>
+                      </div>
+
+                      {/* Stats */}
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-amber-400 font-bold text-lg">{root.total_serials.toLocaleString()}</p>
+                        <p className="text-gray-500 text-xs uppercase tracking-wider">serials</p>
+                      </div>
+
+                      {/* Verification Link */}
+                      {explorerUrl && (
+                        <div className="flex items-center self-center ml-2 flex-shrink-0">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-800/50 text-xs font-medium text-gray-400 group-hover:text-amber-400 group-hover:bg-amber-500/10 transition-colors">
+                            <span className="hidden sm:inline">Verify</span>
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-amber-500 font-bold">{root.total_serials}</p>
-                      <p className="text-gray-600 text-xs">serials</p>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex justify-between items-end">
-                    <span className="text-gray-600 text-xs">
-                      {new Date(root.anchored_at).toLocaleString()}
-                    </span>
-                    {root.solana_tx_hash && (
-                      <span className="text-[10px] text-gray-700 font-mono group-hover:text-blue-400/80 transition-colors">
-                        View on Solscan →
-                      </span>
-                    )}
-                  </div>
-                </Wrapper>
-              </motion.div>
-            );
-          })}
-        </div>
-      )}
+                  </Wrapper>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </motion.div>
   );
 }

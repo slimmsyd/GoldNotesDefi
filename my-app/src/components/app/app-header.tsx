@@ -1,26 +1,49 @@
 'use client';
 
+/**
+ * App Header Component
+ * GoldBack Design System Implementation
+ */
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useEffect, useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { PROTOCOL_CONFIG } from '@/lib/protocol-constants';
 
-function NavLink({ href, children, isActive }: { href: string; children: React.ReactNode; isActive: boolean }) {
+function NavLink({
+  href,
+  children,
+  isActive,
+  icon,
+}: {
+  href: string;
+  children: React.ReactNode;
+  isActive: boolean;
+  icon?: React.ReactNode;
+}) {
   return (
-    <div className="transform transition-transform hover:scale-105 active:scale-95">
-      <Link
-        href={href}
-        className={`px-4 py-2 rounded-xl border transition-all duration-200 text-sm font-medium ${isActive
-          ? 'bg-gray-800 text-white border-gray-700 shadow-lg shadow-gray-900/20'
-          : 'border-transparent text-gray-400 hover:text-white hover:bg-gray-800/50'
-          }`}
-      >
-        {children}
-      </Link>
-    </div>
+    <Link
+      href={href}
+      className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${
+        isActive
+          ? 'bg-gray-800 text-white shadow-lg'
+          : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+      }`}
+    >
+      {icon}
+      {children}
+      {isActive && (
+        <motion.div
+          layoutId="activeNav"
+          className="absolute inset-0 bg-gray-800 rounded-xl -z-10"
+          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        />
+      )}
+    </Link>
   );
 }
 
@@ -34,7 +57,17 @@ function CustomWalletButton() {
     setMounted(true);
   }, []);
 
-  const handleConnect = () => {
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setIsDropdownOpen(false);
+    if (isDropdownOpen) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [isDropdownOpen]);
+
+  const handleConnect = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (connected) {
       setIsDropdownOpen(!isDropdownOpen);
     } else {
@@ -47,7 +80,7 @@ function CustomWalletButton() {
 
   if (!mounted) {
     return (
-      <button className="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-5 py-2 rounded-xl font-medium text-sm shadow-lg hover:shadow-amber-500/20 hover:shadow-xl transition-all transform hover:scale-105 active:scale-95">
+      <button className="bg-amber-500 text-black font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-amber-400 transition-colors">
         Connect Wallet
       </button>
     );
@@ -59,41 +92,77 @@ function CustomWalletButton() {
       <div className="relative">
         <button
           onClick={handleConnect}
-          className="bg-gray-800 cursor-pointer border border-gray-700 text-white px-5 py-2 rounded-xl font-medium text-sm shadow-lg hover:bg-gray-700 transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2"
+          className="flex items-center gap-2.5 bg-gray-900/80 border border-gray-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm hover:bg-gray-800 hover:border-gray-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900"
         >
-          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          {`${address.slice(0, 4)}...${address.slice(-4)}`}
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+          </span>
+          <span className="font-mono">{`${address.slice(0, 4)}...${address.slice(-4)}`}</span>
+          <svg
+            className={`w-4 h-4 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
         </button>
-        {isDropdownOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-800 rounded-xl shadow-xl py-2 z-50">
-            <Link
-              href="/app/profile"
-              onClick={() => setIsDropdownOpen(false)}
-              className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+
+        <AnimatePresence>
+          {isDropdownOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.15 }}
+              className="absolute right-0 mt-2 w-56 bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-50"
             >
-              <span className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Profile
-              </span>
-            </Link>
-            <button
-              onClick={() => {
-                disconnect();
-                setIsDropdownOpen(false);
-              }}
-              className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
-            >
-              <span className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Disconnect
-              </span>
-            </button>
-          </div>
-        )}
+              {/* Wallet Info */}
+              <div className="px-4 py-3 border-b border-gray-800">
+                <p className="text-xs text-gray-500 mb-1">Connected Wallet</p>
+                <p className="text-sm font-mono text-white truncate">{address}</p>
+              </div>
+
+              {/* Menu Items */}
+              <div className="py-2">
+                <Link
+                  href="/app/profile"
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+                >
+                  <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span className="font-medium">Profile</span>
+                    <p className="text-xs text-gray-500">View wallet details</p>
+                  </div>
+                </Link>
+
+                <button
+                  onClick={() => {
+                    disconnect();
+                    setIsDropdownOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  <div className="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <span className="font-medium">Disconnect</span>
+                    <p className="text-xs text-red-400/70">End session</p>
+                  </div>
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
@@ -106,7 +175,7 @@ function CustomWalletButton() {
 
       <button
         onClick={handleConnect}
-        className="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-5 py-2 rounded-xl font-medium text-sm shadow-lg hover:shadow-amber-500/20 hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
+        className="bg-amber-500 text-black font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-amber-400 active:bg-amber-600 transition-colors duration-200 shadow-lg shadow-amber-500/20 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900"
       >
         Connect Wallet
       </button>
@@ -124,49 +193,90 @@ export function AppHeader() {
     return false;
   };
 
+  const navItems = [
+    {
+      href: '/app',
+      label: 'Dashboard',
+      icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+        </svg>
+      ),
+    },
+    {
+      href: '/app/swap',
+      label: 'Swap',
+      icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+      ),
+    },
+    {
+      href: '/app/vault',
+      label: 'Vault',
+      icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      ),
+    },
+  ];
+
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-xl bg-gray-950/80 border-b border-gray-800">
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#0A0A0A]/80 border-b border-gray-800/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/app" className="flex items-center gap-2 group">
-            <div className="relative w-8 h-8 transition-transform group-hover:scale-105">
+          <Link href="/app" className="flex items-center gap-3 group">
+            <div className="relative w-9 h-9 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/30 transition-shadow">
               <Image
                 src="/logos/BlackWeb.png"
                 alt="BlackW3B"
-                width={32}
-                height={32}
+                width={24}
+                height={24}
                 className="object-contain filter invert"
               />
             </div>
-            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-200 to-amber-500">
-              BlackW3B
-            </span>
-            <span className={`text-xs font-mono px-2 py-0.5 rounded border ${
-              PROTOCOL_CONFIG.isMainnet 
-                ? 'text-green-400 border-green-800 bg-green-900/30' 
-                : 'text-amber-400 border-amber-800 bg-amber-900/30'
-            }`}>
-              {PROTOCOL_CONFIG.networkDisplay}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-white">
+                GoldBack
+              </span>
+              <span
+                className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                  PROTOCOL_CONFIG.isMainnet
+                    ? 'text-green-400 bg-green-500/10 border border-green-500/20'
+                    : 'text-amber-400 bg-amber-500/10 border border-amber-500/20'
+                }`}
+              >
+                {PROTOCOL_CONFIG.networkDisplay}
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1">
-            <NavLink href="/app/swap" isActive={isActive('/app/swap')}>Swap</NavLink>
-            <NavLink href="/app" isActive={isActive('/app')}>Dashboard</NavLink>
-            <NavLink href="/app/vault" isActive={isActive('/app/vault')}>Vault</NavLink>
-          </div>
+          <nav className="hidden md:flex items-center gap-1 bg-gray-900/50 border border-gray-800 rounded-2xl p-1">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.href}
+                href={item.href}
+                isActive={isActive(item.href)}
+                icon={item.icon}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <CustomWalletButton />
 
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 text-gray-400 hover:text-white"
+              className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-gray-900/50 border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700 transition-colors"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {isMobileMenuOpen ? (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 ) : (
@@ -179,36 +289,39 @@ export function AppHeader() {
       </div>
 
       {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-800 bg-gray-950">
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            <Link
-              href="/app/swap"
-              className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${isActive('/app/swap') ? 'bg-gray-900 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Swap
-            </Link>
-            <Link
-              href="/app"
-              className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${isActive('/app') ? 'bg-gray-900 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/app/vault"
-              className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${isActive('/app/vault') ? 'bg-gray-900 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                }`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Vault
-            </Link>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden border-t border-gray-800/50 bg-[#0A0A0A]/95 backdrop-blur-xl overflow-hidden"
+          >
+            <div className="px-4 py-4 space-y-2">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-colors ${
+                    isActive(item.href)
+                      ? 'bg-gray-800 text-white'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                    isActive(item.href) ? 'bg-amber-500/20 text-amber-500' : 'bg-gray-800 text-gray-400'
+                  }`}>
+                    {item.icon}
+                  </div>
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

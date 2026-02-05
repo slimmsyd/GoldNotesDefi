@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../styles/design-tokens.css";
 
 /* Matter Font Family */
 @font-face {
@@ -69,10 +70,46 @@ html {
 }
 
 @theme inline {
+  /* Background & Foreground */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  /* Typography */
   --font-sans: 'Matter', sans-serif;
   --font-mono: var(--font-geist-mono);
+
+  /* GoldBack Brand Colors */
+  --color-gold-50: #FFFBEB;
+  --color-gold-100: #FEF3C7;
+  --color-gold-200: #FDE68A;
+  --color-gold-300: #FCD34D;
+  --color-gold-400: #FBBF24;
+  --color-gold-500: #F59E0B;
+  --color-gold-600: #D97706;
+  --color-gold-700: #B45309;
+  --color-gold-800: #92400E;
+  --color-gold-900: #78350F;
+
+  /* Semantic Surface Colors */
+  --color-surface: #111111;
+  --color-surface-elevated: #1A1A1A;
+  --color-surface-hover: #262626;
+
+  /* Semantic Text Colors */
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #9CA3AF;
+  --color-text-muted: #6B7280;
+
+  /* Status Colors */
+  --color-success: #22C55E;
+  --color-warning: #EAB308;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+
+  /* Gold Shadows */
+  --shadow-gold-sm: 0 2px 8px rgba(245, 158, 11, 0.15);
+  --shadow-gold: 0 4px 14px rgba(245, 158, 11, 0.25);
+  --shadow-gold-lg: 0 8px 24px rgba(245, 158, 11, 0.3);
 }
 
 body {

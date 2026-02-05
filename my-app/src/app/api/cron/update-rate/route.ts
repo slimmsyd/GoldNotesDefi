@@ -57,13 +57,33 @@ export async function GET(request: Request) {
             },
         });
 
-        // 5. Revalidate the shop page cache so users see the new price
+        // 5. Store in price history for 24h change tracking
+        await prisma.goldbackPriceHistory.create({
+            data: {
+                price: newRate,
+                timestamp: new Date(),
+            },
+        });
+
+        // 6. Clean up old price history (keep last 48 hours only)
+        const cutoffDate = new Date(Date.now() - 48 * 60 * 60 * 1000);
+        await prisma.goldbackPriceHistory.deleteMany({
+            where: {
+                timestamp: {
+                    lt: cutoffDate,
+                },
+            },
+        });
+
+        // 7. Revalidate page caches so users see the new price
         revalidatePath('/shop-gold-backs');
+        revalidatePath('/app');
 
         return NextResponse.json({
             success: true,
             oldRate,
             newRate,
+            updatedAt: updatedSettings.updatedAt.toISOString(),
             timestamp: new Date().toISOString()
         });
 
