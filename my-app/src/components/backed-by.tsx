@@ -37,6 +37,9 @@ const partners: Partner[] = [
     width: 120,
     height: 30,
     external: true,
+
+
+    
   },
   {
     href: "#",
