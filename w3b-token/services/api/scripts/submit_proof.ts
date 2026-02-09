@@ -58,14 +58,18 @@ interface ProofSubmission {
 /**
  * Verify proof locally using Barretenberg before submitting to blockchain.
  */
-function verifyProofLocally(proofPath: string, vkPath: string): boolean {
+function verifyProofLocally(proofPath: string, vkPath: string, publicInputsPath?: string): boolean {
     if (!fs.existsSync(vkPath)) {
         console.error("❌ Verifying key not found at:", vkPath);
         return false;
     }
 
     try {
-        execSync(`bb verify -p "${proofPath}" -k "${vkPath}"`, {
+        let cmd = `bb verify -p "${proofPath}" -k "${vkPath}"`;
+        if (publicInputsPath && fs.existsSync(publicInputsPath)) {
+            cmd += ` -i "${publicInputsPath}"`;
+        }
+        execSync(cmd, {
             stdio: ["pipe", "pipe", "pipe"],
             timeout: 60000,
         });
@@ -132,6 +136,7 @@ async function processBatchedProofs(): Promise<{ submissions: ProofSubmission[],
         
         const proofPath = path.join(BATCH_PROOF_DIR, proof.proofFile);
         const vkPath = path.join(BATCH_PROOF_DIR, proof.vkFile);
+        const publicInputsPath = path.join(BATCH_PROOF_DIR, proof.publicInputsFile);
 
         if (!fs.existsSync(proofPath)) {
             console.error(`❌ Proof file not found: ${proofPath}`);
@@ -139,7 +144,7 @@ async function processBatchedProofs(): Promise<{ submissions: ProofSubmission[],
             continue;
         }
 
-        const verified = verifyProofLocally(proofPath, vkPath);
+        const verified = verifyProofLocally(proofPath, vkPath, publicInputsPath);
         if (verified) {
             console.log(`   ✅ Batch ${proof.batchNumber} verified`);
         } else {
@@ -185,7 +190,7 @@ async function processSingleProof(): Promise<{ submissions: ProofSubmission[], t
 
     console.log("📄 Processing single proof (non-batched mode)");
 
-    const verified = verifyProofLocally(proofPath, vkPath);
+    const verified = verifyProofLocally(proofPath, vkPath, publicInputsPath);
     if (!verified) {
         console.error("\n🚫 ABORTING: Proof failed verification.");
         process.exit(1);

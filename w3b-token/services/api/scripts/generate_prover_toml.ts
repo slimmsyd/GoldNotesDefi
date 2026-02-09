@@ -129,7 +129,6 @@ async function main() {
         const { data, error } = await supabase
             .from("goldback_serials")
             .select("serial_number")
-            .eq("status", "active") // Only active serials
             .order("serial_number");
         
         if (error || !data) {
@@ -138,7 +137,7 @@ async function main() {
         }
         
         serialStrings = data.map(s => s.serial_number);
-        console.log(`📦 Fetched ${serialStrings.length} active serials from Supabase`);
+        console.log(`📦 Fetched ${serialStrings.length} serials from Supabase`);
     }
 
     if (serialStrings.length === 0) {

@@ -229,18 +229,18 @@ export function AppHeader() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/app" className="flex items-center gap-3 group">
-            <div className="relative w-9 h-9 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/30 transition-shadow">
+            <div className="relative w-9 h-9 group-hover:scale-105 transition-transform">
               <Image
-                src="/logos/BlackWeb.png"
-                alt="BlackW3B"
-                width={24}
-                height={24}
-                className="object-contain filter invert"
+                src="/logos/BlackWebTokenLogo.png"
+                alt="WGB"
+                width={36}
+                height={36}
+                className="object-contain drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]"
               />
             </div>
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold text-white">
-                GoldBack
+                WGB
               </span>
               <span
                 className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${

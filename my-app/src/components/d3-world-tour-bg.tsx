@@ -3,6 +3,34 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
+import { GLOBE_CITIES, randomCityPair } from '@/lib/globe-cities';
+
+/* ─── Tour generator ─── */
+
+interface TourStop {
+  from: { name: string; coordinates: [number, number] };
+  to: { name: string; coordinates: [number, number] };
+}
+
+function generateTour(count: number): TourStop[] {
+  const stops: TourStop[] = [];
+  const used = new Set<string>();
+
+  for (let i = 0; i < count; i++) {
+    const [from, to] = randomCityPair();
+    const key = `${from.name}-${to.name}`;
+    if (used.has(key)) { i--; continue; }
+    used.add(key);
+    stops.push({
+      from: { name: from.name, coordinates: [from.lng, from.lat] },
+      to: { name: to.name, coordinates: [to.lng, to.lat] },
+    });
+  }
+
+  return stops;
+}
+
+/* ─── Component ─── */
 
 export function D3WorldTourBg() {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -14,11 +42,10 @@ export function D3WorldTourBg() {
     const container = containerRef.current;
     const width = container.clientWidth;
     const height = container.clientHeight;
-    
-    const svg = d3.select(svgRef.current);
-    svg.selectAll('*').remove(); // Clear previous render
 
-    // Set SVG dimensions
+    const svg = d3.select(svgRef.current);
+    svg.selectAll('*').remove();
+
     svg.attr('width', width).attr('height', height);
 
     const projection = d3.geoOrthographic()
@@ -28,7 +55,7 @@ export function D3WorldTourBg() {
 
     const path = d3.geoPath(projection);
 
-    // Create globe sphere
+    /* ── Globe sphere — light fill ── */
     svg.append('path')
       .datum({ type: 'Sphere' })
       .attr('class', 'sphere')
@@ -37,7 +64,7 @@ export function D3WorldTourBg() {
       .style('stroke', '#e0e0e0')
       .style('stroke-width', '1.5px');
 
-    // Graticule (grid lines)
+    /* ── Graticule — subtle neutral grid ── */
     const graticule = d3.geoGraticule10();
     svg.append('path')
       .datum(graticule)
@@ -48,18 +75,14 @@ export function D3WorldTourBg() {
       .style('stroke-width', '0.5px')
       .style('opacity', '0.5');
 
-    // Load world topology data
+    /* ── Load world data ── */
     fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
       .then(response => response.json())
       .then((world: any) => {
-        // Extract individual countries
         const countriesFeature = topojson.feature(world, world.objects.countries) as any;
         const countries = countriesFeature.features;
-        
-        // Country codes to highlight: USA (840), Ghana (288), Russia (643)
-        const highlightCountries = ['840', '288', '643'];
-        
-        // Draw countries
+
+        /* ── Country fills — neutral gray ── */
         svg.append('g')
           .attr('class', 'countries')
           .selectAll('path')
@@ -67,116 +90,81 @@ export function D3WorldTourBg() {
           .enter()
           .append('path')
           .attr('d', path as any)
-          .attr('class', (d: any) => {
-            return highlightCountries.includes(d.id) ? 'country-highlight' : 'country';
-          })
-          .style('fill', (d: any) => {
-            // Highlight specific countries
-            if (d.id === '840') return '#fecaca'; // USA - light red
-            if (d.id === '288') return '#bfdbfe'; // Ghana - light blue
-            if (d.id === '643') return '#ddd6fe'; // Russia - light purple
-            return '#e5e7eb'; // Default light gray
-          })
-          .style('stroke', '#999')
+          .style('fill', '#e8e8e8')
+          .style('stroke', '#ccc')
           .style('stroke-width', '0.5px');
 
-        // Define tour locations with connections and country IDs
-        const locations = [
-          { name: 'Virginia, USA', coordinates: [-77.4360, 37.5407], countryId: '840' },
-          { name: 'Ghana, Africa', coordinates: [-1.2164, 7.9465], countryId: '288' },
-          { name: 'Moscow, Russia', coordinates: [37.6173, 55.7558], countryId: '643' },
-        ];
-
-        // Create arcs layer
+        /* ── Arc layer ── */
         const arcsGroup = svg.append('g').attr('class', 'arcs');
 
-        let currentLocation = 0;
-        
-        // Get country paths for highlighting
-        const countryPaths = svg.selectAll('path.country, path.country-highlight');
+        /* ── Generate a tour of 10 random city-to-city routes ── */
+        const tour = generateTour(10);
+        let currentStop = 0;
 
         function transition() {
-          const from = locations[currentLocation];
-          const to = locations[(currentLocation + 1) % locations.length];
-          
-          // Highlight active countries with pulsing effect
-          countryPaths.each(function(d: any) {
-            const element = d3.select(this as SVGPathElement);
-            if (d.id === from.countryId || d.id === to.countryId) {
-              // Pulse the active countries
-              element
-                .transition()
-                .duration(800)
-                .style('fill', d.id === '840' ? '#ef4444' : d.id === '288' ? '#3b82f6' : '#8b5cf6')
-                .style('stroke-width', '2px')
-                .transition()
-                .duration(2000)
-                .style('fill', d.id === '840' ? '#fecaca' : d.id === '288' ? '#bfdbfe' : '#ddd6fe')
-                .style('stroke-width', '0.5px');
-            }
-          });
-          
-          // Create arc between current and next location
-          const arcGenerator = d3.geoInterpolate(
-            from.coordinates as [number, number],
-            to.coordinates as [number, number]
-          );
-          
-          // Generate points along the arc
-          const arcPoints = d3.range(0, 1.01, 0.05).map(arcGenerator);
-          
-          // Create line generator for the arc
-          const lineGenerator = d3.geoPath(projection);
-          const arcLine = {
-            type: 'LineString' as const,
-            coordinates: arcPoints
-          };
+          const stop = tour[currentStop];
 
-          // Add the arc path (initially invisible, will be drawn progressively)
+          /* Arc interpolator */
+          const arcGenerator = d3.geoInterpolate(
+            stop.from.coordinates,
+            stop.to.coordinates
+          );
+
+          const arcPoints = d3.range(0, 1.01, 0.04).map(arcGenerator);
+          const lineGenerator = d3.geoPath(projection);
+          const arcLine = { type: 'LineString' as const, coordinates: arcPoints };
+
+          /* Draw arc path (initially hidden) */
           const arcPath = arcsGroup
             .append('path')
             .datum(arcLine)
             .attr('class', 'arc')
             .attr('d', lineGenerator as any)
             .style('fill', 'none')
-            .style('stroke', '#ec4899')
-            .style('stroke-width', '3px')
-            .style('stroke-opacity', 0.9)
+            .style('stroke', '#c9a84c')
+            .style('stroke-width', '2.5px')
+            .style('stroke-opacity', 0.85)
             .style('stroke-linecap', 'round');
 
-          // Get the total length of the path for animation
           const totalLength = (arcPath.node() as SVGPathElement).getTotalLength();
-          
-          // Set up the initial state: line is hidden
+
           arcPath
             .style('stroke-dasharray', `${totalLength} ${totalLength}`)
             .style('stroke-dashoffset', totalLength);
 
-          // Add animated dots at start and end points
+          /* Start & end dots */
           const startDot = svg.append('circle')
             .attr('class', 'location-dot')
-            .style('fill', '#ec4899')
+            .style('fill', '#e8d48b')
             .style('opacity', 0)
-            .attr('r', 6);
+            .attr('r', 5);
 
           const endDot = svg.append('circle')
             .attr('class', 'location-dot')
-            .style('fill', '#a855f7')
+            .style('fill', '#c9a84c')
             .style('opacity', 0)
-            .attr('r', 6);
+            .attr('r', 5);
 
-          // Add traveling particle that moves along the arc
+          /* Traveling particle */
           const travelingDot = svg.append('circle')
             .attr('class', 'traveling-dot')
-            .style('fill', '#fbbf24')
+            .style('fill', '#e8d48b')
             .style('opacity', 0)
-            .attr('r', 4)
-            .style('filter', 'drop-shadow(0 0 4px #fbbf24)');
+            .attr('r', 3.5)
+            .style('filter', 'drop-shadow(0 0 6px rgba(201, 168, 76, 0.8))');
 
-          // Calculate midpoint for rotation
+          /* Glow ring at start */
+          const glowRing = svg.append('circle')
+            .attr('class', 'glow-ring')
+            .style('fill', 'none')
+            .style('stroke', '#c9a84c')
+            .style('stroke-width', '1.5px')
+            .style('opacity', 0)
+            .attr('r', 5);
+
+          /* Calculate midpoint & swing globe */
           const midpoint = arcGenerator(0.5);
-          
-          // Rotate globe to show the arc
+
           d3.transition()
             .duration(1500)
             .tween('rotate', function () {
@@ -184,116 +172,99 @@ export function D3WorldTourBg() {
               const targetRotate: [number, number, number] = [-midpoint[0], -midpoint[1], 0];
               const r = d3.interpolate(currentRotate, targetRotate);
               return function (t) {
-                const interpolated = r(t);
-                projection.rotate(interpolated);
+                projection.rotate(r(t));
                 svg.selectAll('path').attr('d', path as any);
-                
-                // Update arc path
                 arcPath.attr('d', lineGenerator as any);
-                
-                // Update dot positions
-                const startProj = projection(from.coordinates as [number, number]);
-                const endProj = projection(to.coordinates as [number, number]);
-                
-                if (startProj) {
-                  startDot.attr('cx', startProj[0]).attr('cy', startProj[1]);
-                }
-                if (endProj) {
-                  endDot.attr('cx', endProj[0]).attr('cy', endProj[1]);
-                }
+
+                const startProj = projection(stop.from.coordinates);
+                const endProj = projection(stop.to.coordinates);
+                if (startProj) startDot.attr('cx', startProj[0]).attr('cy', startProj[1]);
+                if (endProj) endDot.attr('cx', endProj[0]).attr('cy', endProj[1]);
               };
             })
             .on('end', function () {
-              // Show start dot
+              /* Show start dot + glow ring */
+              const startProj = projection(stop.from.coordinates);
+              if (startProj) {
+                glowRing
+                  .attr('cx', startProj[0])
+                  .attr('cy', startProj[1])
+                  .style('opacity', 0.7)
+                  .transition().duration(800)
+                  .attr('r', 14)
+                  .style('opacity', 0)
+                  .remove();
+              }
+
               startDot.transition().duration(300).style('opacity', 1);
-              
-              // Show traveling dot and animate it along the arc
               travelingDot.style('opacity', 1);
-              
-              // Animate the line being drawn from start to end
+
+              /* Animate arc drawing + traveling particle */
               arcPath
                 .transition()
                 .duration(1500)
                 .ease(d3.easeCubicInOut)
-                .styleTween('stroke-dashoffset', function() {
+                .styleTween('stroke-dashoffset', function () {
                   const interpolate = d3.interpolate(totalLength, 0);
-                  return function(t) {
-                    // Update arc path position as we animate
+                  return function (t) {
                     arcPath.attr('d', lineGenerator as any);
-                    
-                    // Update dot positions
-                    const startProj = projection(from.coordinates as [number, number]);
-                    const endProj = projection(to.coordinates as [number, number]);
-                    
-                    if (startProj) {
-                      startDot.attr('cx', startProj[0]).attr('cy', startProj[1]);
-                    }
-                    if (endProj) {
-                      endDot.attr('cx', endProj[0]).attr('cy', endProj[1]);
-                    }
-                    
-                    // Move traveling dot along the arc
+
+                    const sP = projection(stop.from.coordinates);
+                    const eP = projection(stop.to.coordinates);
+                    if (sP) startDot.attr('cx', sP[0]).attr('cy', sP[1]);
+                    if (eP) endDot.attr('cx', eP[0]).attr('cy', eP[1]);
+
                     const point = arcGenerator(t);
                     const projected = projection(point as [number, number]);
                     if (projected) {
-                      travelingDot
-                        .attr('cx', projected[0])
-                        .attr('cy', projected[1]);
+                      travelingDot.attr('cx', projected[0]).attr('cy', projected[1]);
                     }
-                    
+
                     return interpolate(t).toString();
                   };
                 })
                 .on('end', function () {
-                  // Show end dot when line reaches destination
                   endDot.transition().duration(300).style('opacity', 1);
-                  // Hide traveling dot
                   travelingDot.transition().duration(300).style('opacity', 0);
                 });
             })
             .transition()
             .delay(2200)
             .on('start', function () {
-              // Fade out the arc and dots
               arcPath.transition().duration(600).style('stroke-opacity', 0).remove();
               startDot.transition().duration(600).style('opacity', 0).remove();
               endDot.transition().duration(600).style('opacity', 0).remove();
               travelingDot.remove();
+              glowRing.remove();
             })
             .on('end', () => {
-              currentLocation = (currentLocation + 1) % locations.length;
+              currentStop = (currentStop + 1) % tour.length;
               transition();
             });
         }
 
-        // Start animation
         transition();
       })
       .catch(error => {
-        console.error('Error loading world data:', error);
+        console.error('[D3Globe] Error loading world data:', error);
       });
 
-    // Handle window resize
+    /* ── Resize ── */
     function handleResize() {
       if (!containerRef.current) return;
-      
       const newWidth = containerRef.current.clientWidth;
       const newHeight = containerRef.current.clientHeight;
-      
+
       svg.attr('width', newWidth).attr('height', newHeight);
-      
       projection
         .scale(Math.min(newWidth, newHeight) / 2.5)
         .translate([newWidth / 2, newHeight / 2]);
-      
+
       svg.selectAll('path').attr('d', path as any);
     }
 
     window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   return (
@@ -310,4 +281,3 @@ export function D3WorldTourBg() {
     </div>
   );
 }
-

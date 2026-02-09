@@ -27,7 +27,7 @@ export function LearnMoreSection() {
               {/* Document Preview */}
               <div
                 onClick={() => setIsPDFOpen(true)}
-                className="relative h-96 w-full mx-auto bg-gray-100 border border-gray-200 rounded-lg overflow-hidden mb-4 transition-all duration-300 group-hover:border-gray-300 group-hover:shadow-md cursor-pointer"
+                className="relative h-96 w-full mx-auto bg-gray-100 border border-gray-200 overflow-hidden mb-4 transition-all duration-150 group-hover:border-gray-300 group-hover:shadow-md cursor-pointer"
               >
                 <div className="absolute inset-0 flex items-center justify-center">
                   <iframe
@@ -44,7 +44,7 @@ export function LearnMoreSection() {
               <div className="space-y-3 text-center">
                 <h3 className="text-xl font-medium text-gray-900 flex items-center justify-center gap-2">
                   BlackW3B White Paper
-                  <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                  <span className="inline-flex items-center bg-[#d4af37]/20 px-2 py-1 text-[10px] font-mono uppercase text-[#d4af37]">
                     Being Updated
                   </span>
                 </h3>
@@ -54,13 +54,13 @@ export function LearnMoreSection() {
                 <div className="flex justify-center gap-3">
                   <button
                     onClick={() => setIsModalOpen(true)}
-                    className="inline-flex cursor-pointer items-center px-6 py-2.5 bg-white border border-gray-300 text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all duration-300 shadow-sm hover:shadow-md"
+                    className="inline-flex cursor-pointer items-center px-6 py-2.5 bg-white border border-gray-300 text-gray-900 text-sm font-bold hover:bg-gray-50 transition-all duration-150 active:scale-95"
                   >
                     Contact Us
                   </button>
                   <button
                     onClick={() => setIsPDFOpen(true)}
-                    className="inline-flex cursor-pointer items-center px-6 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all duration-300 shadow-sm hover:shadow-md"
+                    className="inline-flex cursor-pointer items-center px-6 py-2.5 bg-[#0a0a0a] text-white text-sm font-bold hover:bg-[#1a1a1a] transition-all duration-150 active:scale-95"
                   >
                     Preview
                   </button>

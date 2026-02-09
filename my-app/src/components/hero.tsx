@@ -16,7 +16,7 @@ function ComingSoonModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-10000 flex items-center justify-center bg-black/50 backdrop-blur-sm"
           onClick={onClose}
         >
           <motion.div
@@ -28,7 +28,7 @@ function ComingSoonModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-[#FFE860] to-[#FEFDD6] flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-r from-[#FFE860] to-[#FEFDD6] flex items-center justify-center">
                 <svg
                   className="w-8 h-8 text-gray-900"
                   fill="none"
@@ -124,7 +124,7 @@ export function Hero() {
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.6, ease: 'easeInOut' }}
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-white"
+            className="fixed inset-0 z-9999 flex items-center justify-center bg-white"
           >
             <div className="text-center">
               {/* Logo Animation */}
@@ -135,7 +135,7 @@ export function Hero() {
                 className="mb-8"
               >
                 <Image
-                  src="/logos/BlackWebLogo.png"
+                  src="/logos/BlackWebLogo_v3.png"
                   alt="GoldBack Logo"
                   width={150}
                   height={150}
@@ -174,7 +174,7 @@ export function Hero() {
                 initial={{ width: 0 }}
                 animate={{ width: '100%' }}
                 transition={{ duration: 2.5, ease: 'easeInOut' }}
-                className="mt-8 h-1 bg-gradient-to-r from-[#6B6550] to-[#9B9683] rounded-full mx-auto"
+                className="mt-8 h-1 bg-linear-to-r from-[#6B6550] to-[#9B9683] rounded-full mx-auto"
                 style={{ maxWidth: '200px' }}
               />
             </div>
@@ -186,26 +186,6 @@ export function Hero() {
         ref={sectionRef}
         className="relative min-h-screen flex items-start justify-center px-6 pt-32 pb-20 text-base overflow-hidden"
       >
-        {/* Static Video Background Layer - Deep Background */}
-        {/* <div className="absolute inset-0" style={{ zIndex: 0 }}>
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute w-full h-full object-cover"
-            style={{
-              zIndex: -100,
-              backgroundPosition: '50%',
-              backgroundSize: 'cover',
-              margin: 'auto',
-              inset: '-100%',
-            }}
-          >
-            <source src="/hero/Hero_Image.mp4" type="video/mp4" />
-          </video>
-        </div> */}
-
         {/* D3.js World Tour Background - Middle Layer */}
         <D3WorldTourBg />
 
@@ -224,7 +204,7 @@ export function Hero() {
             className="flex justify-center mb-8"
           >
             <Image
-              src="/logos/BlackWebLogo.png"
+              src="/logos/BlackWebLogo_v3.png"
               alt="Black W3B Logo"
               width={200}
               height={200}
@@ -296,10 +276,10 @@ export function Hero() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: isLoading ? 0 : 1, y: isLoading ? 30 : 0 }}
             transition={{ duration: 0.8, delay: 0.9, ease: 'easeOut' }}
-            className="text-gray-700 text-16px max-w-2xl mb-0 mx-auto leading-relaxed"
+            className="text-gray-700 text-[16px] max-w-2xl mb-0 mx-auto leading-relaxed"
           >
-            In the heart of blockchain innovation, we're building
-            tomorrow's digital gold standard today
+            In the heart of blockchain innovation, we&apos;re building
+            tomorrow&apos;s digital gold standard today
           </motion.p>
 
           <motion.div
@@ -310,9 +290,9 @@ export function Hero() {
           >
             <Button
               asChild
+              className = "text-white"
               variant="primary"
               size="lg"
-              shape="pill"
             >
               <a href="#whitepaper">Read Our White Paper</a>
             </Button>
@@ -320,45 +300,15 @@ export function Hero() {
             <Button
               variant="secondary"
               size="lg"
-              shape="pill"
               onClick={() => setIsLearnMoreModalOpen(true)}
             >
               Learn More
             </Button>
           </motion.div>
-
-          {/* <div className="relative mt-20 rounded-3xl overflow-hidden min-h-[500px] flex items-center justify-center -mx-[3.5rem] md:-mx-[7.2rem] lg:-mx-[12.4rem] max-w-none w-[calc(100%+7rem)] md:w-[calc(100%+14.4rem)] lg:w-[calc(100%+24.8rem)]">
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="absolute inset-0 w-full h-full object-cover"
-            >
-              <source src="/Hero_Video.mp4" type="video/mp4" />
-            </video>
-            
-        
-            <div className="relative z-10 text-center px-8 py-20">
-              <div className="flex items-center justify-center gap-4 mb-12">
-           
-              </div>
-
-              <h3 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-8 max-w-4xl mx-auto leading-tight">
-                Gold-Backs meets digital innovation on the blockchain
-              </h3>
-
-        
-              <p className="text-lg md:text-xl text-gray-300 flex items-center justify-center gap-3">
-                <span className="text-pink-400">▶</span>
-                <span className="text-16px text-black">Each token backed by real gold-backs, secured on Solana blockchain</span>
-              </p>
-            </div>
-          </div> */}
         </motion.div>
 
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-500/20 rounded-full blur-3xl animate-pulse z-[1] pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-yellow-500/20 rounded-full blur-3xl animate-pulse delay-1000 z-[1] pointer-events-none" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-500/20 rounded-full blur-3xl animate-pulse z-1 pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-yellow-500/20 rounded-full blur-3xl animate-pulse delay-1000 z-1 pointer-events-none" />
       </section>
 
       <LearnMoreModal isOpen={isLearnMoreModalOpen} onClose={() => setIsLearnMoreModalOpen(false)} />

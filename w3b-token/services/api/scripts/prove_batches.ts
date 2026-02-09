@@ -109,34 +109,25 @@ async function main() {
             process.exit(1);
         }
 
-        // Step 3: Run bb prove to generate proof
-        console.log("\n3️⃣ Generating ZK proof (bb prove)...");
+        // Step 3: Generate proof with vk (combined command)
+        console.log("\n3️⃣ Generating ZK proof with verification key (bb prove)...");
+        const vkPath = path.join(CIRCUIT_DIR, "target", "vk");
+        if (fs.existsSync(vkPath)) {
+            fs.rmSync(vkPath, { recursive: true, force: true });
+        }
         try {
             runCommand(
-                "bb prove -b ./target/reserve_proof.json -w ./target/reserve_proof.gz -o ./target",
+                "bb prove -b ./target/reserve_proof.json -w ./target/reserve_proof.gz -o ./target --write_vk",
                 CIRCUIT_DIR
             );
-            console.log("   ✅ Proof generated");
+            console.log("   ✅ Proof and verifying key generated");
         } catch (error) {
             console.error(`   ❌ Failed to generate proof for batch ${batch.batchNumber}`);
             process.exit(1);
         }
 
-        // Step 4: Generate verifying key if not exists
-        const vkPath = path.join(CIRCUIT_DIR, "target", "vk");
-        if (!fs.existsSync(vkPath)) {
-            console.log("\n4️⃣ Generating verifying key (bb write_vk)...");
-            try {
-                runCommand("bb write_vk -b ./target/reserve_proof.json -o ./target/vk", CIRCUIT_DIR);
-                console.log("   ✅ Verifying key generated");
-            } catch (error) {
-                console.error(`   ❌ Failed to generate verifying key`);
-                process.exit(1);
-            }
-        }
-
-        // Step 5: Verify the proof locally
-        console.log("\n5️⃣ Verifying proof locally (bb verify)...");
+        // Step 4: Verify the proof locally
+        console.log("\n4️⃣ Verifying proof locally (bb verify)...");
         try {
             runCommand("bb verify -p ./target/proof -k ./target/vk", CIRCUIT_DIR);
             console.log("   ✅ Proof verified!");
@@ -145,7 +136,7 @@ async function main() {
             process.exit(1);
         }
 
-        // Step 6: Copy proof files to batch-specific names
+        // Step 5: Copy proof files to batch-specific names
         const batchProofFile = `proof_batch_${batch.batchNumber}`;
         const batchVkFile = `vk_batch_${batch.batchNumber}`;
         const batchPublicInputsFile = `public_inputs_batch_${batch.batchNumber}`;

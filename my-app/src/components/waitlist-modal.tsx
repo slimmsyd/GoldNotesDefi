@@ -69,13 +69,13 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] transition-opacity"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-100 transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[101] w-full max-w-md px-4">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-101 w-full max-w-md px-4">
+        <div className="bg-white shadow-2xl overflow-hidden">
           {/* Header */}
           <div className="relative px-8 pt-8 pb-6 border-b border-gray-200">
             <button
@@ -96,7 +96,7 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
           {/* Form */}
           {submitStatus === 'success' ? (
             <div className="px-8 py-12 text-center">
-              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-[#00ff00] flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
@@ -117,7 +117,7 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   disabled={isSubmitting}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-all text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50 focus:border-[#d4af37] transition-all duration-150 text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="Your name"
                 />
               </div>
@@ -134,14 +134,14 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   disabled={isSubmitting}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent transition-all text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50 focus:border-[#d4af37] transition-all duration-150 text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="your@email.com"
                 />
               </div>
 
               {/* Error Message */}
               {submitStatus === 'error' && errorMessage && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="p-3 bg-red-50 border border-red-200">
                   <p className="text-sm text-red-600">{errorMessage}</p>
                 </div>
               )}
@@ -150,10 +150,7 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full px-6 py-3 text-gray-900 font-semibold rounded-lg hover:shadow-lg hover:shadow-yellow-500/50 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{
-                  background: 'linear-gradient(to right, #FFE860, #FEFDD6)',
-                }}
+                className="w-full px-6 py-3 bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black font-bold hover:brightness-110 transition-all duration-150 cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Submitting...' : 'Join Waitlist'}
               </button>

@@ -25,7 +25,7 @@ export function PDFPreviewModal({ isOpen, onClose, pdfUrl }: PDFPreviewModalProp
 
     return (
         <div
-            className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
+            className="fixed inset-0 z-10000 flex items-center justify-center p-4"
             onClick={onClose}
         >
             {/* Backdrop with blur */}
@@ -37,9 +37,9 @@ export function PDFPreviewModal({ isOpen, onClose, pdfUrl }: PDFPreviewModalProp
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Glassmorphic Card */}
-                <div className="relative flex-1 flex flex-col backdrop-blur-2xl bg-white/90 rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+                <div className="relative flex-1 flex flex-col backdrop-blur-2xl bg-white/90 shadow-2xl border border-white/20 overflow-hidden">
                     {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-white/30 to-white/10 pointer-events-none" />
+                    <div className="absolute inset-0 bg-linear-to-br from-white/50 via-white/30 to-white/10 pointer-events-none" />
 
                     {/* Header */}
                     <div className="relative flex items-center justify-between p-6 border-b border-gray-200/50 bg-white/40">
@@ -48,7 +48,7 @@ export function PDFPreviewModal({ isOpen, onClose, pdfUrl }: PDFPreviewModalProp
                             <a
                                 href={pdfUrl}
                                 download
-                                className="inline-flex items-center px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm"
+                                className="inline-flex items-center px-4 py-2 bg-[#0a0a0a] text-white text-sm font-bold hover:bg-[#1a1a1a] transition-all duration-150 active:scale-95"
                             >
                                 <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -57,7 +57,7 @@ export function PDFPreviewModal({ isOpen, onClose, pdfUrl }: PDFPreviewModalProp
                             </a>
                             <button
                                 onClick={onClose}
-                                className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-900/5 hover:bg-gray-900/10 transition-all duration-200 group"
+                                className="w-10 h-10 flex items-center justify-center bg-gray-900/5 hover:bg-gray-900/10 transition-all duration-150 group"
                                 aria-label="Close modal"
                             >
                                 <svg

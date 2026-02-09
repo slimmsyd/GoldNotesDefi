@@ -33,13 +33,13 @@ const WalletMultiButton = dynamic(
 // Goldback price in USD (fetched from DB via API)
 const DEFAULT_W3B_PRICE_USD = 9.02;
 
-// W3B Token info for the output
-const W3B_TOKEN: TokenInfo = {
+// WGB Token info for the output
+const WGB_TOKEN: TokenInfo = {
   address: PROTOCOL_CONFIG.w3bMint,
-  symbol: 'W3B',
+  symbol: 'WGB',
   name: 'GoldBack Token',
   decimals: 9,
-  logoURI: undefined
+  logoURI: '/logos/BlackWebTokenLogo.png'
 };
 
 export function SwapInterface() {
@@ -87,7 +87,7 @@ export function SwapInterface() {
       const data = await res.json();
 
       if (!data.success || !data.rate) {
-        return { verified: false, rate: null, error: 'Unable to verify current W3B price. Please try again.' };
+        return { verified: false, rate: null, error: 'Unable to verify current WGB price. Please try again.' };
       }
 
       const minutesSinceUpdate = data.minutesSinceUpdate ?? Infinity;
@@ -212,7 +212,7 @@ export function SwapInterface() {
     // W3B has 0 decimals (1 token = 1 Goldback)
     const w3bAmountInt = Math.floor(w3bAmount);
     if (w3bAmountInt <= 0) {
-      setError('Amount must be at least 1 W3B');
+      setError('Amount must be at least 1 WGB');
       return;
     }
 
@@ -234,7 +234,7 @@ export function SwapInterface() {
       ]);
 
       if (priceLamports === BigInt(0)) {
-        setError('W3B price not set on protocol. Contact admin.');
+        setError('WGB price not set on protocol. Contact admin.');
         setIsLoading(false);
         return;
       }
@@ -305,7 +305,7 @@ export function SwapInterface() {
       if (err.message?.includes('InsufficientFunds')) {
         setError('Insufficient SOL balance');
       } else if (err.message?.includes('PriceNotSet')) {
-        setError('W3B price not configured');
+        setError('WGB price not configured');
       } else if (err.message?.includes('ProtocolPaused')) {
         setError('Protocol is paused');
       } else {
@@ -370,7 +370,7 @@ export function SwapInterface() {
                       <TokenSelector
                         selectedToken={selectedPayToken}
                         onSelectToken={setSelectedPayToken}
-                        excludeToken={W3B_TOKEN.address}
+                        excludeToken={WGB_TOKEN.address}
                       />
                       <div className="text-gray-500 text-xs mt-1 ml-1">
                         {selectedPayToken.symbol === 'SOL' ? 'Solana' : selectedPayToken.name}
@@ -415,15 +415,16 @@ export function SwapInterface() {
 
                 <div className="bg-[#1A1A1A] rounded-[24px] p-4 border border-transparent hover:border-gray-700/50 transition-all">
                   <div className="flex items-center justify-between gap-4">
-                    {/* Fixed W3B Token Display */}
+                    {/* Fixed WGB Token Display */}
                     <div className="flex-shrink-0">
                       <div className="bg-[#2A2A2A] hover:bg-[#333] rounded-full pl-2 pr-4 py-1.5 flex items-center gap-3 transition-colors cursor-default border border-gray-800">
-                        <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-xs text-black font-bold shadow-lg shadow-amber-500/20">
-                          G
-                        </div>
+                        <img
+                          src="/logos/BlackWebTokenLogo.png"
+                          alt="WGB Token"
+                          className="w-8 h-8 rounded-full shadow-lg shadow-amber-500/20"
+                        />
                         <div className="text-left">
-                          <span className="text-white font-bold block leading-none">W3B</span>
-                          {/* <span className="text-[10px] text-gray-400 block leading-none mt-0.5">Goldback</span> */}
+                          <span className="text-white font-bold block leading-none">WGB</span>
                         </div>
                       </div>
                       <div className="text-gray-500 text-xs mt-1 ml-1">
@@ -440,7 +441,7 @@ export function SwapInterface() {
                         className="bg-transparent text-4xl font-medium text-white w-full text-right outline-none placeholder-gray-700 font-sans"
                       />
                       <div className="text-gray-600 text-xs mt-1 font-medium">
-                        1 W3B ≈ ${w3bPriceUsd.toFixed(2)}
+                        1 WGB ≈ ${w3bPriceUsd.toFixed(2)}
                       </div>
                     </div>
                   </div>
@@ -453,8 +454,8 @@ export function SwapInterface() {
                   <span>Rate</span>
                   <span className="text-white">
                     {selectedPayToken.symbol === 'SOL' && solPrice
-                      ? `1 W3B ≈ ${(w3bPriceUsd / solPrice).toFixed(6)} SOL`
-                      : `1 W3B ≈ ${w3bPriceUsd} ${selectedPayToken.symbol}`
+                      ? `1 WGB ≈ ${(w3bPriceUsd / solPrice).toFixed(6)} SOL`
+                      : `1 WGB ≈ ${w3bPriceUsd} ${selectedPayToken.symbol}`
                     }
                   </span>
                 </div>
@@ -501,7 +502,7 @@ export function SwapInterface() {
               <div className="text-center">
                 <div className="text-gray-400 text-sm mb-1">Confirm Swap</div>
                 <div className="text-3xl font-bold text-white mb-2">
-                  {receiveAmount} W3B
+                  {receiveAmount} WGB
                 </div>
                 <div className="text-amber-500 text-sm">
                   Using {payAmount} {selectedPayToken.symbol}
@@ -511,7 +512,7 @@ export function SwapInterface() {
               <div className="bg-gray-950 rounded-xl p-4 space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Rate</span>
-                  <span className="text-white">1 W3B = {w3bPriceUsd} USD</span>
+                  <span className="text-white">1 WGB = {w3bPriceUsd} USD</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Price Age</span>
@@ -597,7 +598,7 @@ export function SwapInterface() {
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">Swap Complete!</h3>
               <p className="text-gray-400 mb-4">
-                {Math.floor(parseFloat(receiveAmount))} W3B has been transferred to your wallet
+                {Math.floor(parseFloat(receiveAmount))} WGB has been transferred to your wallet
               </p>
               {txSignature && (
                 <a
@@ -621,7 +622,7 @@ export function SwapInterface() {
       </div>
 
       <div className="text-center mt-6 text-xs text-gray-500">
-        Powered by BlackW3B • {PROTOCOL_CONFIG.networkDisplay}
+        Powered by BlackWGB • {PROTOCOL_CONFIG.networkDisplay}
       </div>
     </div>
   );

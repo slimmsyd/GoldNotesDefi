@@ -2,54 +2,34 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/lib/utils";
 
-// If you don't have class-variance-authority installed, I should check or handle it. 
-// However, it's a very standard shadcn pattern. I will use standard props if CVA is not desired, 
-// but CVA makes this much cleaner.
-// Checking installed packages showed empty or error, so I'll stick to manual cn logic to be safe and avoid extra deps unless I install CVA too.
-// Actually, I'll install CVA as well, it's lightweight and worth it.
-// Wait, I can't install CVA in the middle of this `write_to_file` thought process.
-// I'll stick to a simple `cn` implementation without CVA to avoid dependency hell if the user is strict, 
-// OR I will just add `class-variance-authority` to the install command above.
-// Let's keep it simple with just TS and `cn`.
-
 export interface ButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     asChild?: boolean;
-    variant?: "primary" | "secondary" | "outline" | "ghost" | "link" | "black";
+    variant?: "primary" | "secondary" | "tertiary" | "outline" | "ghost" | "link" | "danger";
     size?: "default" | "sm" | "lg" | "icon";
-    shape?: "default" | "pill" | "square";
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-    ({ className, variant = "primary", size = "default", shape = "default", asChild = false, ...props }, ref) => {
+    ({ className, variant = "primary", size = "default", asChild = false, ...props }, ref) => {
         const Comp = asChild ? Slot : "button";
 
-        // Base styles
-        const baseStyles = "inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50 active:scale-95 cursor-pointer";
+        const baseStyles = "inline-flex items-center justify-center whitespace-nowrap font-bold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] disabled:pointer-events-none disabled:opacity-50 active:scale-95 cursor-pointer rounded-none";
 
-        // Variants
-        const variants = {
-            primary: "bg-gradient-to-r from-[#FFE860] to-[#FEFDD6] text-gray-900 hover:scale-105 shadow-lg shadow-yellow-500/20 hover:shadow-yellow-500/30 border border-transparent",
-            secondary: "bg-white/90 text-gray-900 border border-gray-200 hover:bg-yellow-50 hover:scale-105 shadow-sm backdrop-blur-sm",
+        const variants: Record<string, string> = {
+            primary: "bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black hover:brightness-110 shadow-[0_4px_16px_rgba(201,168,76,0.35)]",
+            secondary: "bg-[#0a0a0a]/80 border border-[#c9a84c]/40 text-[#e8d48b] font-semibold hover:bg-[#0a0a0a] hover:border-[#c9a84c]/60 backdrop-blur-sm",
+            tertiary: "bg-[#0a0a0a] text-white hover:bg-[#1a1a1a]",
             outline: "border border-gray-200 bg-transparent hover:bg-gray-100 text-gray-900",
-            ghost: "hover:bg-gray-100 hover:text-gray-900 text-gray-600",
-            link: "text-gray-900 underline-offset-4 hover:underline",
-            black: "bg-gray-900 text-white hover:bg-gray-800 shadow-lg hover:shadow-gray-900/20 hover:scale-105"
+            ghost: "text-gray-300 hover:text-[#d4af37] font-medium",
+            link: "text-[#d4af37] underline-offset-4 hover:underline font-medium",
+            danger: "bg-[#ff0000] text-white hover:bg-red-600",
         };
 
-        // Sizes
-        const sizes = {
-            default: "h-9 px-4 py-2 text-sm",
-            sm: "h-8 px-3 text-xs",
-            lg: "h-12 px-10 text-lg", // Matches Hero large
-            icon: "h-9 w-9",
-        };
-
-        // Shapes
-        const shapes = {
-            default: "rounded-xl", // Current default in Header
-            pill: "rounded-full", // "Sleek" style
-            square: "rounded-none",
+        const sizes: Record<string, string> = {
+            default: "h-10 px-6 text-sm",
+            sm: "h-8 px-4 text-xs",
+            lg: "h-12 px-10 text-base",
+            icon: "h-10 w-10",
         };
 
         return (
@@ -58,7 +38,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                     baseStyles,
                     variants[variant],
                     sizes[size],
-                    shapes[shape],
                     className
                 )}
                 ref={ref}

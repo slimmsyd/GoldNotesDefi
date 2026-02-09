@@ -216,7 +216,7 @@ export function AuditedSection() {
   }, []);
 
   return (
-    <section className="relative bg-gradient-to-b from-white to-gray-50 overflow-hidden">
+    <section className="relative bg-linear-to-b from-white to-gray-50 overflow-hidden">
       <div
         ref={containerRef}
         className="relative w-full min-h-screen flex flex-col items-center justify-center px-6"
@@ -280,12 +280,9 @@ export function AuditedSection() {
             <button
               ref={buttonRef}
               onClick={() => setIsWaitlistModalOpen(true)}
-              className="group relative cursor-pointer px-12 py-5 bg-gray-900 text-white text-sm font-medium tracking-wider uppercase rounded-lg hover:bg-gray-800 transition-all duration-300 shadow-lg hover:shadow-xl"
+              className="relative cursor-pointer px-12 py-5 bg-[#0a0a0a] text-white text-sm font-bold tracking-wider uppercase hover:bg-[#1a1a1a] transition-all duration-150 active:scale-95 shadow-lg"
             >
-              <span className="relative z-10 cursor-pointer">Join Waitlist</span>
-
-              {/* Button glow effect */}
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-300" />
+              Join Waitlist
             </button>
           </div>
         </div>

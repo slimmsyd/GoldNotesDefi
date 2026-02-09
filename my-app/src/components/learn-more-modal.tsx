@@ -66,7 +66,7 @@ export function LearnMoreModal({ isOpen, onClose }: LearnMoreModalProps) {
 
   return (
     <div 
-      className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
+      className="fixed inset-0 z-10000 flex items-center justify-center p-4"
       onClick={onClose}
     >
       {/* Backdrop with blur */}
@@ -78,16 +78,16 @@ export function LearnMoreModal({ isOpen, onClose }: LearnMoreModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Glassmorphic Card */}
-        <div className="relative backdrop-blur-2xl bg-white/90 rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+        <div className="relative backdrop-blur-2xl bg-white/90 shadow-2xl border border-white/20 overflow-hidden">
           {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-white/30 to-white/10 pointer-events-none" />
+          <div className="absolute inset-0 bg-linear-to-br from-white/50 via-white/30 to-white/10 pointer-events-none" />
           
           {/* Content */}
           <div className="relative p-8 md:p-10">
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="absolute top-6 cursor-pointer right-6 w-10 h-10 flex items-center justify-center rounded-full bg-gray-900/5 hover:bg-gray-900/10 transition-all duration-200 group"
+              className="absolute top-6 cursor-pointer right-6 w-10 h-10 flex items-center justify-center bg-gray-900/5 hover:bg-gray-900/10 transition-all duration-150 group"
               aria-label="Close modal"
             >
               <svg
@@ -112,7 +112,7 @@ export function LearnMoreModal({ isOpen, onClose }: LearnMoreModalProps) {
 
             {submitStatus === 'success' ? (
               <div className="text-center py-12">
-                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-[#00ff00] flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
@@ -135,7 +135,7 @@ export function LearnMoreModal({ isOpen, onClose }: LearnMoreModalProps) {
                       required
                       value={formData.name}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-xl bg-white/50 border border-gray-300 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 outline-none transition-all duration-200 text-gray-900 placeholder-gray-400"
+                      className="w-full px-4 py-3 bg-white/50 border border-gray-300 focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20 outline-none transition-all duration-150 text-gray-900 placeholder-gray-400"
                       placeholder="John Doe"
                     />
                   </div>
@@ -151,7 +151,7 @@ export function LearnMoreModal({ isOpen, onClose }: LearnMoreModalProps) {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-xl bg-white/50 border border-gray-300 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 outline-none transition-all duration-200 text-gray-900 placeholder-gray-400"
+                      className="w-full px-4 py-3 bg-white/50 border border-gray-300 focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20 outline-none transition-all duration-150 text-gray-900 placeholder-gray-400"
                       placeholder="john@example.com"
                     />
                   </div>
@@ -169,7 +169,7 @@ export function LearnMoreModal({ isOpen, onClose }: LearnMoreModalProps) {
                       name="company"
                       value={formData.company}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-xl bg-white/50 border border-gray-300 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 outline-none transition-all duration-200 text-gray-900 placeholder-gray-400"
+                      className="w-full px-4 py-3 bg-white/50 border border-gray-300 focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20 outline-none transition-all duration-150 text-gray-900 placeholder-gray-400"
                       placeholder="Optional"
                     />
                   </div>
@@ -184,7 +184,7 @@ export function LearnMoreModal({ isOpen, onClose }: LearnMoreModalProps) {
                       required
                       value={formData.interest}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-xl bg-white/50 border border-gray-300 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 outline-none transition-all duration-200 text-gray-900"
+                      className="w-full px-4 py-3 bg-white/50 border border-gray-300 focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20 outline-none transition-all duration-150 text-gray-900"
                     >
                       <option value="">Select an option</option>
                       <option value="investing">Investing</option>
@@ -207,7 +207,7 @@ export function LearnMoreModal({ isOpen, onClose }: LearnMoreModalProps) {
                     rows={4}
                     value={formData.message}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl bg-white/50 border border-gray-300 focus:border-gray-900 focus:ring-2 focus:ring-gray-900/20 outline-none transition-all duration-200 text-gray-900 placeholder-gray-400 resize-none"
+                    className="w-full px-4 py-3 bg-white/50 border border-gray-300 focus:border-[#d4af37] focus:ring-2 focus:ring-[#d4af37]/20 outline-none transition-all duration-150 text-gray-900 placeholder-gray-400 resize-none"
                     placeholder="Tell us more about your interest..."
                   />
                 </div>
@@ -217,7 +217,7 @@ export function LearnMoreModal({ isOpen, onClose }: LearnMoreModalProps) {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="px-8 py-3.5 bg-gray-900 text-white rounded-xl font-medium text-base shadow-lg hover:shadow-xl hover:bg-gray-800 transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none min-w-[200px]"
+                    className="px-8 py-3.5 bg-[#0a0a0a] text-white font-bold text-base hover:bg-[#1a1a1a] transition-all duration-150 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-w-[200px]"
                   >
                     {isSubmitting ? (
                       <span className="flex items-center justify-center gap-2">
