@@ -184,7 +184,7 @@ export function Hero() {
 
       <section
         ref={sectionRef}
-        className="relative min-h-screen flex items-start justify-center px-6 pt-32 pb-20 text-base overflow-hidden"
+        className="relative min-h-[90vh] flex items-start justify-center px-6 pt-32 pb-20 text-base overflow-hidden"
       >
         {/* D3.js World Tour Background - Middle Layer */}
         <D3WorldTourBg />
