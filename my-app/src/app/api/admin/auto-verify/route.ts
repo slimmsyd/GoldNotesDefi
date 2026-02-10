@@ -21,7 +21,7 @@ import { NextResponse } from "next/server";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import * as anchor from "@coral-xyz/anchor";
-import { Program, AnchorProvider, Wallet } from "@coral-xyz/anchor";
+import { Program, AnchorProvider } from "@coral-xyz/anchor";
 import { createClient } from "@supabase/supabase-js";
 import { MerkleTree } from "merkletreejs";
 import crypto from "crypto";
@@ -233,7 +233,7 @@ export async function POST(request: Request) {
     log(`Program: ${programId.toBase58()}`);
 
     // Setup Anchor
-    const wallet = new Wallet(authority);
+    const wallet = new anchor.Wallet(authority);
     const provider = new AnchorProvider(connection, wallet, {
       commitment: "confirmed",
     });
