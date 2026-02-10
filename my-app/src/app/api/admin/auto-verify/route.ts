@@ -18,10 +18,9 @@
  */
 
 import { NextResponse } from "next/server";
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
-import * as anchor from "@coral-xyz/anchor";
-import { Program, AnchorProvider } from "@coral-xyz/anchor";
+import { Program, AnchorProvider, BN, setProvider } from "@coral-xyz/anchor";
 import { createClient } from "@supabase/supabase-js";
 import { MerkleTree } from "merkletreejs";
 import crypto from "crypto";
@@ -29,6 +28,33 @@ import { PROTOCOL_CONFIG } from "@/lib/protocol-constants";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Allow up to 60s for Solana transactions
+
+/**
+ * Minimal wallet adapter for AnchorProvider (replaces removed anchor.Wallet)
+ */
+class NodeWallet {
+  constructor(readonly payer: Keypair) {}
+
+  get publicKey(): PublicKey {
+    return this.payer.publicKey;
+  }
+
+  async signTransaction<T extends Transaction | VersionedTransaction>(tx: T): Promise<T> {
+    if (tx instanceof Transaction) {
+      tx.partialSign(this.payer);
+    }
+    return tx;
+  }
+
+  async signAllTransactions<T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> {
+    return txs.map((tx) => {
+      if (tx instanceof Transaction) {
+        tx.partialSign(this.payer);
+      }
+      return tx;
+    });
+  }
+}
 
 /* ─── IDL (minimal for the instructions we need) ─── */
 
@@ -233,11 +259,11 @@ export async function POST(request: Request) {
     log(`Program: ${programId.toBase58()}`);
 
     // Setup Anchor
-    const wallet = new anchor.Wallet(authority);
+    const wallet = new NodeWallet(authority);
     const provider = new AnchorProvider(connection, wallet, {
       commitment: "confirmed",
     });
-    anchor.setProvider(provider);
+    setProvider(provider);
 
     const program = new Program(W3B_IDL as any, provider);
 
@@ -254,7 +280,7 @@ export async function POST(request: Request) {
     let treasuryPubkey: PublicKey | null = null;
 
     try {
-      const preState = await program.account.protocolState.fetch(
+      const preState = await (program.account as any).protocolState.fetch(
         protocolStatePda
       );
       currentSupply = (preState as any).totalSupply.toNumber();
@@ -271,7 +297,7 @@ export async function POST(request: Request) {
     // Submit update_merkle_root
     log("Submitting update_merkle_root to Solana...");
     const updateTx = await program.methods
-      .updateMerkleRoot(rootArray as number[], new anchor.BN(serials.length))
+      .updateMerkleRoot(rootArray as number[], new BN(serials.length))
       .accountsPartial({
         protocolState: protocolStatePda,
         authority: authority.publicKey,
@@ -290,7 +316,7 @@ export async function POST(request: Request) {
       if (amountToMint > 0) {
         log(`Auto-minting ${amountToMint} W3B tokens...`);
         mintTx = await (program.methods as any)
-          .mintW3B(new anchor.BN(amountToMint))
+          .mintW3B(new BN(amountToMint))
           .accountsPartial({
             protocolState: protocolStatePda,
             w3bMint: w3bMintPubkey,
@@ -337,7 +363,7 @@ export async function POST(request: Request) {
     // 9. Fetch final state
     let finalState = null;
     try {
-      const postState = await program.account.protocolState.fetch(
+      const postState = await (program.account as any).protocolState.fetch(
         protocolStatePda
       );
       finalState = {
