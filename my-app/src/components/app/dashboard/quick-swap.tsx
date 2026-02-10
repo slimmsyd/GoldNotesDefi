@@ -17,7 +17,7 @@ export function QuickSwap() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.6 }}
-      className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6"
+      className="bg-gray-900/50 border border-gray-800 p-6"
     >
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-gray-400 text-sm font-medium uppercase tracking-wider">Quick Swap</h3>
@@ -28,7 +28,7 @@ export function QuickSwap() {
 
       <div className="space-y-3">
         {/* Input */}
-        <div className="bg-gray-950 rounded-xl p-3 border border-gray-800">
+        <div className="bg-gray-950 p-3 border border-gray-800">
           <div className="flex items-center gap-3">
             <input
               type="number"
@@ -37,8 +37,8 @@ export function QuickSwap() {
               onChange={(e) => setAmount(e.target.value)}
               className="bg-transparent text-xl font-medium text-white w-full outline-none placeholder-gray-600"
             />
-            <div className="bg-gray-800 rounded-full px-2 py-1 flex items-center gap-1.5 flex-shrink-0 text-sm">
-              <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-[8px] text-white font-bold">
+            <div className="bg-gray-800 px-2 py-1 flex items-center gap-1.5 flex-shrink-0 text-sm">
+              <div className="w-4 h-4 bg-blue-500 flex items-center justify-center text-[8px] text-white font-bold">
                 $
               </div>
               <span className="text-white">USDC</span>
@@ -48,7 +48,7 @@ export function QuickSwap() {
 
         {/* Arrow */}
         <div className="flex justify-center">
-          <div className="bg-gray-800 p-1.5 rounded-lg">
+          <div className="bg-gray-800 p-1.5">
             <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
             </svg>
@@ -56,11 +56,11 @@ export function QuickSwap() {
         </div>
 
         {/* Output */}
-        <div className="bg-gray-950 rounded-xl p-3 border border-gray-800">
+        <div className="bg-gray-950 p-3 border border-gray-800">
           <div className="flex items-center justify-between">
             <span className="text-xl font-medium text-white">{w3bAmount}</span>
-            <div className="bg-gray-800 rounded-full px-2 py-1 flex items-center gap-1.5 flex-shrink-0 text-sm">
-              <div className="w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center text-[8px] text-black font-bold">
+            <div className="bg-gray-800 px-2 py-1 flex items-center gap-1.5 flex-shrink-0 text-sm">
+              <div className="w-4 h-4 bg-[#c9a84c] flex items-center justify-center text-[8px] text-black font-bold">
                 G
               </div>
               <span className="text-white">W3B</span>
@@ -70,7 +70,7 @@ export function QuickSwap() {
 
         <Link
           href="/app/swap"
-          className="block w-full text-center bg-amber-500 text-black font-bold py-3 rounded-xl hover:bg-amber-400 transition-colors"
+          className="block w-full text-center bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black font-bold py-3 hover:brightness-110 active:scale-95 transition-all"
         >
           Swap Now
         </Link>

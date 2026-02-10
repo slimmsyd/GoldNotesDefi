@@ -189,19 +189,19 @@ export function TokenSelector({
             {/* Trigger Button */}
             <button
                 onClick={() => setIsOpen(true)}
-                className="bg-[#2A2A2A] hover:bg-[#333] rounded-full pl-2 pr-4 py-1.5 flex items-center gap-3 transition-colors cursor-pointer border border-gray-800 group"
+                className="bg-[#2A2A2A] hover:bg-[#333] pl-2 pr-4 py-1.5 flex items-center gap-3 transition-colors cursor-pointer border border-gray-800 group"
             >
                 {selectedToken.logoURI ? (
                     <img
                         src={selectedToken.logoURI}
                         alt={selectedToken.symbol}
-                        className="w-8 h-8 rounded-full shadow-lg"
+                        className="w-8 h-8 shadow-lg"
                         onError={(e) => {
                             (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"><circle cx="12" cy="12" r="10"/></svg>';
                         }}
                     />
                 ) : (
-                    <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-[10px] text-white font-bold">
+                    <div className="w-8 h-8 bg-gray-600 flex items-center justify-center text-[10px] text-white font-bold">
                         {selectedToken.symbol[0]}
                     </div>
                 )}
@@ -239,14 +239,14 @@ export function TokenSelector({
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             transition={{ duration: 0.2 }}
-                            className="w-full max-w-md bg-[#0B0B0B] border border-gray-800 rounded-[24px] shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[80vh]"
+                            className="w-full max-w-md bg-[#0B0B0B] border border-gray-800 shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[80vh]"
                         >
                             {/* Header */}
                             <div className="flex items-center justify-between p-6 pb-2">
                                 <h3 className="text-white text-lg font-semibold">Select currency</h3>
                                 <button
                                     onClick={() => setIsOpen(false)}
-                                    className="p-1 rounded-full hover:bg-white/10 transition-colors text-gray-400"
+                                    className="p-1 hover:bg-white/10 transition-colors text-gray-400"
                                 >
                                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -270,7 +270,7 @@ export function TokenSelector({
                                         placeholder="Search by name, ticker, or network..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full bg-[#1A1A1A] text-white text-base pl-12 pr-4 py-3.5 rounded-2xl outline-none border border-transparent focus:border-gray-700 placeholder-gray-600 transition-all font-sans"
+                                        className="w-full bg-[#1A1A1A] text-white text-base pl-12 pr-4 py-3.5 outline-none border border-transparent focus:border-gray-700 placeholder-gray-600 transition-all font-sans"
                                         autoFocus
                                     />
                                 </div>
@@ -299,7 +299,7 @@ export function TokenSelector({
                                                 <button
                                                     key={token.address}
                                                     onClick={() => handleSelect(token)}
-                                                    className={`w-full p-3 flex items-center gap-4 hover:bg-[#1A1A1A] rounded-xl transition-all group ${selectedToken.address === token.address ? 'bg-[#1A1A1A] ring-1 ring-gray-800' : ''}`}
+                                                    className={`w-full p-3 flex items-center gap-4 hover:bg-[#1A1A1A] transition-all group ${selectedToken.address === token.address ? 'bg-[#1A1A1A] ring-1 ring-gray-800' : ''}`}
                                                 >
                                                     {/* Token Icon */}
                                                     <div className="relative">
@@ -307,13 +307,13 @@ export function TokenSelector({
                                                             <img
                                                                 src={token.logoURI}
                                                                 alt={token.symbol}
-                                                                className="w-10 h-10 rounded-full"
+                                                                className="w-10 h-10"
                                                                 onError={(e) => {
                                                                     (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"><circle cx="12" cy="12" r="10"/></svg>';
                                                                 }}
                                                             />
                                                         ) : (
-                                                            <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white font-bold">
+                                                            <div className="w-10 h-10 bg-gray-800 flex items-center justify-center text-white font-bold">
                                                                 {token.symbol[0]}
                                                             </div>
                                                         )}
@@ -339,7 +339,7 @@ export function TokenSelector({
                                                             </div>
                                                         </div>
                                                     ) : selectedToken.address === token.address && (
-                                                        <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                                                        <svg className="w-5 h-5 text-[#c9a84c]" fill="currentColor" viewBox="0 0 20 20">
                                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                                         </svg>
                                                     )}

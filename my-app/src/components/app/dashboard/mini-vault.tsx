@@ -32,11 +32,11 @@ export function MiniVault() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 hover:border-gray-700 transition-colors cursor-pointer group"
+        className="bg-gray-900/50 border border-gray-800 p-6 hover:border-gray-700 transition-colors cursor-pointer group"
       >
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-gray-400 text-sm font-medium uppercase tracking-wider flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="w-2 h-2 bg-[#c9a84c] animate-pulse" />
             Live Vault
           </h3>
           <span className="text-gray-600 text-xs group-hover:text-gray-400 transition-colors">
@@ -47,7 +47,7 @@ export function MiniVault() {
         {isLoading ? (
           <div className="space-y-2">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-10 bg-gray-800 rounded-lg animate-pulse" />
+              <div key={i} className="h-10 bg-gray-800 animate-pulse" />
             ))}
           </div>
         ) : (
@@ -59,13 +59,13 @@ export function MiniVault() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="flex items-center justify-between bg-gray-800/50 rounded-lg p-3 border border-gray-700/50"
+                  className="flex items-center justify-between bg-gray-800/50 p-3 border border-gray-700/50"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-6 h-7 bg-amber-500/20 border border-amber-500/50 rounded flex items-center justify-center">
-                      <span className="text-amber-500 text-[8px] font-bold">$1</span>
+                    <div className="w-6 h-7 bg-[#c9a84c]/20 border border-[#c9a84c]/50 flex items-center justify-center">
+                      <span className="text-[#c9a84c] text-[8px] font-bold">$1</span>
                     </div>
-                    <span className="text-amber-100 font-mono text-xs">
+                    <span className="text-[#e8d48b] font-mono text-xs">
                       {serial.serial_number}
                     </span>
                   </div>

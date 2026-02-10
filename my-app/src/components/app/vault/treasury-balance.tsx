@@ -15,9 +15,9 @@ interface TreasuryBalanceProps {
 export function TreasuryBalance({ treasuryBalance, isLoading, onRefresh }: TreasuryBalanceProps) {
     if (isLoading) {
         return (
-            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 animate-pulse">
-                <div className="h-6 bg-gray-700 rounded w-32 mb-3"></div>
-                <div className="h-10 bg-gray-700 rounded w-24"></div>
+            <div className="bg-gray-900/50 border border-gray-800 p-6 animate-pulse">
+                <div className="h-6 bg-gray-700 w-32 mb-3"></div>
+                <div className="h-10 bg-gray-700 w-24"></div>
             </div>
         );
     }
@@ -27,15 +27,15 @@ export function TreasuryBalance({ treasuryBalance, isLoading, onRefresh }: Treas
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-gradient-to-br from-amber-900/20 to-gray-900 border border-amber-700/30 rounded-2xl p-6 relative overflow-hidden"
+            className="bg-gradient-to-br from-[#c9a84c]/10 to-gray-900 border border-[#c9a84c]/30 p-6 relative overflow-hidden"
         >
             {/* Animated gold shimmer effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/5 to-transparent animate-shimmer"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#c9a84c]/5 to-transparent animate-shimmer"></div>
 
             <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-[#c9a84c] flex items-center justify-center">
                             <span className="text-black font-bold text-sm">G</span>
                         </div>
                         <div>
@@ -57,7 +57,7 @@ export function TreasuryBalance({ treasuryBalance, isLoading, onRefresh }: Treas
                 </div>
 
                 <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold text-amber-400">
+                    <span className="text-4xl font-bold text-[#e8d48b]">
                         {treasuryBalance?.toLocaleString() ?? '—'}
                     </span>
                     <span className="text-gray-400 text-lg">W3B</span>
@@ -69,7 +69,7 @@ export function TreasuryBalance({ treasuryBalance, isLoading, onRefresh }: Treas
                         href={`https://solscan.io/account/${TREASURY.toBase58()}?cluster=devnet`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-amber-400 hover:text-amber-300 font-mono flex items-center gap-1"
+                        className="text-[#e8d48b] hover:text-[#c9a84c] font-mono flex items-center gap-1"
                     >
                         {TREASURY.toBase58().slice(0, 4)}...{TREASURY.toBase58().slice(-4)}
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

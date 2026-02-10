@@ -65,16 +65,16 @@ export function MempoolBlocks({ goldbackPrice }: MempoolBlocksProps) {
 
   if (isLoading) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6">
+      <div className="bg-gray-900/50 border border-gray-800 p-6">
         <div className="flex items-center justify-between mb-6">
-          <div className="h-6 w-48 bg-gray-800 rounded-lg animate-pulse" />
-          <div className="h-5 w-24 bg-gray-800 rounded-full animate-pulse" />
+          <div className="h-6 w-48 bg-gray-800 animate-pulse" />
+          <div className="h-5 w-24 bg-gray-800 animate-pulse" />
         </div>
         <div className="flex gap-4 overflow-hidden">
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
-              className="shrink-0 w-44 h-48 bg-gray-800/50 rounded-2xl animate-pulse"
+              className="shrink-0 w-44 h-48 bg-gray-800/50 animate-pulse"
               style={{ animationDelay: `${i * 0.1}s` }}
             />
           ))}
@@ -85,16 +85,16 @@ export function MempoolBlocks({ goldbackPrice }: MempoolBlocksProps) {
 
   if (blocks.length === 0) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-8 text-center">
-        <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-amber-500/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="bg-gray-900/50 border border-gray-800 p-8 text-center">
+        <div className="w-16 h-16 bg-[#c9a84c]/10 flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-[#c9a84c]/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
           </svg>
         </div>
         <p className="text-white font-medium mb-1">Awaiting ZK Proofs</p>
         <p className="text-gray-500 text-sm mb-3">Verified Goldback batches will appear here once submitted to the network</p>
-        <div className="inline-flex items-center gap-2 text-xs text-gray-500 bg-gray-800/50 px-3 py-1.5 rounded-full">
-          <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+        <div className="inline-flex items-center gap-2 text-xs text-gray-500 bg-gray-800/50 px-3 py-1.5">
+          <span className="w-1.5 h-1.5 bg-[#c9a84c] animate-pulse" />
           Monitoring for new proofs
         </div>
       </div>
@@ -102,12 +102,12 @@ export function MempoolBlocks({ goldbackPrice }: MempoolBlocksProps) {
   }
 
   return (
-    <div className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden">
+    <div className="bg-gray-900/50 border border-gray-800 overflow-hidden">
       {/* Header */}
       <div className="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-800/50">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
-            <svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-10 h-10 bg-[#c9a84c]/20 flex items-center justify-center">
+            <svg className="w-5 h-5 text-[#c9a84c]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
           </div>
@@ -131,7 +131,7 @@ export function MempoolBlocks({ goldbackPrice }: MempoolBlocksProps) {
       </div>
 
       {/* Blocks Container - Horizontal Slider */}
-      <div className="p-6 overflow-x-auto [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-700 [&::-webkit-scrollbar-thumb]:rounded-full">
+      <div className="p-6 overflow-x-auto [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-700">
         <div className="flex gap-4 min-w-max pb-2">
           <AnimatePresence mode="popLayout">
             {blocks.map((block, index) => (
@@ -191,23 +191,23 @@ function MempoolBlock({ block, index, isAnchored, formatAge, goldbackPrice }: Me
       className="shrink-0 cursor-pointer group"
     >
       <div
-        className={`relative w-44 rounded-2xl border overflow-hidden transition-all duration-200 ${
+        className={`relative w-44 border overflow-hidden transition-all duration-200 ${
           isAnchored
-            ? 'bg-gradient-to-b from-gray-800 to-gray-900 border-gray-700/50 group-hover:border-amber-500/30 group-hover:shadow-lg group-hover:shadow-amber-500/10'
-            : 'bg-gradient-to-b from-amber-900/20 to-gray-900 border-amber-500/30 group-hover:shadow-lg group-hover:shadow-amber-500/10'
+            ? 'bg-gradient-to-b from-gray-800 to-gray-900 border-gray-700/50 group-hover:border-[#c9a84c]/30 group-hover:shadow-lg group-hover:shadow-[#c9a84c]/10'
+            : 'bg-gradient-to-b from-[#c9a84c]/10 to-gray-900 border-[#c9a84c]/30 group-hover:shadow-lg group-hover:shadow-[#c9a84c]/10'
         }`}
       >
         {/* Top Accent Bar */}
-        <div className={`h-1 ${isAnchored ? 'bg-gradient-to-r from-amber-500 to-amber-600' : 'bg-gradient-to-r from-yellow-500 to-orange-500'}`} />
+        <div className={`h-1 ${isAnchored ? 'bg-gradient-to-r from-[#c9a84c] to-[#a48a3a]' : 'bg-gradient-to-r from-yellow-500 to-orange-500'}`} />
 
         {/* Block Number Header */}
         <div className="px-4 pt-3 pb-2">
           <div className="flex items-center justify-between">
-            <span className="text-amber-400 font-mono text-xs font-bold tracking-wider">
+            <span className="text-[#e8d48b] font-mono text-xs font-bold tracking-wider">
               #{(block.blockNumber ?? index + 1).toString().padStart(5, '0')}
             </span>
             <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+              className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium ${
                 isAnchored
                   ? 'bg-green-500/20 text-green-400'
                   : 'bg-yellow-500/20 text-yellow-400'
@@ -233,8 +233,8 @@ function MempoolBlock({ block, index, isAnchored, formatAge, goldbackPrice }: Me
 
           {/* Serial Count */}
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-amber-500/20 rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-8 h-8 bg-[#c9a84c]/20 flex items-center justify-center">
+              <svg className="w-4 h-4 text-[#c9a84c]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
               </svg>
             </div>
@@ -248,7 +248,7 @@ function MempoolBlock({ block, index, isAnchored, formatAge, goldbackPrice }: Me
         {/* Footer */}
         <div className="px-4 py-2.5 border-t border-gray-800/50 bg-gray-950/50 flex items-center justify-between">
           <span className="text-gray-500 text-xs">{formatAge(block.ageMinutes ?? 0)}</span>
-          <svg className="w-4 h-4 text-gray-500 group-hover:text-amber-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-4 h-4 text-gray-500 group-hover:text-[#c9a84c] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </div>

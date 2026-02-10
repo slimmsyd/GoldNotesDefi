@@ -21,6 +21,7 @@ import { SolvencyHero } from '@/components/app/dashboard/solvency-hero';
 import { StatsGrid } from '@/components/app/dashboard/stats-grid';
 import { AuditTrail } from '@/components/app/dashboard/audit-trail';
 import { ArchitectureExplainer } from '@/components/app/dashboard/architecture-explainer';
+import { VerifyNowButton } from '@/components/app/dashboard/verify-now-button';
 
 // Animation variants - standardized timing (Phase 3)
 const fadeInUp = {
@@ -56,12 +57,15 @@ export default function AppDashboard() {
           <h1 className="text-4xl font-bold text-white tracking-tight">Dashboard</h1>
           <p className="text-gray-400 mt-2">Real-time protocol overview</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {/* Verify Now (Admin Only) */}
+          <VerifyNowButton onComplete={refresh} />
+
           {/* Refresh Button */}
           <button
             onClick={refresh}
             disabled={isLoading}
-            className="flex items-center gap-2 bg-gray-900/50 border border-gray-800 rounded-xl px-4 py-2 text-gray-400 hover:text-white hover:border-gray-600 transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+            className="flex items-center gap-2 bg-gray-900/50 border border-gray-800 px-4 py-2 text-gray-400 hover:text-white hover:border-[#c9a84c]/50 transition-colors disabled:opacity-50 focus:outline-none cursor-pointer"
           >
             <svg
               className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
@@ -86,10 +90,10 @@ export default function AppDashboard() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-red-500/20 border border-red-500/30 rounded-2xl p-4 flex items-center justify-between"
+          className="bg-red-500/20 border border-red-500/30 p-4 flex items-center justify-between"
         >
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-red-500/20 flex items-center justify-center">
               <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
@@ -105,7 +109,7 @@ export default function AppDashboard() {
           </div>
           <button
             onClick={refresh}
-            className="bg-red-500/20 text-red-400 font-medium px-4 py-3 rounded-xl hover:bg-red-500/30 border border-red-500/30 transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+            className="bg-red-500/20 text-red-400 font-medium px-4 py-3 hover:bg-red-500/30 border border-red-500/30 transition-colors text-sm focus:outline-none"
           >
             Retry
           </button>
@@ -144,7 +148,7 @@ export default function AppDashboard() {
       >
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+            <span className="w-1.5 h-1.5 bg-[#c9a84c]" />
             Network: <span className="text-gray-400">Solana Devnet</span>
           </span>
         </div>

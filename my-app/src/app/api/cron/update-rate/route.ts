@@ -57,23 +57,27 @@ export async function GET(request: Request) {
             },
         });
 
-        // 5. Store in price history for 24h change tracking
-        await prisma.goldbackPriceHistory.create({
-            data: {
-                price: newRate,
-                timestamp: new Date(),
-            },
-        });
-
-        // 6. Clean up old price history (keep last 48 hours only)
-        const cutoffDate = new Date(Date.now() - 48 * 60 * 60 * 1000);
-        await prisma.goldbackPriceHistory.deleteMany({
-            where: {
-                timestamp: {
-                    lt: cutoffDate,
+        // 5. Store in price history for 24h change tracking (non-blocking)
+        try {
+            await prisma.goldbackPriceHistory.create({
+                data: {
+                    price: newRate,
+                    timestamp: new Date(),
                 },
-            },
-        });
+            });
+
+            // 6. Clean up old price history (keep last 48 hours only)
+            const cutoffDate = new Date(Date.now() - 48 * 60 * 60 * 1000);
+            await prisma.goldbackPriceHistory.deleteMany({
+                where: {
+                    timestamp: {
+                        lt: cutoffDate,
+                    },
+                },
+            });
+        } catch (historyErr) {
+            console.warn('[cron/update-rate] Price history write failed (table may not exist):', historyErr);
+        }
 
         // 7. Revalidate page caches so users see the new price
         revalidatePath('/shop-gold-backs');

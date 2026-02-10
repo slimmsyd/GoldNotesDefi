@@ -51,7 +51,7 @@ export function SwapInterface() {
   const [payAmount, setPayAmount] = useState<string>('');
   const [receiveAmount, setReceiveAmount] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState<'input' | 'review' | 'success'>('input');
+  const [step, setStep] = useState<'input' | 'review' | 'processing' | 'success'>('input');
   const [error, setError] = useState<string | null>(null);
   const [txSignature, setTxSignature] = useState<string | null>(null);
   const [solPrice, setSolPrice] = useState<number | null>(null);
@@ -61,6 +61,7 @@ export function SwapInterface() {
   const [priceVerifiedAt, setPriceVerifiedAt] = useState<Date | null>(null);
   const [isPriceVerifying, setIsPriceVerifying] = useState(false);
   const [priceMinutesSinceUpdate, setPriceMinutesSinceUpdate] = useState<number | null>(null);
+  const [isPriceFallback, setIsPriceFallback] = useState(false);
 
   // Fetch W3B/Goldback price from database
   useEffect(() => {
@@ -71,9 +72,11 @@ export function SwapInterface() {
         if (data.success && data.rate) {
           setW3bPriceUsd(data.rate);
           setPriceMinutesSinceUpdate(data.minutesSinceUpdate);
+          setIsPriceFallback(data.source === 'fallback');
         }
       } catch (err) {
         console.error('Failed to fetch Goldback rate, using default');
+        setIsPriceFallback(true);
       }
     };
     fetchGoldbackRate();
@@ -90,21 +93,24 @@ export function SwapInterface() {
         return { verified: false, rate: null, error: 'Unable to verify current WGB price. Please try again.' };
       }
 
-      const minutesSinceUpdate = data.minutesSinceUpdate ?? Infinity;
+      const isFallback = data.source === 'fallback';
+      setIsPriceFallback(isFallback);
 
-      // Block if price is more than 60 minutes stale
-      if (minutesSinceUpdate > 60) {
-        return {
-          verified: false,
-          rate: data.rate,
-          error: `Price data is ${minutesSinceUpdate} minutes old. Swap blocked for safety. Please try again later.`
-        };
+      // If using a real DB price, enforce staleness check
+      if (!isFallback && data.minutesSinceUpdate !== null) {
+        if (data.minutesSinceUpdate > 60) {
+          return {
+            verified: false,
+            rate: data.rate,
+            error: `Price data is ${data.minutesSinceUpdate} minutes old. Swap blocked for safety. Please try again later.`
+          };
+        }
       }
 
-      // Update state with verified price
+      // Update state with verified price (fallback or fresh DB price)
       setW3bPriceUsd(data.rate);
       setPriceVerifiedAt(new Date());
-      setPriceMinutesSinceUpdate(minutesSinceUpdate);
+      setPriceMinutesSinceUpdate(data.minutesSinceUpdate);
 
       return { verified: true, rate: data.rate, error: null };
     } catch (err) {
@@ -218,6 +224,7 @@ export function SwapInterface() {
 
     setIsLoading(true);
     setError(null);
+    setStep('processing');
 
     try {
       // CRITICAL: Verify price freshness before swap
@@ -225,6 +232,7 @@ export function SwapInterface() {
       if (!priceCheck.verified) {
         setError(priceCheck.error || 'Price verification failed');
         setIsLoading(false);
+        setStep('review');
         return;
       }
       // Fetch on-chain data
@@ -311,6 +319,7 @@ export function SwapInterface() {
       } else {
         setError(err.message || 'Transaction failed');
       }
+      setStep('review');
     } finally {
       setIsLoading(false);
     }
@@ -322,11 +331,23 @@ export function SwapInterface() {
     setStep('input');
     setTxSignature(null);
     setError(null);
+    setIsPriceFallback(false);
   };
+
+  // Progress bar configuration aligned to each swap step
+  const PROGRESS_STEPS = [
+    { key: 'input', label: 'Enter Amount' },
+    { key: 'review', label: 'Review Details' },
+    { key: 'processing', label: 'Processing' },
+    { key: 'success', label: 'Complete' },
+  ] as const;
+
+  const currentStepIndex = PROGRESS_STEPS.findIndex(s => s.key === step);
+  const currentStepLabel = PROGRESS_STEPS[currentStepIndex]?.label ?? '';
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="bg-[#111111] border border-gray-800/50 rounded-[32px] p-6 shadow-2xl relative overflow-hidden max-w-[480px] w-full mx-auto">
+      <div className="bg-[#111111] border border-gray-800/50 p-6 shadow-2xl relative overflow-hidden max-w-[480px] w-full mx-auto">
         {/* Header */}
         <div className="flex flex-col mb-8">
           <div className="flex justify-between items-center mb-4">
@@ -336,18 +357,39 @@ export function SwapInterface() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <span className="text-gray-500 text-sm font-medium">1/4</span>
+            <span className="text-gray-500 text-sm font-medium">{currentStepIndex + 1}/{PROGRESS_STEPS.length}</span>
           </div>
 
           {/* Progress Bar */}
           <div className="flex gap-2 mb-6">
-            <div className="h-1 bg-blue-500 w-full rounded-full"></div>
-            <div className="h-1 bg-gray-800 w-full rounded-full"></div>
-            <div className="h-1 bg-gray-800 w-full rounded-full"></div>
-            <div className="h-1 bg-gray-800 w-full rounded-full"></div>
+            {PROGRESS_STEPS.map((s, i) => {
+              const isCompleted = i < currentStepIndex;
+              const isActive = i === currentStepIndex;
+              const isProcessingPulse = step === 'processing' && i === currentStepIndex;
+
+              return (
+                <div
+                  key={s.key}
+                  className={`h-1 w-full transition-all duration-500 ease-out ${
+                    isCompleted
+                      ? 'bg-[#c9a84c]'
+                      : isActive
+                        ? isProcessingPulse
+                          ? 'bg-[#c9a84c] animate-pulse'
+                          : 'bg-[#c9a84c]'
+                        : 'bg-gray-800'
+                  }`}
+                />
+              );
+            })}
           </div>
 
-          <p className="text-gray-500 text-sm">Fees and rate shown before confirmation</p>
+          <p className="text-gray-500 text-sm">
+            {step === 'input' && 'Select a token and enter the amount to swap'}
+            {step === 'review' && 'Review the details before confirming'}
+            {step === 'processing' && 'Your transaction is being processed...'}
+            {step === 'success' && 'Your swap has been completed successfully'}
+          </p>
         </div>
 
         <AnimatePresence mode="wait">
@@ -363,7 +405,7 @@ export function SwapInterface() {
               {/* Pay Input */}
               <div className="space-y-2">
                 <div className="text-gray-500 text-sm mb-1 ml-1">You send</div>
-                <div className="bg-[#1A1A1A] rounded-[24px] p-4 border border-transparent hover:border-gray-700/50 transition-all group">
+                <div className="bg-[#1A1A1A] p-4 border border-transparent hover:border-gray-700/50 transition-all group">
                   <div className="flex items-center justify-between gap-4">
                     {/* Token Selector - Left Side */}
                     <div className="flex-shrink-0">
@@ -398,7 +440,7 @@ export function SwapInterface() {
 
               {/* Arrow */}
               <div className="flex justify-center -my-2 relative z-10">
-                <div className="bg-gray-800 p-2 rounded-xl border-4 border-gray-900">
+                <div className="bg-gray-800 p-2 border-4 border-gray-900">
                   <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                   </svg>
@@ -413,15 +455,15 @@ export function SwapInterface() {
                   <div className="text-gray-600 text-xs mt-1">estimated</div>
                 </div>
 
-                <div className="bg-[#1A1A1A] rounded-[24px] p-4 border border-transparent hover:border-gray-700/50 transition-all">
+                <div className="bg-[#1A1A1A] p-4 border border-transparent hover:border-gray-700/50 transition-all">
                   <div className="flex items-center justify-between gap-4">
                     {/* Fixed WGB Token Display */}
                     <div className="flex-shrink-0">
-                      <div className="bg-[#2A2A2A] hover:bg-[#333] rounded-full pl-2 pr-4 py-1.5 flex items-center gap-3 transition-colors cursor-default border border-gray-800">
+                      <div className="bg-[#2A2A2A] hover:bg-[#333] pl-2 pr-4 py-1.5 flex items-center gap-3 transition-colors cursor-default border border-gray-800">
                         <img
                           src="/logos/BlackWebTokenLogo.png"
                           alt="WGB Token"
-                          className="w-8 h-8 rounded-full shadow-lg shadow-amber-500/20"
+                          className="w-8 h-8 shadow-lg shadow-[#c9a84c]/20"
                         />
                         <div className="text-left">
                           <span className="text-white font-bold block leading-none">WGB</span>
@@ -449,7 +491,7 @@ export function SwapInterface() {
               </div>
 
               {/* Rate Info */}
-              <div className="bg-gray-950/50 rounded-xl p-3 text-xs space-y-2">
+              <div className="bg-gray-950/50 p-3 text-xs space-y-2">
                 <div className="flex justify-between text-gray-400">
                   <span>Rate</span>
                   <span className="text-white">
@@ -461,7 +503,7 @@ export function SwapInterface() {
                 </div>
                 <div className="flex justify-between text-gray-400">
                   <span>Network</span>
-                  <span className={PROTOCOL_CONFIG.isMainnet ? 'text-green-400' : 'text-amber-400'}>
+                  <span className={PROTOCOL_CONFIG.isMainnet ? 'text-green-400' : 'text-[#e8d48b]'}>
                     Solana {PROTOCOL_CONFIG.networkDisplay}
                   </span>
                 </div>
@@ -469,7 +511,7 @@ export function SwapInterface() {
 
               {/* Error Display */}
               {error && (
-                <div className="bg-red-900/30 border border-red-800 rounded-xl p-3 text-red-400 text-sm">
+                <div className="bg-red-900/30 border border-red-800 p-3 text-red-400 text-sm">
                   {error}
                 </div>
               )}
@@ -477,13 +519,13 @@ export function SwapInterface() {
               {/* Connect Wallet or Review Button */}
               {!connected ? (
                 <div className="flex justify-center">
-                  <WalletMultiButton className="!bg-amber-500 !text-black !font-bold !rounded-xl !py-4 !px-8" />
+                  <WalletMultiButton className="!bg-[#c9a84c] !text-black !font-bold !py-4 !px-8" />
                 </div>
               ) : (
                 <button
                   disabled={!payAmount || parseFloat(payAmount) <= 0}
                   onClick={() => setStep('review')}
-                  className="w-full bg-amber-500 cursor-pointer text-black font-bold py-4 rounded-xl hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-amber-500/20"
+                  className="w-full bg-linear-to-r from-[#c9a84c] to-[#a48a3a] cursor-pointer text-black font-bold py-4 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-[0_4px_16px_rgba(201,168,76,0.35)]"
                 >
                   Review Swap
                 </button>
@@ -504,12 +546,12 @@ export function SwapInterface() {
                 <div className="text-3xl font-bold text-white mb-2">
                   {receiveAmount} WGB
                 </div>
-                <div className="text-amber-500 text-sm">
+                <div className="text-[#c9a84c] text-sm">
                   Using {payAmount} {selectedPayToken.symbol}
                 </div>
               </div>
 
-              <div className="bg-gray-950 rounded-xl p-4 space-y-3 text-sm">
+              <div className="bg-gray-950 p-4 space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Rate</span>
                   <span className="text-white">1 WGB = {w3bPriceUsd} USD</span>
@@ -517,15 +559,19 @@ export function SwapInterface() {
                 <div className="flex justify-between">
                   <span className="text-gray-400">Price Age</span>
                   <span className={`${
-                    priceMinutesSinceUpdate !== null && priceMinutesSinceUpdate > 30
-                      ? 'text-yellow-400'
-                      : 'text-green-400'
+                    isPriceFallback
+                      ? 'text-amber-400'
+                      : priceMinutesSinceUpdate !== null && priceMinutesSinceUpdate > 30
+                        ? 'text-yellow-400'
+                        : 'text-green-400'
                   }`}>
-                    {priceMinutesSinceUpdate !== null
-                      ? priceMinutesSinceUpdate < 1
-                        ? 'Updated just now'
-                        : `${priceMinutesSinceUpdate} min ago`
-                      : 'Verifying...'}
+                    {isPriceFallback
+                      ? 'Default rate'
+                      : priceMinutesSinceUpdate !== null
+                        ? priceMinutesSinceUpdate < 1
+                          ? 'Updated just now'
+                          : `${priceMinutesSinceUpdate} min ago`
+                        : 'Unknown'}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -540,9 +586,19 @@ export function SwapInterface() {
                 </div>
               </div>
 
+              {/* Fallback pricing warning */}
+              {isPriceFallback && (
+                <div className="bg-amber-900/30 border border-amber-700 p-3 text-amber-400 text-sm flex items-center gap-2">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Using default rate (${w3bPriceUsd.toFixed(2)}). Live pricing is currently unavailable.</span>
+                </div>
+              )}
+
               {/* Price staleness warning */}
-              {priceMinutesSinceUpdate !== null && priceMinutesSinceUpdate > 30 && (
-                <div className="bg-yellow-900/30 border border-yellow-800 rounded-xl p-3 text-yellow-400 text-sm flex items-center gap-2">
+              {!isPriceFallback && priceMinutesSinceUpdate !== null && priceMinutesSinceUpdate > 30 && (
+                <div className="bg-yellow-900/30 border border-yellow-800 p-3 text-yellow-400 text-sm flex items-center gap-2">
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
@@ -551,7 +607,7 @@ export function SwapInterface() {
               )}
 
               {error && (
-                <div className="bg-red-900/30 border border-red-800 rounded-xl p-3 text-red-400 text-sm">
+                <div className="bg-red-900/30 border border-red-800 p-3 text-red-400 text-sm">
                   {error}
                 </div>
               )}
@@ -559,14 +615,14 @@ export function SwapInterface() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setStep('input')}
-                  className="flex-1 bg-gray-800 text-white font-medium py-3 rounded-xl hover:bg-gray-700 transition-colors"
+                  className="flex-1 bg-gray-800 text-white font-medium py-3 hover:bg-gray-700 transition-colors"
                 >
                   Back
                 </button>
                 <button
                   onClick={handleSwap}
                   disabled={isLoading || isPriceVerifying}
-                  className="flex-[2] cursor-pointer bg-amber-500 text-black font-bold py-3 rounded-xl hover:bg-amber-400 disabled:opacity-80 transition-all shadow-lg shadow-amber-500/20 relative"
+                  className="flex-[2] cursor-pointer bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black font-bold py-3 hover:brightness-110 disabled:opacity-80 transition-all active:scale-95 shadow-[0_4px_16px_rgba(201,168,76,0.35)] relative"
                 >
                   {isLoading || isPriceVerifying ? (
                     <span className="flex items-center justify-center gap-2">
@@ -584,6 +640,56 @@ export function SwapInterface() {
             </motion.div>
           )}
 
+          {step === 'processing' && (
+            <motion.div
+              key="processing"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="text-center py-12 space-y-6"
+            >
+              {/* Animated spinner */}
+              <div className="relative w-20 h-20 mx-auto">
+                <div className="absolute inset-0 border-4 border-gray-800 rounded-full" />
+                <div className="absolute inset-0 border-4 border-transparent border-t-[#c9a84c] rounded-full animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <img
+                    src="/logos/BlackWebTokenLogo.png"
+                    alt="WGB"
+                    className="w-8 h-8"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-xl font-bold text-white mb-2">
+                  {isPriceVerifying ? 'Verifying Price...' : 'Processing Swap'}
+                </h3>
+                <p className="text-gray-400 text-sm">
+                  {isPriceVerifying
+                    ? 'Checking the latest WGB price for your protection'
+                    : 'Confirming your transaction on Solana'}
+                </p>
+              </div>
+
+              {/* Transaction details summary */}
+              <div className="bg-gray-950/50 p-4 text-sm space-y-2 mx-4">
+                <div className="flex justify-between text-gray-400">
+                  <span>Sending</span>
+                  <span className="text-white">{payAmount} {selectedPayToken.symbol}</span>
+                </div>
+                <div className="flex justify-between text-gray-400">
+                  <span>Receiving</span>
+                  <span className="text-white">{receiveAmount} WGB</span>
+                </div>
+              </div>
+
+              <p className="text-gray-600 text-xs">
+                Please confirm in your wallet if prompted
+              </p>
+            </motion.div>
+          )}
+
           {step === 'success' && (
             <motion.div
               key="success"
@@ -591,7 +697,7 @@ export function SwapInterface() {
               animate={{ opacity: 1, scale: 1 }}
               className="text-center py-8"
             >
-              <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-20 h-20 bg-green-500/20 flex items-center justify-center mx-auto mb-6">
                 <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                 </svg>
@@ -605,14 +711,14 @@ export function SwapInterface() {
                   href={getExplorerUrl(txSignature, 'tx')}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-amber-400 hover:text-amber-300 text-sm underline mb-8 block"
+                  className="text-[#e8d48b] hover:text-[#c9a84c] text-sm underline mb-8 block"
                 >
                   View Transaction on Solscan →
                 </a>
               )}
               <button
                 onClick={reset}
-                className="w-full bg-gray-800 text-white font-medium py-3 rounded-xl hover:bg-gray-700 transition-colors"
+                  className="w-full bg-gray-800 text-white font-medium py-3 hover:bg-gray-700 transition-colors"
               >
                 Start New Swap
               </button>

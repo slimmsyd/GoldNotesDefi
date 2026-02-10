@@ -55,18 +55,18 @@ export function SolvencyBadge() {
 
     if (isLoading) {
         return (
-            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 animate-pulse">
-                <div className="h-8 bg-gray-700 rounded w-48 mb-4"></div>
-                <div className="h-4 bg-gray-700 rounded w-32"></div>
+            <div className="bg-gray-900/50 border border-gray-800 p-6 animate-pulse">
+                <div className="h-8 bg-gray-700 w-48 mb-4"></div>
+                <div className="h-4 bg-gray-700 w-32"></div>
             </div>
         );
     }
 
     if (error || !status) {
         return (
-            <div className="bg-red-900/20 border border-red-800 rounded-2xl p-6">
+            <div className="bg-red-900/20 border border-red-800 p-6">
                 <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 rounded-full bg-red-500 animate-pulse"></div>
+                    <div className="w-4 h-4 bg-red-500 animate-pulse"></div>
                     <span className="text-red-400 font-semibold">Unable to verify on-chain status</span>
                 </div>
                 <p className="text-red-400/70 text-sm mt-2">{error}</p>
@@ -90,7 +90,7 @@ export function SolvencyBadge() {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`relative overflow-hidden rounded-2xl p-6 ${isSolvent
+            className={`relative overflow-hidden p-6 ${isSolvent
                 ? 'bg-gradient-to-br from-emerald-900/30 to-gray-900 border border-emerald-700/50'
                 : 'bg-gradient-to-br from-red-900/30 to-gray-900 border border-red-700/50'
                 }`}
@@ -105,7 +105,7 @@ export function SolvencyBadge() {
                         <motion.div
                             animate={{ scale: [1, 1.2, 1] }}
                             transition={{ repeat: Infinity, duration: 2 }}
-                            className={`w-4 h-4 rounded-full ${isSolvent ? 'bg-emerald-500' : 'bg-red-500'}`}
+                            className={`w-4 h-4 ${isSolvent ? 'bg-emerald-500' : 'bg-red-500'}`}
                         ></motion.div>
                         <h3 className="text-xl font-bold text-white">
                             {isSolvent ? '✅ Verified Solvent' : '❌ Insolvency Detected'}
@@ -124,19 +124,19 @@ export function SolvencyBadge() {
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-black/30 rounded-xl p-4">
+                    <div className="bg-black/30 p-4">
                         <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Proven Reserves</p>
                         <p className="text-2xl font-bold text-white">{onChain.provenReserves.toLocaleString()}</p>
                         <p className="text-emerald-400 text-xs">Goldbacks</p>
                     </div>
 
-                    <div className="bg-black/30 rounded-xl p-4">
+                    <div className="bg-black/30 p-4">
                         <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Token Supply</p>
                         <p className="text-2xl font-bold text-white">{onChain.totalSupply.toLocaleString()}</p>
-                        <p className="text-amber-400 text-xs">W3B</p>
+                        <p className="text-[#e8d48b] text-xs">W3B</p>
                     </div>
 
-                    <div className="bg-black/30 rounded-xl p-4">
+                    <div className="bg-black/30 p-4">
                         <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Coverage Ratio</p>
                         <p className={`text-2xl font-bold ${isSolvent ? 'text-emerald-400' : 'text-red-400'}`}>
                             {solvency.ratio !== null ? `${(solvency.ratio * 100).toFixed(0)}%` : '∞'}
@@ -144,7 +144,7 @@ export function SolvencyBadge() {
                         <p className="text-gray-500 text-xs">{isSolvent ? 'Fully Backed' : 'Under-collateralized'}</p>
                     </div>
 
-                    <div className="bg-black/30 rounded-xl p-4">
+                    <div className="bg-black/30 p-4">
                         <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Last Audit</p>
                         <p className="text-lg font-medium text-white truncate">{lastProof}</p>
                         <p className="text-gray-500 text-xs">ZK Verified</p>
@@ -152,7 +152,7 @@ export function SolvencyBadge() {
                 </div>
 
                 {/* Merkle Root */}
-                <div className="mt-4 bg-black/20 rounded-lg p-3 flex items-center justify-between">
+                <div className="mt-4 bg-black/20 p-3 flex items-center justify-between">
                     <div>
                         <p className="text-gray-500 text-xs uppercase tracking-wider">Current Merkle Root</p>
                         <p className="text-gray-300 font-mono text-sm truncate max-w-xs md:max-w-md">
@@ -163,7 +163,7 @@ export function SolvencyBadge() {
                         href="https://solscan.io/account/CWYNiviNYPEApbGjjhDPZ8vmxRTMJiHsJto8JRZNPG8s?cluster=devnet"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-amber-400 hover:text-amber-300 text-xs flex items-center gap-1"
+                        className="text-[#e8d48b] hover:text-[#c9a84c] text-xs flex items-center gap-1"
                     >
                         View Protocol State
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

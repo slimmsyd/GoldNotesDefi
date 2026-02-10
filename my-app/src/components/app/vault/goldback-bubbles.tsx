@@ -218,7 +218,7 @@ export function GoldbackBubbles() {
 
   if (isLoading) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 h-[400px] animate-pulse flex items-center justify-center">
+      <div className="bg-gray-900/50 border border-gray-800 p-6 h-[400px] animate-pulse flex items-center justify-center">
         <div className="text-gray-500">Loading batch data...</div>
       </div>
     );
@@ -226,7 +226,7 @@ export function GoldbackBubbles() {
 
   if (batches.length === 0) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 h-[400px] flex flex-col items-center justify-center">
+      <div className="bg-gray-900/50 border border-gray-800 p-6 h-[400px] flex flex-col items-center justify-center">
         <div className="text-6xl mb-4">🏦</div>
         <p className="text-gray-500">Vault is empty</p>
         <p className="text-gray-600 text-sm mt-1">Verified batches will appear as bubbles</p>

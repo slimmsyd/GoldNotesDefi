@@ -49,7 +49,7 @@ export function ProofHistoryTable() {
 
     if (isLoading) {
         return (
-            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 animate-pulse">
+            <div className="bg-gray-900/50 border border-gray-800 p-6 animate-pulse">
                 <div className="h-6 bg-gray-700 rounded w-48 mb-4"></div>
                 <div className="space-y-3">
                     {[1, 2, 3].map(i => (
@@ -62,7 +62,7 @@ export function ProofHistoryTable() {
 
     if (error) {
         return (
-            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6">
+            <div className="bg-gray-900/50 border border-gray-800 p-6">
                 <p className="text-red-400">{error}</p>
             </div>
         );
@@ -73,11 +73,11 @@ export function ProofHistoryTable() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden"
+            className="bg-gray-900/50 border border-gray-800 overflow-hidden"
         >
             <div className="p-6 border-b border-gray-800">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                    <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-[#e8d48b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                     </svg>
                     Proof History (Audit Log)
@@ -127,12 +127,12 @@ export function ProofHistoryTable() {
                                         <span className="text-gray-500 text-sm ml-1">Goldbacks</span>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <code className="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded font-mono">
+                                        <code className="text-xs text-gray-400 bg-gray-800 px-2 py-1 font-mono">
                                             {record.root_hash.slice(0, 10)}...{record.root_hash.slice(-8)}
                                         </code>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${record.status === 'anchored'
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium ${record.status === 'anchored'
                                                 ? 'bg-emerald-900/50 text-emerald-400'
                                                 : 'bg-yellow-900/50 text-yellow-400'
                                             }`}>
@@ -145,7 +145,7 @@ export function ProofHistoryTable() {
                                                 href={`https://solscan.io/tx/${record.solana_tx_hash}?cluster=devnet`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="text-amber-400 hover:text-amber-300 text-sm flex items-center gap-1"
+                                                className="text-[#e8d48b] hover:text-[#c9a84c] text-sm flex items-center gap-1"
                                             >
                                                 View Tx
                                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

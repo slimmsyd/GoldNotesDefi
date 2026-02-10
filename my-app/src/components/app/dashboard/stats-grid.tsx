@@ -31,10 +31,10 @@ function StatCard({ title, value, subtitle, icon, color, delay = 0, href, trend 
   // Phase 1.5: Reduced to 2 accent colors only (amber + green)
   const colorConfig = {
     amber: {
-      bg: 'bg-amber-500/20',
-      border: 'border-gray-800 hover:border-amber-500/40',
-      icon: 'text-amber-500',
-      glow: 'group-hover:shadow-amber-500/10',
+      bg: 'bg-[#c9a84c]/20',
+      border: 'border-gray-800 hover:border-[#c9a84c]/40',
+      icon: 'text-[#c9a84c]',
+      glow: 'group-hover:shadow-[#c9a84c]/10',
     },
     green: {
       bg: 'bg-green-500/20',
@@ -51,7 +51,7 @@ function StatCard({ title, value, subtitle, icon, color, delay = 0, href, trend 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={`group bg-gray-900/50 border ${config.border} rounded-2xl p-5 relative overflow-hidden transition-all duration-200 hover:translate-y-[-2px] ${config.glow} group-hover:shadow-lg h-full`}
+      className={`group bg-gray-900/50 border ${config.border} p-5 relative overflow-hidden transition-all duration-200 hover:translate-y-[-2px] ${config.glow} group-hover:shadow-lg h-full`}
     >
       {/* Background Gradient */}
       <div className={`absolute inset-0 ${config.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
@@ -59,7 +59,7 @@ function StatCard({ title, value, subtitle, icon, color, delay = 0, href, trend 
       <div className="relative z-10">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
-          <div className={`w-10 h-10 ${config.bg} rounded-xl flex items-center justify-center`}>
+          <div className={`w-10 h-10 ${config.bg} flex items-center justify-center`}>
             <div className={config.icon}>{icon}</div>
           </div>
           {href && (
@@ -101,7 +101,7 @@ function StatCard({ title, value, subtitle, icon, color, delay = 0, href, trend 
 
   if (href) {
     return (
-      <Link href={href} className="block h-full focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900 rounded-2xl">
+      <Link href={href} className="block h-full focus:outline-none">
         {content}
       </Link>
     );
@@ -115,10 +115,10 @@ export function StatsGrid({ data, isLoading }: StatsGridProps) {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-gray-900/50 border border-gray-800 rounded-2xl p-5 animate-pulse">
-            <div className="w-10 h-10 bg-gray-800 rounded-xl mb-3" />
-            <div className="w-20 h-3 bg-gray-800 rounded mb-2" />
-            <div className="w-24 h-7 bg-gray-800 rounded" />
+          <div key={i} className="bg-gray-900/50 border border-gray-800 p-5 animate-pulse">
+            <div className="w-10 h-10 bg-gray-800 mb-3" />
+            <div className="w-20 h-3 bg-gray-800 mb-2" />
+            <div className="w-24 h-7 bg-gray-800" />
           </div>
         ))}
       </div>

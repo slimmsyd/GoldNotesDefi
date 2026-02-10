@@ -45,7 +45,7 @@ export function MempoolVisualizer({ className }: MempoolVisualizerProps) {
   }, [serials, batches]);
 
   return (
-    <div className={`w-full bg-gray-900/50 rounded-3xl border border-gray-800 overflow-hidden backdrop-blur-sm ${className}`}>
+    <div className={`w-full bg-gray-900/50 border border-gray-800 overflow-hidden backdrop-blur-sm ${className}`}>
       {/* Header */}
       <div className="px-8 py-6 border-b border-gray-800/50 flex items-center justify-between">
          <div className="flex items-center gap-3">
@@ -54,7 +54,7 @@ export function MempoolVisualizer({ className }: MempoolVisualizerProps) {
          </div>
          <div className="flex gap-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
             <div className="flex items-center gap-2">
-               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+               <span className="w-1.5 h-1.5 bg-[#c9a84c]" />
                Raw Ingest
             </div>
             <div className="flex items-center gap-2">
@@ -72,7 +72,7 @@ export function MempoolVisualizer({ className }: MempoolVisualizerProps) {
         <div className="relative">
           <div className="flex items-center justify-between mb-6">
              <h4 className="text-gray-400 text-sm font-medium">Incoming Serials</h4>
-             <span className="text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded text-xs font-mono">
+             <span className="text-[#c9a84c] bg-[#c9a84c]/10 px-2 py-0.5 text-xs font-mono">
                 {pendingSerials.length} PENDING
              </span>
           </div>
@@ -93,7 +93,7 @@ export function MempoolVisualizer({ className }: MempoolVisualizerProps) {
               ))}
             </AnimatePresence>
             {pendingSerials.length === 0 && !isLoading && (
-               <div className="w-full h-24 flex items-center justify-center text-gray-600 text-sm italic border border-dashed border-gray-800 rounded-xl">
+               <div className="w-full h-24 flex items-center justify-center text-gray-600 text-sm italic border border-dashed border-gray-800">
                   Waiting for serials...
                </div>
             )}
@@ -104,7 +104,7 @@ export function MempoolVisualizer({ className }: MempoolVisualizerProps) {
         <div className="relative pl-0 lg:pl-6">
           <div className="flex items-center justify-between mb-6">
              <h4 className="text-gray-400 text-sm font-medium">Anchored Batches</h4>
-             <span className="text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded text-xs font-mono">
+             <span className="text-blue-500 bg-blue-500/10 px-2 py-0.5 text-xs font-mono">
                 {confirmedBatches.length} VERIFIED
              </span>
           </div>
@@ -114,7 +114,7 @@ export function MempoolVisualizer({ className }: MempoolVisualizerProps) {
               <BatchBlock key={batch.batchId} batch={batch} />
             ))}
              {confirmedBatches.length === 0 && !isLoading && (
-               <div className="w-full h-24 flex items-center justify-center text-gray-600 text-sm italic border border-dashed border-gray-800 rounded-xl">
+               <div className="w-full h-24 flex items-center justify-center text-gray-600 text-sm italic border border-dashed border-gray-800">
                   No verified batches yet
                </div>
             )}
@@ -128,13 +128,13 @@ export function MempoolVisualizer({ className }: MempoolVisualizerProps) {
 function GoldbackTicket({ serial }: { serial: GoldbackSerialRecord }) {
   return (
     <div className="group w-40 relative">
-      <div className="absolute inset-0 bg-amber-500/20 blur-lg rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <div className="relative bg-gray-900 border border-gray-800 hover:border-amber-500/50 rounded-xl p-3 transition-all duration-300 group-hover:-translate-y-1">
+      <div className="absolute inset-0 bg-[#c9a84c]/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <div className="relative bg-gray-900 border border-gray-800 hover:border-[#c9a84c]/50 p-3 transition-all duration-300 group-hover:-translate-y-1">
         <div className="flex items-center justify-between mb-2">
-            <div className="w-6 h-6 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 text-[10px] font-bold">
+            <div className="w-6 h-6 bg-[#c9a84c]/10 flex items-center justify-center text-[#c9a84c] text-[10px] font-bold">
                $1
             </div>
-            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            <div className="w-1.5 h-1.5 bg-[#c9a84c] animate-pulse" />
         </div>
         <div className="font-mono text-white font-medium text-xs tracking-wider mb-1">
           {serial.serial_number}
@@ -150,8 +150,8 @@ function GoldbackTicket({ serial }: { serial: GoldbackSerialRecord }) {
 function BatchBlock({ batch }: { batch: BatchStats }) {
   return (
     <div className="group w-48 relative shrink-0">
-       <div className="absolute inset-0 bg-blue-500/10 blur-xl rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-       <div className="relative bg-gray-900 border border-gray-800 hover:border-blue-500/50 rounded-xl p-4 transition-all duration-300 group-hover:-translate-y-1">
+       <div className="absolute inset-0 bg-blue-500/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+       <div className="relative bg-gray-900 border border-gray-800 hover:border-blue-500/50 p-4 transition-all duration-300 group-hover:-translate-y-1">
          <div className="flex justify-between items-start mb-3">
             <div className="flex flex-col">
                <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-0.5">Batch</span>
@@ -159,7 +159,7 @@ function BatchBlock({ batch }: { batch: BatchStats }) {
                   {batch.batchId.split('-').pop()}...
                </span>
             </div>
-            <div className="p-1.5 bg-gray-800 rounded-lg text-green-400">
+            <div className="p-1.5 bg-gray-800 text-green-400">
                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                </svg>
@@ -171,8 +171,8 @@ function BatchBlock({ batch }: { batch: BatchStats }) {
             <span className="text-xs text-gray-500 mb-1">Items</span>
          </div>
          
-         <div className="w-full bg-gray-800 rounded-full h-1 mb-2 overflow-hidden">
-            <div className="bg-blue-500 h-full w-full rounded-full" />
+         <div className="w-full bg-gray-800 h-1 mb-2 overflow-hidden">
+            <div className="bg-blue-500 h-full w-full" />
          </div>
 
          <div className="text-[10px] text-gray-600 font-mono text-right">

@@ -2,7 +2,10 @@
 
 /**
  * App Header Component
- * GoldBack Design System Implementation
+ * Obsidian Shield Design System Implementation
+ *
+ * Sharp edges, gold accents, institutional feel.
+ * Matches the homepage header aesthetic.
  */
 
 import Link from 'next/link';
@@ -14,6 +17,57 @@ import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PROTOCOL_CONFIG } from '@/lib/protocol-constants';
 
+/* ─── Framer Motion variants (matching homepage) ─── */
+const smoothEase: [number, number, number, number] = [0.25, 0.1, 0.25, 1];
+
+const menuOverlay = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.25, when: 'beforeChildren' as const } },
+  exit: { opacity: 0, transition: { duration: 0.2, when: 'afterChildren' as const } },
+};
+
+const menuPanel = {
+  hidden: { x: '100%' },
+  visible: { x: 0, transition: { duration: 0.3, ease: smoothEase } },
+  exit: { x: '100%', transition: { duration: 0.25, ease: smoothEase } },
+};
+
+const menuItem = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+  exit: { opacity: 0 },
+};
+
+const staggerContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06, delayChildren: 0.15 } },
+  exit: { transition: { staggerChildren: 0.03, staggerDirection: -1 } },
+};
+
+/* ─── Network Badge ─── */
+function NetworkBadge() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  return (
+    <span
+      className={`text-[10px] font-mono px-2 py-0.5 border ${
+        PROTOCOL_CONFIG.isMainnet
+          ? 'bg-[#c9a84c]/10 text-[#c9a84c] border-[#c9a84c]/30'
+          : 'bg-[#c9a84c]/10 text-[#c9a84c] border-[#c9a84c]/30'
+      }`}
+    >
+      {PROTOCOL_CONFIG.networkDisplay}
+    </span>
+  );
+}
+
+/* ─── NavLink ─── */
 function NavLink({
   href,
   children,
@@ -28,25 +82,22 @@ function NavLink({
   return (
     <Link
       href={href}
-      className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${
+      className={`relative flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors duration-150 ${
         isActive
-          ? 'bg-gray-800 text-white shadow-lg'
-          : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+          ? 'text-white bg-[#1a1a1a]'
+          : 'text-gray-400 hover:text-[#e8d48b]'
       }`}
     >
       {icon}
       {children}
       {isActive && (
-        <motion.div
-          layoutId="activeNav"
-          className="absolute inset-0 bg-gray-800 rounded-xl -z-10"
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-        />
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#c9a84c]" />
       )}
     </Link>
   );
 }
 
+/* ─── Custom Wallet Button ─── */
 function CustomWalletButton() {
   const { publicKey, connected, disconnect } = useWallet();
   const walletButtonRef = useRef<HTMLDivElement>(null);
@@ -80,7 +131,7 @@ function CustomWalletButton() {
 
   if (!mounted) {
     return (
-      <button className="bg-amber-500 text-black font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-amber-400 transition-colors">
+      <button className="bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black font-bold px-5 py-1.5 text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer">
         Connect Wallet
       </button>
     );
@@ -92,11 +143,11 @@ function CustomWalletButton() {
       <div className="relative">
         <button
           onClick={handleConnect}
-          className="flex items-center gap-2.5 bg-gray-900/80 border border-gray-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm hover:bg-gray-800 hover:border-gray-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+          className="flex items-center gap-2.5 border border-[#c9a84c]/50 text-[#e8d48b] px-4 py-1.5 font-medium text-xs hover:bg-[#c9a84c]/10 transition-all duration-150 cursor-pointer"
         >
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+            <span className="animate-ping absolute inline-flex h-full w-full bg-green-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 bg-green-500" />
           </span>
           <span className="font-mono">{`${address.slice(0, 4)}...${address.slice(-4)}`}</span>
           <svg
@@ -112,53 +163,45 @@ function CustomWalletButton() {
         <AnimatePresence>
           {isDropdownOpen && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.15 }}
-              className="absolute right-0 mt-2 w-56 bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-50"
+              className="absolute right-0 mt-2 w-56 bg-[#1a1a1a] border border-[#c9a84c]/30 shadow-2xl overflow-hidden z-50"
             >
               {/* Wallet Info */}
-              <div className="px-4 py-3 border-b border-gray-800">
-                <p className="text-xs text-gray-500 mb-1">Connected Wallet</p>
-                <p className="text-sm font-mono text-white truncate">{address}</p>
+              <div className="px-4 py-3 border-b border-[#c9a84c]/20">
+                <p className="text-xs text-gray-500 uppercase tracking-wider">Connected Wallet</p>
+                <p className="text-xs font-mono text-[#c9a84c] truncate">{address}</p>
               </div>
 
               {/* Menu Items */}
-              <div className="py-2">
+              <div className="py-1">
                 <Link
                   href="/app/profile"
                   onClick={() => setIsDropdownOpen(false)}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
                 >
-                  <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <span className="font-medium">Profile</span>
-                    <p className="text-xs text-gray-500">View wallet details</p>
-                  </div>
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  Profile
                 </Link>
 
-                <button
-                  onClick={() => {
-                    disconnect();
-                    setIsDropdownOpen(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
-                >
-                  <div className="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center">
+                <div className="border-t border-[#c9a84c]/20 mt-1 pt-1">
+                  <button
+                    onClick={() => {
+                      disconnect();
+                      setIsDropdownOpen(false);
+                    }}
+                    className="flex items-center gap-3 w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                  >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
-                  </div>
-                  <div className="text-left">
-                    <span className="font-medium">Disconnect</span>
-                    <p className="text-xs text-red-400/70">End session</p>
-                  </div>
-                </button>
+                    Disconnect
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -175,7 +218,7 @@ function CustomWalletButton() {
 
       <button
         onClick={handleConnect}
-        className="bg-amber-500 text-black font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-amber-400 active:bg-amber-600 transition-colors duration-200 shadow-lg shadow-amber-500/20 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+        className="bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black font-bold px-5 py-1.5 text-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-[0_4px_16px_rgba(201,168,76,0.35)]"
       >
         Connect Wallet
       </button>
@@ -192,6 +235,18 @@ export function AppHeader() {
     if (path !== '/app' && pathname?.startsWith(path)) return true;
     return false;
   };
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
 
   const navItems = [
     {
@@ -224,38 +279,28 @@ export function AppHeader() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#0A0A0A]/80 border-b border-gray-800/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <>
+      <header className="relative z-50 bg-[#0a0a0a] border-b-[0.5px] border-[#c9a84c]/30 h-16 px-6">
+        <div className="flex items-center justify-between h-full max-w-7xl mx-auto">
           {/* Logo */}
-          <Link href="/app" className="flex items-center gap-3 group">
-            <div className="relative w-9 h-9 group-hover:scale-105 transition-transform">
-              <Image
-                src="/logos/BlackWebTokenLogo.png"
-                alt="WGB"
-                width={36}
-                height={36}
-                className="object-contain drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold text-white">
-                WGB
-              </span>
-              <span
-                className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                  PROTOCOL_CONFIG.isMainnet
-                    ? 'text-green-400 bg-green-500/10 border border-green-500/20'
-                    : 'text-amber-400 bg-amber-500/10 border border-amber-500/20'
-                }`}
-              >
-                {PROTOCOL_CONFIG.networkDisplay}
-              </span>
-            </div>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/app" className="flex items-center gap-3">
+              <div className="relative w-9 h-9">
+                <Image
+                  src="/logos/BlackWebTokenLogo.png"
+                  alt="WGB"
+                  width={36}
+                  height={36}
+                  className="object-contain drop-shadow-[0_0_8px_rgba(201,168,76,0.3)]"
+                />
+              </div>
+              <span className="text-lg font-bold text-white">WGB</span>
+            </Link>
+            <NetworkBadge />
+          </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1 bg-gray-900/50 border border-gray-800 rounded-2xl p-1">
+          <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
               <NavLink
                 key={item.href}
@@ -268,60 +313,111 @@ export function AppHeader() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <CustomWalletButton />
 
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-gray-900/50 border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700 transition-colors"
+              className="md:hidden p-2 text-gray-300 hover:text-[#c9a84c] transition-colors cursor-pointer"
+              aria-label="Toggle menu"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {isMobileMenuOpen ? (
+              {isMobileMenuOpen ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
+                </svg>
+              )}
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Full Screen Slide Panel (matching homepage) */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden border-t border-gray-800/50 bg-[#0A0A0A]/95 backdrop-blur-xl overflow-hidden"
+            key="mobile-menu"
+            variants={menuOverlay}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="fixed inset-0 z-60 md:hidden"
           >
-            <div className="px-4 py-4 space-y-2">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-colors ${
-                    isActive(item.href)
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
-                  }`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                    isActive(item.href) ? 'bg-amber-500/20 text-amber-500' : 'bg-gray-800 text-gray-400'
-                  }`}>
-                    {item.icon}
-                  </div>
-                  {item.label}
+            {/* Backdrop */}
+            <motion.div
+              className="absolute inset-0 bg-black/60"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+
+            {/* Sliding Panel */}
+            <motion.div
+              variants={menuPanel}
+              className="absolute top-0 right-0 bottom-0 w-full bg-[#0a0a0a] flex flex-col"
+            >
+              {/* Mobile Menu Header */}
+              <div className="flex items-center justify-between h-16 px-6 border-b border-[#c9a84c]/30">
+                <Link href="/app" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3">
+                  <Image
+                    src="/logos/BlackWebTokenLogo.png"
+                    alt="WGB"
+                    width={36}
+                    height={36}
+                    className="object-contain"
+                  />
+                  <span className="text-lg font-bold text-white">WGB</span>
                 </Link>
-              ))}
-            </div>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2 text-gray-300 hover:text-white transition-colors cursor-pointer"
+                  aria-label="Close menu"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Mobile Menu Links - Staggered entrance */}
+              <motion.nav
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="flex-1 px-6 pt-8 overflow-y-auto"
+              >
+                {navItems.map((item) => (
+                  <motion.div key={item.label} variants={menuItem}>
+                    <Link
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-5 text-lg font-medium transition-colors border-b border-white/5 ${
+                        isActive(item.href)
+                          ? 'text-[#e8d48b]'
+                          : 'text-white hover:text-[#c9a84c]'
+                      }`}
+                    >
+                      <span className={isActive(item.href) ? 'text-[#c9a84c]' : 'text-gray-500'}>
+                        {item.icon}
+                      </span>
+                      {item.label}
+                      {isActive(item.href) && (
+                        <span className="ml-auto w-1.5 h-1.5 bg-[#c9a84c]" />
+                      )}
+                    </Link>
+                  </motion.div>
+                ))}
+              </motion.nav>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-    </header>
+    </>
   );
 }

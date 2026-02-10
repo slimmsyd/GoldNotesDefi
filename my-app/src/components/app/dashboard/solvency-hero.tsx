@@ -33,16 +33,16 @@ const formatTimeAgo = (hoursAgo: number): string => {
 export function SolvencyHero({ data, isLoading }: SolvencyHeroProps) {
   if (isLoading || !data) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 h-full animate-pulse">
+      <div className="bg-gray-900/50 border border-gray-800 p-6 h-full animate-pulse">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 bg-gray-800 rounded-2xl" />
+          <div className="w-14 h-14 bg-gray-800" />
           <div className="flex-1 space-y-3">
-            <div className="w-32 h-6 bg-gray-800 rounded-lg" />
-            <div className="w-full h-4 bg-gray-800 rounded-lg" />
-            <div className="w-3/4 h-4 bg-gray-800 rounded-lg" />
+            <div className="w-32 h-6 bg-gray-800" />
+            <div className="w-full h-4 bg-gray-800" />
+            <div className="w-3/4 h-4 bg-gray-800" />
           </div>
         </div>
-        <div className="mt-6 h-2 bg-gray-800 rounded-full" />
+        <div className="mt-6 h-2 bg-gray-800" />
       </div>
     );
   }
@@ -56,7 +56,7 @@ export function SolvencyHero({ data, isLoading }: SolvencyHeroProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className={`relative overflow-hidden rounded-2xl border h-full ${
+      className={`relative overflow-hidden border h-full ${
         isSolvent
           ? 'bg-gradient-to-br from-green-500/5 via-gray-900/50 to-gray-900/50 border-green-500/20'
           : 'bg-gradient-to-br from-red-500/5 via-gray-900/50 to-gray-900/50 border-red-500/20'
@@ -74,7 +74,7 @@ export function SolvencyHero({ data, isLoading }: SolvencyHeroProps) {
         <div className="flex items-start gap-4 mb-6">
           {/* Status Icon */}
           <div
-            className={`w-14 h-14 flex-shrink-0 rounded-2xl flex items-center justify-center ${
+            className={`w-14 h-14 flex-shrink-0 flex items-center justify-center ${
               isSolvent ? 'bg-green-500/20' : 'bg-red-500/20'
             }`}
           >
@@ -95,7 +95,7 @@ export function SolvencyHero({ data, isLoading }: SolvencyHeroProps) {
                 {isSolvent ? 'Fully Backed' : 'Under-Collateralized'}
               </h2>
               <span
-                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
+                className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium ${
                   isSolvent ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
                 }`}
               >
@@ -107,7 +107,7 @@ export function SolvencyHero({ data, isLoading }: SolvencyHeroProps) {
               </span>
               {/* Zeroth Law Circuit Breaker Badge */}
               <span
-                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-800/50 text-gray-400 border border-gray-700"
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium bg-gray-800/50 text-gray-400 border border-gray-700"
                 title="Minting is blocked if reserves fall below token supply"
               >
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -125,12 +125,12 @@ export function SolvencyHero({ data, isLoading }: SolvencyHeroProps) {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-gray-800/30 rounded-xl p-3 border border-gray-800/50">
+          <div className="bg-gray-800/30 p-3 border border-gray-800/50">
             <div className="text-gray-500 text-xs uppercase tracking-wider font-medium mb-1">Treasury</div>
-            <div className="text-amber-400 font-bold text-lg">{treasuryBalance.toLocaleString()}</div>
+            <div className="text-[#e8d48b] font-bold text-lg">{treasuryBalance.toLocaleString()}</div>
             <div className="text-gray-500 text-xs">Available Supply</div>
           </div>
-          <div className="bg-gray-800/30 rounded-xl p-3 border border-gray-800/50">
+          <div className="bg-gray-800/30 p-3 border border-gray-800/50">
             <div className="text-gray-500 text-xs uppercase tracking-wider font-medium mb-1">Circulating</div>
             <div className="text-white font-bold text-lg">{circulatingSupply.toLocaleString()}</div>
             <div className="text-gray-500 text-xs">In Circulation</div>
@@ -145,12 +145,12 @@ export function SolvencyHero({ data, isLoading }: SolvencyHeroProps) {
               {solvencyRatio.toFixed(1)}%
             </span>
           </div>
-          <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+          <div className="h-2 bg-gray-800 overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${solvencyRatio}%` }}
               transition={{ duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.3 }}
-              className={`h-full rounded-full ${
+              className={`h-full ${
                 isSolvent
                   ? 'bg-gradient-to-r from-green-600 to-green-400'
                   : 'bg-gradient-to-r from-red-600 to-red-400'

@@ -264,7 +264,7 @@ export function ReserveGrowthChart() {
 
   if (isLoading) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 h-[500px] animate-pulse flex items-center justify-center">
+      <div className="bg-gray-900/50 border border-gray-800 p-6 h-[500px] animate-pulse flex items-center justify-center">
         <div className="text-gray-500">Loading reserve data...</div>
       </div>
     );
@@ -272,7 +272,7 @@ export function ReserveGrowthChart() {
 
   if (data.length === 0) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 h-[500px] flex flex-col items-center justify-center">
+      <div className="bg-gray-900/50 border border-gray-800 p-6 h-[500px] flex flex-col items-center justify-center">
         <svg className="w-16 h-16 text-gray-700 mb-4" fill="currentColor" viewBox="0 0 24 24">
           <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
         </svg>
@@ -285,12 +285,12 @@ export function ReserveGrowthChart() {
   const latestPoint = data[data.length - 1];
 
   return (
-    <div className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden">
+    <div className="bg-gray-900/50 border border-gray-800 overflow-hidden">
       {/* Header */}
       <div className="p-6 border-b border-gray-800 flex justify-between items-start">
         <div>
           <h3 className="text-white font-semibold text-lg flex items-center gap-2">
-            <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-[#c9a84c]" fill="currentColor" viewBox="0 0 24 24">
               <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
             </svg>
             Reserve Growth Since Inception
@@ -301,7 +301,7 @@ export function ReserveGrowthChart() {
         </div>
         
         <div className="text-right">
-          <div className="text-3xl font-bold text-amber-500">
+          <div className="text-3xl font-bold text-[#c9a84c]">
             {latestPoint?.totalSerials.toLocaleString()}
           </div>
           <div className="text-gray-500 text-xs uppercase tracking-wider">
@@ -312,8 +312,8 @@ export function ReserveGrowthChart() {
 
       {/* Tooltip */}
       {hoveredPoint && (
-        <div className="absolute z-20 bg-gray-800 border border-gray-700 rounded-lg p-3 shadow-xl pointer-events-none">
-          <div className="text-amber-500 font-bold">{hoveredPoint.totalSerials.toLocaleString()} Goldbacks</div>
+        <div className="absolute z-20 bg-gray-800 border border-gray-700 p-3 shadow-xl pointer-events-none">
+          <div className="text-[#c9a84c] font-bold">{hoveredPoint.totalSerials.toLocaleString()} Goldbacks</div>
           <div className="text-gray-400 text-xs mt-1">{hoveredPoint.date.toLocaleString()}</div>
           <div className="text-gray-600 text-[10px] font-mono mt-1 truncate max-w-[200px]">
             {hoveredPoint.rootHash}
@@ -329,11 +329,11 @@ export function ReserveGrowthChart() {
       {/* Legend */}
       <div className="px-6 pb-4 flex items-center gap-6 text-xs text-gray-500">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-amber-500" />
+          <div className="w-3 h-3 bg-[#c9a84c]" />
           <span>ZK Proof Anchor</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-0.5 bg-amber-500" />
+          <div className="w-8 h-0.5 bg-[#c9a84c]" />
           <span>Cumulative Supply</span>
         </div>
       </div>
