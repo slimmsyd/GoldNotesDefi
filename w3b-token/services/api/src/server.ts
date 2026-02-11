@@ -107,6 +107,216 @@ app.post('/api/v1/goldback/new_batch', async (req, res) => {
     }
 });
 
+// ==================== REDEMPTION ENDPOINTS ====================
+
+/**
+ * POST /api/v1/redemption/create
+ * Called after a user burns W3B on-chain. Stores shipping details off-chain.
+ */
+app.post('/api/v1/redemption/create', async (req, res) => {
+    try {
+        const {
+            user_wallet,
+            request_id,
+            amount,
+            burn_tx_hash,
+            shipping_name,
+            shipping_address,
+            shipping_city,
+            shipping_state,
+            shipping_zip,
+            shipping_country,
+        } = req.body;
+
+        if (!user_wallet || request_id === undefined || !amount) {
+            res.status(400).json({ error: 'user_wallet, request_id, and amount are required.' });
+            return;
+        }
+
+        const result = await pool.query(
+            `INSERT INTO redemption_requests (
+                user_wallet, request_id, amount, status, burn_tx_hash,
+                shipping_name, shipping_address, shipping_city,
+                shipping_state, shipping_zip, shipping_country
+            ) VALUES ($1, $2, $3, 0, $4, $5, $6, $7, $8, $9, $10)
+            ON CONFLICT (user_wallet, request_id) DO UPDATE SET
+                burn_tx_hash = COALESCE(EXCLUDED.burn_tx_hash, redemption_requests.burn_tx_hash),
+                shipping_name = COALESCE(EXCLUDED.shipping_name, redemption_requests.shipping_name),
+                shipping_address = COALESCE(EXCLUDED.shipping_address, redemption_requests.shipping_address),
+                shipping_city = COALESCE(EXCLUDED.shipping_city, redemption_requests.shipping_city),
+                shipping_state = COALESCE(EXCLUDED.shipping_state, redemption_requests.shipping_state),
+                shipping_zip = COALESCE(EXCLUDED.shipping_zip, redemption_requests.shipping_zip),
+                shipping_country = COALESCE(EXCLUDED.shipping_country, redemption_requests.shipping_country)
+            RETURNING *`,
+            [
+                user_wallet, request_id, amount, burn_tx_hash || null,
+                shipping_name || null, shipping_address || null, shipping_city || null,
+                shipping_state || null, shipping_zip || null, shipping_country || 'US',
+            ]
+        );
+
+        console.log(`[Redemption] Created request #${request_id} for ${amount} W3B from ${user_wallet}`);
+
+        res.json({
+            success: true,
+            redemption: result.rows[0],
+        });
+    } catch (error: any) {
+        console.error('Error creating redemption:', error);
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
+    }
+});
+
+/**
+ * GET /api/v1/redemption/pending
+ * Lists pending redemption requests available for P2P fulfillers to claim.
+ */
+app.get('/api/v1/redemption/pending', async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT
+                id, user_wallet, request_id, amount, status,
+                shipping_city, shipping_state, shipping_country,
+                created_at
+            FROM redemption_requests
+            WHERE status = 0
+            ORDER BY created_at ASC`
+        );
+
+        res.json({
+            success: true,
+            count: result.rows.length,
+            requests: result.rows,
+        });
+    } catch (error: any) {
+        console.error('Error fetching pending redemptions:', error);
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
+    }
+});
+
+/**
+ * GET /api/v1/redemption/status/:wallet
+ * Get all redemption requests for a specific user wallet.
+ */
+app.get('/api/v1/redemption/status/:wallet', async (req, res) => {
+    try {
+        const { wallet } = req.params;
+
+        const result = await pool.query(
+            `SELECT * FROM redemption_requests
+             WHERE user_wallet = $1
+             ORDER BY created_at DESC`,
+            [wallet]
+        );
+
+        res.json({
+            success: true,
+            count: result.rows.length,
+            requests: result.rows,
+        });
+    } catch (error: any) {
+        console.error('Error fetching user redemptions:', error);
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
+    }
+});
+
+/**
+ * PATCH /api/v1/redemption/:id/claim
+ * Update a redemption request when it's claimed on-chain by a fulfiller.
+ */
+app.patch('/api/v1/redemption/:id/claim', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { fulfiller_wallet, claim_tx_hash } = req.body;
+
+        if (!fulfiller_wallet) {
+            res.status(400).json({ error: 'fulfiller_wallet is required.' });
+            return;
+        }
+
+        const result = await pool.query(
+            `UPDATE redemption_requests
+             SET status = 1,
+                 fulfiller_wallet = $1,
+                 claim_tx_hash = $2,
+                 claimed_at = NOW()
+             WHERE id = $3 AND status = 0
+             RETURNING *`,
+            [fulfiller_wallet, claim_tx_hash || null, id]
+        );
+
+        if (result.rows.length === 0) {
+            res.status(404).json({ error: 'Redemption not found or not in Pending status.' });
+            return;
+        }
+
+        res.json({ success: true, redemption: result.rows[0] });
+    } catch (error: any) {
+        console.error('Error claiming redemption:', error);
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
+    }
+});
+
+/**
+ * PATCH /api/v1/redemption/:id/confirm
+ * Update a redemption request when delivery is confirmed on-chain.
+ */
+app.patch('/api/v1/redemption/:id/confirm', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { confirm_tx_hash, tracking_number } = req.body;
+
+        const result = await pool.query(
+            `UPDATE redemption_requests
+             SET status = 3,
+                 confirm_tx_hash = $1,
+                 tracking_number = COALESCE($2, tracking_number),
+                 confirmed_at = NOW()
+             WHERE id = $3 AND status = 1
+             RETURNING *`,
+            [confirm_tx_hash || null, tracking_number || null, id]
+        );
+
+        if (result.rows.length === 0) {
+            res.status(404).json({ error: 'Redemption not found or not in Claimed status.' });
+            return;
+        }
+
+        res.json({ success: true, redemption: result.rows[0] });
+    } catch (error: any) {
+        console.error('Error confirming redemption:', error);
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
+    }
+});
+
+/**
+ * PATCH /api/v1/redemption/:id/cancel
+ * Cancel a redemption request (Admin only — no auth middleware yet).
+ */
+app.patch('/api/v1/redemption/:id/cancel', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const result = await pool.query(
+            `UPDATE redemption_requests
+             SET status = 4, cancelled_at = NOW()
+             WHERE id = $1 AND status IN (0, 1)
+             RETURNING *`,
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            res.status(404).json({ error: 'Redemption not found or cannot be cancelled.' });
+            return;
+        }
+
+        res.json({ success: true, redemption: result.rows[0] });
+    } catch (error: any) {
+        console.error('Error cancelling redemption:', error);
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
+    }
+});
+
 // Start Server
 app.listen(PORT, () => {
     console.log(`W3B Backend running on port ${PORT}`);

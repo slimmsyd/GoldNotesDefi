@@ -24,8 +24,10 @@ export const TREASURY = new PublicKey(PROTOCOL_CONFIG.treasury);
 export const PROTOCOL_STATE_PDA = new PublicKey(PROTOCOL_CONFIG.protocolState);
 
 // Instruction discriminators (first 8 bytes of sha256 hash of instruction name)
-// These are computed from anchor's instruction naming convention
-const BUY_W3B_DISCRIMINATOR = new Uint8Array([32, 152, 242, 112, 159, 221, 39, 173]); // sha256("global:buy_w3b")[0..8]
+// These are computed from anchor's instruction naming convention: sha256("global:<name>")[0..8]
+const BUY_W3B_DISCRIMINATOR = new Uint8Array([32, 152, 242, 112, 159, 221, 39, 173]);
+const BURN_W3B_DISCRIMINATOR = new Uint8Array([207, 123, 197, 201, 16, 132, 251, 254]);
+const INIT_USER_PROFILE_DISCRIMINATOR = new Uint8Array([148, 35, 126, 247, 28, 169, 135, 175]);
 
 /**
  * Fetch the current W3B price in lamports from on-chain state
@@ -36,9 +38,11 @@ export async function fetchW3bPriceLamports(connection: Connection): Promise<big
     throw new Error('Protocol state not found');
   }
   
-  // Read w3b_price_lamports from offset 170 (after all other fields)
-  // Layout: 8 (disc) + 32 + 32 + 32 + 32 + 8 + 8 + 8 + 8 + 1 + 1 = 170
-  const priceOffset = 170;
+  // Read w3b_price_lamports at V2 offset 208
+  // V2 Layout: 8 (disc) + 32 (authority) + 32 (operator) + 32 (w3bMint) + 32 (treasury)
+  //   + 8 (totalSupply) + 8 (totalBurned) + 32 (merkleRoot) + 8 (provenReserves)
+  //   + 8 (lastRootUpdate) + 8 (lastProofTimestamp) = 208
+  const priceOffset = 208;
   const priceLamports = accountInfo.data.readBigUInt64LE(priceOffset);
   return priceLamports;
 }
@@ -52,8 +56,8 @@ export async function fetchSolReceiver(connection: Connection): Promise<PublicKe
     throw new Error('Protocol state not found');
   }
   
-  // Read sol_receiver from offset 178
-  const receiverOffset = 178;
+  // Read sol_receiver at V2 offset 216 (after w3b_price_lamports)
+  const receiverOffset = 216;
   const receiverBytes = accountInfo.data.slice(receiverOffset, receiverOffset + 32);
   return new PublicKey(receiverBytes);
 }
@@ -88,6 +92,8 @@ export function createBuyW3bInstruction(
   // Write amount as u64 little-endian
   writeU64LE(amount, data, 8);
 
+  const [userProfilePda] = getUserProfilePDA(buyer);
+
   // Account metas for buy_w3b instruction
   const keys = [
     { pubkey: PROTOCOL_STATE_PDA, isSigner: false, isWritable: false },
@@ -97,6 +103,7 @@ export function createBuyW3bInstruction(
     { pubkey: solReceiver, isSigner: false, isWritable: true },
     { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     { pubkey: TOKEN_2022_PROGRAM_ID, isSigner: false, isWritable: false },
+    { pubkey: userProfilePda, isSigner: false, isWritable: true },
   ];
 
   return new TransactionInstruction({
@@ -124,4 +131,119 @@ export async function getUserW3bTokenAccount(userPubkey: PublicKey): Promise<Pub
  */
 export function calculateSolCost(amount: bigint, priceLamports: bigint): number {
   return Number(amount * priceLamports) / LAMPORTS_PER_SOL;
+}
+
+/**
+ * Derive the UserProfile PDA for a given user
+ */
+export function getUserProfilePDA(userPubkey: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('user_profile'), userPubkey.toBuffer()],
+    PROGRAM_ID
+  );
+}
+
+/**
+ * Derive the RedemptionRequest PDA for a given user + request_id
+ */
+export function getRedemptionRequestPDA(
+  userPubkey: PublicKey,
+  requestId: bigint
+): [PublicKey, number] {
+  const idBuffer = Buffer.alloc(8);
+  idBuffer.writeBigUInt64LE(requestId);
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('redemption'), userPubkey.toBuffer(), idBuffer],
+    PROGRAM_ID
+  );
+}
+
+/**
+ * Create an init_user_profile instruction
+ */
+export function createInitUserProfileInstruction(
+  user: PublicKey
+): TransactionInstruction {
+  const [userProfilePda] = getUserProfilePDA(user);
+
+  const data = new Uint8Array(8);
+  data.set(INIT_USER_PROFILE_DISCRIMINATOR, 0);
+
+  const keys = [
+    { pubkey: userProfilePda, isSigner: false, isWritable: true },
+    { pubkey: user, isSigner: true, isWritable: true },
+    { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+  ];
+
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys,
+    data: Buffer.from(data),
+  });
+}
+
+/**
+ * Create a burn_w3b instruction (Burn-to-Redeem)
+ *
+ * @param user - The user burning tokens (signer)
+ * @param userTokenAccount - The user's W3B token account
+ * @param amount - Amount of W3B tokens to burn
+ * @param requestId - Sequential redemption request ID
+ */
+export function createBurnW3bInstruction(
+  user: PublicKey,
+  userTokenAccount: PublicKey,
+  amount: bigint,
+  requestId: bigint
+): TransactionInstruction {
+  const [redemptionPda] = getRedemptionRequestPDA(user, requestId);
+  const [userProfilePda] = getUserProfilePDA(user);
+
+  // Serialize instruction data: discriminator + amount (u64) + request_id (u64)
+  const data = new Uint8Array(24);
+  data.set(BURN_W3B_DISCRIMINATOR, 0);
+  writeU64LE(amount, data, 8);
+  writeU64LE(requestId, data, 16);
+
+  // Account metas for burn_w3b instruction
+  const keys = [
+    { pubkey: PROTOCOL_STATE_PDA, isSigner: false, isWritable: true },
+    { pubkey: user, isSigner: true, isWritable: true },
+    { pubkey: userTokenAccount, isSigner: false, isWritable: true },
+    { pubkey: W3B_MINT, isSigner: false, isWritable: true },
+    { pubkey: redemptionPda, isSigner: false, isWritable: true },
+    { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    { pubkey: TOKEN_2022_PROGRAM_ID, isSigner: false, isWritable: false },
+    { pubkey: userProfilePda, isSigner: false, isWritable: true },
+  ];
+
+  return new TransactionInstruction({
+    programId: PROGRAM_ID,
+    keys,
+    data: Buffer.from(data),
+  });
+}
+
+/**
+ * Fetch the user's W3B token balance
+ */
+export async function fetchUserW3bBalance(
+  connection: Connection,
+  userPubkey: PublicKey
+): Promise<bigint> {
+  const tokenAccount = await getUserW3bTokenAccount(userPubkey);
+  const accountInfo = await connection.getAccountInfo(tokenAccount);
+  if (!accountInfo) return BigInt(0);
+
+  // SPL Token-2022 account layout: amount is at offset 64 (8 bytes LE)
+  const amount = accountInfo.data.readBigUInt64LE(64);
+  return amount;
+}
+
+/**
+ * Generate a unique request ID based on current timestamp
+ * In production, this should query the chain/DB for the next unused ID
+ */
+export function generateRequestId(): bigint {
+  return BigInt(Date.now());
 }

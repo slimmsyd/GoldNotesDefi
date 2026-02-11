@@ -12,7 +12,8 @@
     "prove-batches": "ts-node scripts/prove_batches.ts",
     "submit-proof": "ts-node scripts/submit_proof.ts",
     "setup-token": "ts-node scripts/setup_token.ts",
-    "full-pipeline": "npm run generate-prover && npm run prove-batches && npm run submit-proof"
+    "full-pipeline": "npm run generate-prover && npm run prove-batches && npm run submit-proof",
+    "reset": "ts-node scripts/reset_protocol.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",

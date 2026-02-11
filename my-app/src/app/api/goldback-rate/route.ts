@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentGoldbackRate } from '@/lib/goldback-scraper';
+import { getSolPriceUsd, calculateLamportsPrice } from '@/lib/sol-price';
+import { syncOnChainPrice, getOnChainPriceLamports } from '@/lib/price-sync';
 
 const DEFAULT_GOLDBACK_RATE = 9.02;
 const STALE_THRESHOLD_MINUTES = 30;
@@ -26,7 +28,10 @@ export async function GET() {
             isStale = minutesSinceUpdate > STALE_THRESHOLD_MINUTES;
         }
 
-        // 3. Self-healing: if stale, scrape a fresh rate inline
+        // Track price sync result
+        let priceSyncResult: { tx: string; oldPrice: number; newPrice: number } | null = null;
+
+        // 3. Self-healing: if stale, scrape a fresh rate AND sync on-chain price
         if (isStale) {
             console.log('[goldback-rate] DB rate is stale, scraping fresh rate...');
             const scrapeResult = await getCurrentGoldbackRate();
@@ -70,6 +75,20 @@ export async function GET() {
                 minutesSinceUpdate = 0;
                 isStale = false;
                 console.log(`[goldback-rate] Fresh rate scraped and saved: $${newRate}`);
+
+                // ── NEW: Auto-sync on-chain price ──
+                try {
+                    const solPriceUsd = await getSolPriceUsd();
+                    if (solPriceUsd) {
+                        const targetLamports = calculateLamportsPrice(newRate, solPriceUsd);
+                        console.log(`[goldback-rate] Calculated target price: ${targetLamports} lamports (GB=$${newRate}, SOL=$${solPriceUsd})`);
+                        priceSyncResult = await syncOnChainPrice(targetLamports);
+                    } else {
+                        console.warn('[goldback-rate] Could not fetch SOL price, skipping on-chain sync');
+                    }
+                } catch (syncErr) {
+                    console.error('[goldback-rate] On-chain price sync failed (non-blocking):', syncErr);
+                }
             } else {
                 console.warn('[goldback-rate] Scrape failed, returning existing DB rate');
             }
@@ -101,6 +120,30 @@ export async function GET() {
             console.warn('[goldback-rate] Price history read failed (table may not exist):', historyReadErr);
         }
 
+        // 5. Fetch on-chain price info for drift reporting
+        let onChainLamports: number | null = null;
+        let solPriceUsd: number | null = null;
+        let suggestedLamports: number | null = null;
+        let priceDriftPercent: number | null = null;
+
+        try {
+            [onChainLamports, solPriceUsd] = await Promise.all([
+                getOnChainPriceLamports(),
+                getSolPriceUsd(),
+            ]);
+
+            if (solPriceUsd && solPriceUsd > 0) {
+                suggestedLamports = calculateLamportsPrice(rate, solPriceUsd);
+
+                if (onChainLamports && onChainLamports > 0 && suggestedLamports > 0) {
+                    priceDriftPercent = Math.abs(suggestedLamports - onChainLamports) / onChainLamports * 100;
+                    priceDriftPercent = Math.round(priceDriftPercent * 100) / 100; // 2 decimal places
+                }
+            }
+        } catch (driftErr) {
+            console.warn('[goldback-rate] Drift calculation failed (non-blocking):', driftErr);
+        }
+
         return NextResponse.json({
             success: true,
             source: 'database' as const,
@@ -110,6 +153,15 @@ export async function GET() {
             change24h,
             isStale,
             minutesSinceUpdate,
+            // Price sync info
+            priceSync: {
+                onChainLamports,
+                suggestedLamports,
+                solPriceUsd,
+                priceDriftPercent,
+                lastSyncTx: priceSyncResult?.tx ?? null,
+                synced: priceSyncResult !== null,
+            },
         });
     } catch (error) {
         console.error('Failed to fetch Goldback rate:', error);
@@ -122,6 +174,7 @@ export async function GET() {
             change24h: null,
             isStale: true,
             minutesSinceUpdate: null,
+            priceSync: null,
         });
     }
 }

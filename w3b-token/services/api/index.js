@@ -4,6 +4,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const { Pool } = require('pg');
+const { MerkleTree } = require('merkletreejs');
 
 const app = express();
 app.use(express.json());
@@ -105,27 +106,18 @@ app.get('/api/v1/reserve/status', async (req, res) => {
     }
 });
 
-// Helper: Compute Merkle root from leaf hashes
+// Helper: Compute Merkle root from leaf hashes using merkletreejs
+// IMPORTANT: sortPairs=true matches the Noir circuit and auto-verify route
 function computeMerkleRoot(leaves) {
     if (leaves.length === 0) return '0'.repeat(64);
     
-    // Hash pairs iteratively until we get root
-    let layer = leaves.map(l => Buffer.isBuffer(l) ? l : Buffer.from(l, 'hex'));
-    
-    while (layer.length > 1) {
-        const nextLayer = [];
-        for (let i = 0; i < layer.length; i += 2) {
-            const left = layer[i];
-            const right = layer[i + 1] || left; // Duplicate if odd
-            const combined = crypto.createHash('sha256')
-                .update(Buffer.concat([left, right]))
-                .digest();
-            nextLayer.push(combined);
-        }
-        layer = nextLayer;
-    }
-    
-    return layer[0].toString('hex');
+    const buffers = leaves.map(l => Buffer.isBuffer(l) ? l : Buffer.from(l, 'hex'));
+    const tree = new MerkleTree(buffers, (data) => 
+        crypto.createHash('sha256').update(data).digest(),
+        { sortPairs: true }
+    );
+
+    return tree.getRoot().toString('hex');
 }
 
 const PORT = process.env.PORT || 3001;

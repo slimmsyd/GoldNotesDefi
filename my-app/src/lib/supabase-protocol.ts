@@ -209,3 +209,136 @@ export async function fetchRecentSerials(limit = 50): Promise<GoldbackSerialReco
   
   return (data || []) as unknown as GoldbackSerialRecord[];
 }
+
+// ==================== REDEMPTION ====================
+
+export interface RedemptionRecord {
+  id: string;
+  user_wallet: string;
+  request_id: number;
+  amount: number;
+  status: number; // 0=Pending, 1=Claimed, 2=Shipped, 3=Confirmed, 4=Cancelled
+  fulfiller_wallet: string | null;
+  shipping_name: string | null;
+  shipping_address: string | null;
+  shipping_city: string | null;
+  shipping_state: string | null;
+  shipping_zip: string | null;
+  shipping_country: string | null;
+  tracking_number: string | null;
+  burn_tx_hash: string | null;
+  created_at: string;
+  claimed_at: string | null;
+  confirmed_at: string | null;
+  cancelled_at: string | null;
+}
+
+const REDEMPTION_STATUS_LABELS: Record<number, string> = {
+  0: 'Pending',
+  1: 'Claimed',
+  2: 'Shipped',
+  3: 'Confirmed',
+  4: 'Cancelled',
+};
+
+export function getRedemptionStatusLabel(status: number): string {
+  return REDEMPTION_STATUS_LABELS[status] || 'Unknown';
+}
+
+/**
+ * Fetch all redemption requests for a specific user wallet
+ */
+export async function fetchUserRedemptions(wallet: string): Promise<RedemptionRecord[]> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('redemption_requests')
+    .select('*')
+    .eq('user_wallet', wallet)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.warn('Error fetching user redemptions (table may not exist yet):', error.message);
+    return [];
+  }
+
+  return (data || []) as RedemptionRecord[];
+}
+
+/**
+ * Fetch pending redemption requests available for P2P fulfillers
+ */
+export async function fetchPendingRedemptions(): Promise<RedemptionRecord[]> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('redemption_requests')
+    .select('*')
+    .eq('status', 0)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.warn('Error fetching pending redemptions (table may not exist yet):', error.message);
+    return [];
+  }
+
+  return (data || []) as RedemptionRecord[];
+}
+
+// ==================== USER PROFILES ====================
+
+export interface UserProfileRecord {
+  id: string;
+  wallet: string;
+  points: number;
+  tier: number;
+  total_volume: number;
+  total_redeemed: number;
+  total_fulfilled: number;
+  fulfiller_rewards: number;
+  display_name: string | null;
+  is_fulfiller: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Fetch user profile from off-chain cache
+ */
+export async function fetchUserProfile(wallet: string): Promise<UserProfileRecord | null> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('wallet', wallet)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return null; // Not found
+    console.warn('Error fetching user profile (table may not exist yet):', error.message);
+    return null;
+  }
+
+  return data as UserProfileRecord;
+}
+
+/**
+ * Fetch leaderboard (top users by points)
+ */
+export async function fetchLeaderboard(limit = 20): Promise<UserProfileRecord[]> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .order('points', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.warn('Error fetching leaderboard (table may not exist yet):', error.message);
+    return [];
+  }
+
+  return (data || []) as UserProfileRecord[];
+}

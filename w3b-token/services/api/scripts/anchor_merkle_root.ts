@@ -15,8 +15,11 @@ dotenv.config({ path: path.join(__dirname, "../../../.env") });
 const IDL_PATH = path.join(__dirname, "../../../programs/w3b_protocol/target/idl/w3b_protocol.json");
 const IDL = JSON.parse(fs.readFileSync(IDL_PATH, "utf8"));
 
-// Constants
-const PROGRAM_ID = new PublicKey("E9WraHCid6NuDX9gQacw87ZuZhBo8Sgu35eVMq8GBAS3");
+// Constants — read from env first, then fall back to canonical program ID
+// IMPORTANT: Must match the declare_id!() in programs/w3b_protocol/src/lib.rs
+const PROGRAM_ID = new PublicKey(
+    process.env.W3B_PROGRAM_ID || "9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6"
+);
 const RPC_URL = process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
 
 // Supabase client (using anon key - works for reads without RLS)

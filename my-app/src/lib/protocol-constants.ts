@@ -85,21 +85,52 @@ const checkNetworkWarnings = (): string | null => {
   
   return null;
 };
+// Mainnet safety: refuse to use devnet fallback addresses on mainnet
+const requireEnvOnMainnet = (envVar: string, fallback: string, label: string): string => {
+  const value = process.env[envVar];
+  if (value) return value;
+  
+  const network = getNetwork();
+  if (network === 'mainnet-beta') {
+    throw new Error(
+      `CRITICAL: ${envVar} is not set but network is mainnet-beta. ` +
+      `Refusing to use devnet fallback for ${label}. ` +
+      `Set ${envVar} in your environment variables.`
+    );
+  }
+  return fallback;
+};
 
 // Program and Account Addresses
 // NOTE: These must match what's stored in the ProtocolState PDA on-chain
 export const PROTOCOL_CONFIG = {
   // The W3B Protocol Program ID
-  programId: process.env.NEXT_PUBLIC_W3B_PROGRAM_ID || '9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6',
+  programId: requireEnvOnMainnet(
+    'NEXT_PUBLIC_W3B_PROGRAM_ID',
+    '9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6',
+    'Program ID'
+  ),
   
   // Token Mint (SPL Token-2022) - stored in ProtocolState
-  w3bMint: process.env.NEXT_PUBLIC_W3B_MINT || 'GnsxWGypWatWY8tKeqAwSS12qP88yy2879GA79jfwJHL',
+  w3bMint: requireEnvOnMainnet(
+    'NEXT_PUBLIC_W3B_MINT',
+    'G8iL4yvsctALHZbz9nVP2gsw1A1x1kzjfZ7iHLDnHoYZ',
+    'W3B Mint'
+  ),
   
   // Treasury Token Account - PDA-controlled (owner = protocolState PDA)
-  treasury: process.env.NEXT_PUBLIC_W3B_TREASURY_ACCOUNT || 'EvMFQw18whzzEBUgeBhurW1dFWTXCL9KYkEycKEWhqb6',
+  treasury: requireEnvOnMainnet(
+    'NEXT_PUBLIC_W3B_TREASURY_ACCOUNT',
+    'F2vQ2a3ahHyN9KtLbPXfGj6n7Yms7veVEiCgmjfwviaX',
+    'Treasury Account'
+  ),
   
   // Protocol State PDA
-  protocolState: process.env.NEXT_PUBLIC_W3B_PROTOCOL_STATE_PDA || 'CWYNiviNYPEApbGjjhDPZ8vmxRTMJiHsJto8JRZNPG8s',
+  protocolState: requireEnvOnMainnet(
+    'NEXT_PUBLIC_W3B_PROTOCOL_STATE_PDA',
+    'CWYNiviNYPEApbGjjhDPZ8vmxRTMJiHsJto8JRZNPG8s',
+    'Protocol State PDA'
+  ),
   
   // Network (read from env)
   network: getNetwork(),
@@ -127,22 +158,37 @@ export const SUPABASE_CONFIG = {
   anonKeyEnvVar: 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
 } as const;
 
-// Protocol State Account Layout
-// Space: 8 (discriminator) + 32 + 32 + 32 + 32 + 8 + 8 + 8 + 8 + 1 + 1 + 8 + 32 = 210 bytes
+// V2 Protocol State Account Layout
+// Space: 8 (disc) + 32 + 32 + 32 + 32 + 8 + 8 + 32 + 8 + 8 + 8 + 8 + 32 + 2 + 8 + 8 + 1 + 1 + 64 = 332 bytes
 export interface ProtocolStateData {
-  authority: string;
+  // Authority
+  authority: string;           // Admin (cold wallet) — high-risk ops
+  operator: string;            // Operator (hot wallet) — routine ops
+
+  // Token
   w3bMint: string;
   treasury: string;
-  currentMerkleRoot: Uint8Array;
-  lastRootUpdate: number;      // Unix timestamp (seconds)
-  lastProofTimestamp: number;  // Unix timestamp (seconds)
-  provenReserves: number;      // ZK-proven goldback count
   totalSupply: number;         // Minted W3B token count
-  isPaused: boolean;
-  bump: number;
-  // New fields for buy_w3b functionality
+  totalBurned: number;         // Burned W3B count
+
+  // Reserve Proof
+  currentMerkleRoot: Uint8Array;
+  provenReserves: number;      // ZK-proven goldback count
+  lastRootUpdate: number;      // Unix timestamp (seconds)
+  lastProofTimestamp: number;   // Unix timestamp (seconds)
+
+  // Pricing
   w3bPriceLamports: number;    // Price of 1 W3B in lamports
   solReceiver: string;         // Where SOL payments are sent
+
+  // Yield
+  yieldApyBps: number;        // APY in basis points (350 = 3.5%)
+  totalYieldDistributed: number;
+  lastYieldDistribution: number;
+
+  // Config
+  isPaused: boolean;
+  bump: number;
 }
 
 // Supabase Table Types

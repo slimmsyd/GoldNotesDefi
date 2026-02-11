@@ -24,10 +24,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const includeHistory = searchParams.get('history') === 'true';
 
-    // #region agent log
-    fetch('http://127.0.0.1:7247/ingest/99d0f315-4dc7-42db-8aeb-8df9844719a9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:26',message:'/api/protocol-status:begin',data:{includeHistory},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H4'})}).catch(()=>{});
-    // #endregion agent log
-
     // Fetch data in parallel
     const fetchPromises: Promise<unknown>[] = [
       fetchProtocolStateRaw(),
@@ -42,14 +38,7 @@ export async function GET(request: Request) {
     const results = await Promise.all(fetchPromises);
     const [protocolState, latestMerkleRoot, batchCount, history] = results;
 
-    // #region agent log
-    fetch('http://127.0.0.1:7247/ingest/99d0f315-4dc7-42db-8aeb-8df9844719a9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:43',message:'/api/protocol-status:results',data:{hasProtocolState:!!protocolState,hasLatestMerkleRoot:!!latestMerkleRoot,hasBatchCount:typeof batchCount === 'number'},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H4'})}).catch(()=>{});
-    // #endregion agent log
-
     if (!protocolState) {
-      // #region agent log
-      fetch('http://127.0.0.1:7247/ingest/99d0f315-4dc7-42db-8aeb-8df9844719a9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:49',message:'/api/protocol-status:protocolState:null',data:{includeHistory},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H2'})}).catch(()=>{});
-      // #endregion agent log
       return NextResponse.json(
         {
           success: false,
@@ -115,9 +104,6 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    // #region agent log
-    fetch('http://127.0.0.1:7247/ingest/99d0f315-4dc7-42db-8aeb-8df9844719a9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:111',message:'/api/protocol-status:error',data:{message:error instanceof Error ? error.message : 'unknown',name:error instanceof Error ? error.name : 'unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H5'})}).catch(()=>{});
-    // #endregion agent log
     console.error('Error in /api/protocol-status:', error);
     
     return NextResponse.json(
