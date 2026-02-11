@@ -11,31 +11,6 @@ declare_id!("9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6");
 pub mod w3b_protocol {
     use super::*;
 
-    fn validate_optional_user_profile<'info>(
-        user_profile: &Option<Account<'info, UserProfile>>,
-        expected_user: &Pubkey,
-    ) -> Result<()> {
-        if let Some(profile) = user_profile {
-            let (expected_profile_pda, _) = Pubkey::find_program_address(
-                &[b"user_profile", expected_user.as_ref()],
-                &crate::ID,
-            );
-
-            require_keys_eq!(
-                profile.key(),
-                expected_profile_pda,
-                W3BError::InvalidUserProfileAccount
-            );
-            require_keys_eq!(
-                profile.user,
-                *expected_user,
-                W3BError::InvalidUserProfileAccount
-            );
-        }
-
-        Ok(())
-    }
-
     // ==================== ADMIN / MIGRATION ====================
 
     /// Initialize the protocol V2 (New Deployment)
@@ -617,6 +592,31 @@ pub mod w3b_protocol {
         msg!("Yield distribution recorded: {} W3B", amount);
         Ok(())
     }
+}
+
+fn validate_optional_user_profile<'info>(
+    user_profile: &Option<Account<'info, UserProfile>>,
+    expected_user: &Pubkey,
+) -> Result<()> {
+    if let Some(profile) = user_profile {
+        let (expected_profile_pda, _) = Pubkey::find_program_address(
+            &[b"user_profile", expected_user.as_ref()],
+            &crate::ID,
+        );
+
+        require_keys_eq!(
+            profile.key(),
+            expected_profile_pda,
+            W3BError::InvalidUserProfileAccount
+        );
+        require_keys_eq!(
+            profile.user,
+            *expected_user,
+            W3BError::InvalidUserProfileAccount
+        );
+    }
+
+    Ok(())
 }
 
 // ==================== STRUCTS & ACCOUNTS ====================

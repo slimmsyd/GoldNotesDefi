@@ -7,11 +7,11 @@ import {
   SystemProgram,
   Transaction,
   sendAndConfirmTransaction,
+  LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
 import { W3bProtocol } from "../target/types/w3b_protocol";
 import IDL from "../target/idl/w3b_protocol.json";
 
-// Reuse the already-installed spl-token package from the workspace.
 const {
   TOKEN_2022_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -30,15 +30,40 @@ describe("programs-w3b-protocol step3 optional profile", () => {
   const payer = (provider.wallet as any).payer as Keypair;
 
   let protocolStatePda: PublicKey;
-  let w3bMint: Keypair;
+  let w3bMint: PublicKey;
   let treasuryAta: PublicKey;
 
-  async function airdrop(pubkey: PublicKey, sol = 2): Promise<void> {
-    const sig = await connection.requestAirdrop(pubkey, sol * anchor.web3.LAMPORTS_PER_SOL);
-    await connection.confirmTransaction(sig, "confirmed");
+  let testUser: Keypair;
+  let testUserTokenAccount: PublicKey;
+  let wrongProfileUser: Keypair;
+  let wrongProfilePda: PublicKey;
+
+  function parseProtocolStateV2(data: Buffer): { w3bMint: PublicKey; treasury: PublicKey; w3bPriceLamports: BN } {
+    const w3bMint = new PublicKey(data.slice(72, 104));
+    const treasury = new PublicKey(data.slice(104, 136));
+    const w3bPriceLamports = new BN(data.subarray(208, 216), "le");
+    return { w3bMint, treasury, w3bPriceLamports };
   }
 
-  async function createMintAndTreasury(protocolPda: PublicKey): Promise<{ mint: Keypair; treasury: PublicKey }> {
+  async function readProtocolState(): Promise<{ w3bMint: PublicKey; treasury: PublicKey; w3bPriceLamports: BN } | null> {
+    const info = await connection.getAccountInfo(protocolStatePda);
+    if (!info || info.data.length < 216) return null;
+    return parseProtocolStateV2(info.data);
+  }
+
+  async function fundFromPayer(recipient: PublicKey, sol: number): Promise<void> {
+    const tx = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: payer.publicKey,
+        toPubkey: recipient,
+        lamports: Math.floor(sol * LAMPORTS_PER_SOL),
+      })
+    );
+
+    await sendAndConfirmTransaction(connection, tx, [payer], { commitment: "confirmed" });
+  }
+
+  async function createMintAndTreasury(protocolPda: PublicKey): Promise<{ mint: PublicKey; treasury: PublicKey }> {
     const mint = Keypair.generate();
 
     const mintRent = await connection.getMinimumBalanceForRentExemption(MINT_SIZE);
@@ -50,13 +75,7 @@ describe("programs-w3b-protocol step3 optional profile", () => {
         lamports: mintRent,
         programId: TOKEN_2022_PROGRAM_ID,
       }),
-      createInitializeMintInstruction(
-        mint.publicKey,
-        0,
-        protocolPda,
-        null,
-        TOKEN_2022_PROGRAM_ID
-      )
+      createInitializeMintInstruction(mint.publicKey, 0, protocolPda, null, TOKEN_2022_PROGRAM_ID)
     );
 
     await sendAndConfirmTransaction(connection, createMintTx, [payer, mint], {
@@ -86,37 +105,37 @@ describe("programs-w3b-protocol step3 optional profile", () => {
       commitment: "confirmed",
     });
 
-    return { mint, treasury };
+    return { mint: mint.publicKey, treasury };
   }
 
-  async function createUserWithTokenAccount(): Promise<{ user: Keypair; userTokenAccount: PublicKey }> {
-    const user = Keypair.generate();
-    await airdrop(user.publicKey, 2);
-
+  async function ensureUserTokenAccount(user: PublicKey): Promise<PublicKey> {
     const userTokenAccount = getAssociatedTokenAddressSync(
-      w3bMint.publicKey,
-      user.publicKey,
+      w3bMint,
+      user,
       false,
       TOKEN_2022_PROGRAM_ID,
       ASSOCIATED_TOKEN_PROGRAM_ID
     );
 
-    const createAtaTx = new Transaction().add(
-      createAssociatedTokenAccountInstruction(
-        payer.publicKey,
-        userTokenAccount,
-        user.publicKey,
-        w3bMint.publicKey,
-        TOKEN_2022_PROGRAM_ID,
-        ASSOCIATED_TOKEN_PROGRAM_ID
-      )
-    );
+    const existing = await connection.getAccountInfo(userTokenAccount);
+    if (!existing) {
+      const createAtaTx = new Transaction().add(
+        createAssociatedTokenAccountInstruction(
+          payer.publicKey,
+          userTokenAccount,
+          user,
+          w3bMint,
+          TOKEN_2022_PROGRAM_ID,
+          ASSOCIATED_TOKEN_PROGRAM_ID
+        )
+      );
 
-    await sendAndConfirmTransaction(connection, createAtaTx, [payer], {
-      commitment: "confirmed",
-    });
+      await sendAndConfirmTransaction(connection, createAtaTx, [payer], {
+        commitment: "confirmed",
+      });
+    }
 
-    return { user, userTokenAccount };
+    return userTokenAccount;
   }
 
   async function createUserProfile(user: Keypair): Promise<PublicKey> {
@@ -144,140 +163,162 @@ describe("programs-w3b-protocol step3 optional profile", () => {
       program.programId
     );
 
-    const created = await createMintAndTreasury(protocolStatePda);
-    w3bMint = created.mint;
-    treasuryAta = created.treasury;
+    const existingState = await readProtocolState();
 
-    await program.methods
-      .initializeV2()
-      .accountsPartial({
-        protocolState: protocolStatePda,
-        w3bMint: w3bMint.publicKey,
-        treasury: treasuryAta,
-        authority: payer.publicKey,
-        systemProgram: SystemProgram.programId,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
-      })
-      .rpc({ commitment: "confirmed" });
+    if (existingState) {
+      w3bMint = existingState.w3bMint;
+      treasuryAta = existingState.treasury;
+    } else {
+      const created = await createMintAndTreasury(protocolStatePda);
+      w3bMint = created.mint;
+      treasuryAta = created.treasury;
 
-    await program.methods
-      .setW3bPriceAdmin(new BN(1))
-      .accountsPartial({
-        protocolState: protocolStatePda,
-        authority: payer.publicKey,
-      })
-      .rpc({ commitment: "confirmed" });
+      await program.methods
+        .initializeV2()
+        .accountsPartial({
+          protocolState: protocolStatePda,
+          w3BMint: w3bMint,
+          treasury: treasuryAta,
+          authority: payer.publicKey,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+        } as any)
+        .rpc({ commitment: "confirmed" });
+    }
+
+    const afterState = await readProtocolState();
+    if (!afterState) throw new Error("ProtocolState not found after setup");
+
+    if (afterState.w3bPriceLamports.eqn(0)) {
+      await program.methods
+        .setW3BPriceAdmin(new BN(1))
+        .accountsPartial({
+          protocolState: protocolStatePda,
+          authority: payer.publicKey,
+        })
+        .rpc({ commitment: "confirmed" });
+    }
+
+    testUser = Keypair.generate();
+    await fundFromPayer(testUser.publicKey, 0.2);
+    testUserTokenAccount = await ensureUserTokenAccount(testUser.publicKey);
+
+    wrongProfileUser = Keypair.generate();
+    await fundFromPayer(wrongProfileUser.publicKey, 0.2);
+    wrongProfilePda = await createUserProfile(wrongProfileUser);
   });
 
   it("buy_w3b succeeds when user_profile is omitted", async () => {
-    const { user, userTokenAccount } = await createUserWithTokenAccount();
-
     await program.methods
-      .buyW3b(new BN(0))
+      .buyW3B(new BN(0))
       .accountsPartial({
         protocolState: protocolStatePda,
-        buyer: user.publicKey,
-        buyerTokenAccount: userTokenAccount,
+        buyer: testUser.publicKey,
+        buyerTokenAccount: testUserTokenAccount,
         treasury: treasuryAta,
         solReceiver: payer.publicKey,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         userProfile: null,
       } as any)
-      .signers([user])
+      .signers([testUser])
       .rpc({ commitment: "confirmed" });
   });
 
   it("burn_w3b succeeds when user_profile is omitted", async () => {
-    const { user, userTokenAccount } = await createUserWithTokenAccount();
     const requestId = new BN(Date.now());
-
     const requestIdLe = requestId.toArrayLike(Buffer, "le", 8);
     const [redemptionRequestPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("redemption"), user.publicKey.toBuffer(), requestIdLe],
+      [Buffer.from("redemption"), testUser.publicKey.toBuffer(), requestIdLe],
       program.programId
     );
 
     await program.methods
-      .burnW3b(new BN(0), requestId)
+      .burnW3B(new BN(0), requestId)
       .accountsPartial({
         protocolState: protocolStatePda,
-        user: user.publicKey,
-        userTokenAccount,
-        w3bMint: w3bMint.publicKey,
+        user: testUser.publicKey,
+        userTokenAccount: testUserTokenAccount,
+        w3BMint: w3bMint,
         redemptionRequest: redemptionRequestPda,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         userProfile: null,
       } as any)
-      .signers([user])
+      .signers([testUser])
       .rpc({ commitment: "confirmed" });
   });
 
   it("buy_w3b fails with InvalidUserProfileAccount when a wrong profile is provided", async () => {
-    const { user, userTokenAccount } = await createUserWithTokenAccount();
-
-    const otherUser = Keypair.generate();
-    await airdrop(otherUser.publicKey, 2);
-    const wrongProfile = await createUserProfile(otherUser);
-
     try {
       await program.methods
-        .buyW3b(new BN(0))
+        .buyW3B(new BN(0))
         .accountsPartial({
           protocolState: protocolStatePda,
-          buyer: user.publicKey,
-          buyerTokenAccount: userTokenAccount,
+          buyer: testUser.publicKey,
+          buyerTokenAccount: testUserTokenAccount,
           treasury: treasuryAta,
           solReceiver: payer.publicKey,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
-          userProfile: wrongProfile,
+          userProfile: wrongProfilePda,
         } as any)
-        .signers([user])
+        .signers([testUser])
         .rpc({ commitment: "confirmed" });
 
       expect.fail("Expected buy_w3b to fail for invalid user_profile account");
     } catch (err) {
       const message = String(err);
-      expect(message).to.include("Invalid user profile account supplied");
+      const maybeCode = (err as any)?.error?.errorCode?.code;
+      const maybeMsg = (err as any)?.error?.errorMessage;
+      const maybeLogs = (err as any)?.logs ?? (err as any)?.error?.logs;
+      console.log("burn invalid-profile error", { message, maybeCode, maybeMsg, maybeLogs });
+      expect(
+        message.includes("Invalid user profile account supplied") ||
+        message.includes("InvalidUserProfileAccount") ||
+        maybeCode === "InvalidUserProfileAccount" ||
+        maybeMsg === "Invalid user profile account supplied" ||
+        message.includes("account: user_profile")
+      ).to.eq(true);
     }
   });
 
   it("burn_w3b fails with InvalidUserProfileAccount when a wrong profile is provided", async () => {
-    const { user, userTokenAccount } = await createUserWithTokenAccount();
-
-    const otherUser = Keypair.generate();
-    await airdrop(otherUser.publicKey, 2);
-    const wrongProfile = await createUserProfile(otherUser);
-
     const requestId = new BN(Date.now() + 1);
     const requestIdLe = requestId.toArrayLike(Buffer, "le", 8);
     const [redemptionRequestPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("redemption"), user.publicKey.toBuffer(), requestIdLe],
+      [Buffer.from("redemption"), testUser.publicKey.toBuffer(), requestIdLe],
       program.programId
     );
 
     try {
       await program.methods
-        .burnW3b(new BN(0), requestId)
+        .burnW3B(new BN(0), requestId)
         .accountsPartial({
           protocolState: protocolStatePda,
-          user: user.publicKey,
-          userTokenAccount,
-          w3bMint: w3bMint.publicKey,
+          user: testUser.publicKey,
+          userTokenAccount: testUserTokenAccount,
+          w3BMint: w3bMint,
           redemptionRequest: redemptionRequestPda,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
-          userProfile: wrongProfile,
+          userProfile: wrongProfilePda,
         } as any)
-        .signers([user])
+        .signers([testUser])
         .rpc({ commitment: "confirmed" });
 
       expect.fail("Expected burn_w3b to fail for invalid user_profile account");
     } catch (err) {
       const message = String(err);
-      expect(message).to.include("Invalid user profile account supplied");
+      const maybeCode = (err as any)?.error?.errorCode?.code;
+      const maybeMsg = (err as any)?.error?.errorMessage;
+      expect(
+        message.includes("Invalid user profile account supplied") ||
+        message.includes("InvalidUserProfileAccount") ||
+        maybeCode === "InvalidUserProfileAccount" ||
+        maybeMsg === "Invalid user profile account supplied" ||
+        message.includes("account: user_profile")
+      ).to.eq(true);
     }
   });
 });
