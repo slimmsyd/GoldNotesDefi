@@ -36,7 +36,7 @@ export function Footer() {
               </a>
 
               <a
-                href="https://twitter.com"
+                href="https://x.com/blkw3_b?s=21"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-gray-800 text-gray-200 rounded-xl hover:bg-white hover:text-black flex items-center justify-center transition-all"

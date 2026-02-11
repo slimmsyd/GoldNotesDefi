@@ -11,6 +11,31 @@ declare_id!("9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6");
 pub mod w3b_protocol {
     use super::*;
 
+    fn validate_optional_user_profile<'info>(
+        user_profile: &Option<Account<'info, UserProfile>>,
+        expected_user: &Pubkey,
+    ) -> Result<()> {
+        if let Some(profile) = user_profile {
+            let (expected_profile_pda, _) = Pubkey::find_program_address(
+                &[b"user_profile", expected_user.as_ref()],
+                &crate::ID,
+            );
+
+            require_keys_eq!(
+                profile.key(),
+                expected_profile_pda,
+                W3BError::InvalidUserProfileAccount
+            );
+            require_keys_eq!(
+                profile.user,
+                *expected_user,
+                W3BError::InvalidUserProfileAccount
+            );
+        }
+
+        Ok(())
+    }
+
     // ==================== ADMIN / MIGRATION ====================
 
     /// Initialize the protocol V2 (New Deployment)
@@ -342,6 +367,8 @@ pub mod w3b_protocol {
         // Rate limiting: max 1000 W3B per transaction
         require!(amount <= 1000, W3BError::ExceedsTransactionCap);
 
+        validate_optional_user_profile(&ctx.accounts.user_profile, &ctx.accounts.buyer.key())?;
+
         let cost = state.w3b_price_lamports.checked_mul(amount).ok_or(W3BError::MathOverflow)?;
 
         // 1. Transfer SOL
@@ -398,6 +425,8 @@ pub mod w3b_protocol {
     pub fn burn_w3b(ctx: Context<BurnW3B>, amount: u64, request_id: u64) -> Result<()> {
         let state = &mut ctx.accounts.protocol_state;
         require!(!state.is_paused, W3BError::ProtocolPaused);
+
+        validate_optional_user_profile(&ctx.accounts.user_profile, &ctx.accounts.user.key())?;
 
         // 1. Burn Tokens
         token_2022::burn(
@@ -774,11 +803,7 @@ pub struct BuyW3B<'info> {
     pub token_program: Program<'info, Token2022>,
     
     // Optional Points
-    #[account(
-        mut, 
-        seeds = [b"user_profile", buyer.key().as_ref()], 
-        bump = user_profile.bump
-    )]
+    #[account(mut)]
     pub user_profile: Option<Account<'info, UserProfile>>,
 }
 
@@ -826,7 +851,7 @@ pub struct BurnW3B<'info> {
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token2022>,
     
-    #[account(mut, seeds = [b"user_profile", user.key().as_ref()], bump = user_profile.bump)]
+    #[account(mut)]
     pub user_profile: Option<Account<'info, UserProfile>>,
 }
 
@@ -1017,4 +1042,6 @@ pub enum W3BError {
     InvalidRedemptionStatus,
     #[msg("Purchase exceeds per-transaction cap of 1000 W3B")]
     ExceedsTransactionCap,
+    #[msg("Invalid user profile account supplied")]
+    InvalidUserProfileAccount,
 }

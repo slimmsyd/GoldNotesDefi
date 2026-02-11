@@ -183,6 +183,24 @@ export function createInitUserProfileInstruction(
 }
 
 /**
+ * Build an init_user_profile instruction only if the PDA is missing.
+ * This lets first-time wallets execute buy/burn in the same transaction.
+ */
+export async function maybeCreateInitUserProfileInstruction(
+  connection: Connection,
+  user: PublicKey
+): Promise<TransactionInstruction | null> {
+  const [userProfilePda] = getUserProfilePDA(user);
+  const existingProfile = await connection.getAccountInfo(userProfilePda);
+
+  if (existingProfile) {
+    return null;
+  }
+
+  return createInitUserProfileInstruction(user);
+}
+
+/**
  * Create a burn_w3b instruction (Burn-to-Redeem)
  *
  * @param user - The user burning tokens (signer)

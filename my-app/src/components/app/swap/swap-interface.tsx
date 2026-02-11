@@ -21,6 +21,7 @@ import {
   getUserW3bTokenAccount,
   fetchSolReceiver,
   fetchW3bPriceLamports,
+  maybeCreateInitUserProfileInstruction,
 } from '@/lib/w3b-program';
 import { TokenSelector, TokenInfo, POPULAR_TOKENS } from './token-selector';
 
@@ -266,6 +267,12 @@ export function SwapInterface() {
             TOKEN_2022_PROGRAM_ID
           )
         );
+      }
+
+      // Initialize user profile for first-time wallets (needed for points profile account constraints)
+      const initProfileIx = await maybeCreateInitUserProfileInstruction(connection, publicKey);
+      if (initProfileIx) {
+        transaction.add(initProfileIx);
       }
 
       // ============ BUY W3B INSTRUCTION ============

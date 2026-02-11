@@ -12,6 +12,7 @@ import {
   getUserW3bTokenAccount,
   fetchUserW3bBalance,
   generateRequestId,
+  maybeCreateInitUserProfileInstruction,
 } from '@/lib/w3b-program';
 import {
   fetchUserRedemptions,
@@ -132,6 +133,12 @@ export function RedeemInterface() {
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
+
+      // Initialize user profile for first-time wallets (needed for points profile account constraints)
+      const initProfileIx = await maybeCreateInitUserProfileInstruction(connection, publicKey);
+      if (initProfileIx) {
+        transaction.add(initProfileIx);
+      }
 
       // Build burn_w3b instruction
       const burnIx = createBurnW3bInstruction(
