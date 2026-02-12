@@ -380,6 +380,20 @@ async function main() {
     console.log(`   Batches to Submit:  ${submissions.length}`);
     console.log(`   Mint Delta:         ${amountToMint}`);
 
+    const allowInsolventUpdate = process.env.ALLOW_INSOLVENT_UPDATE === "true";
+    if (!allowInsolventUpdate) {
+      if (totalSupply < preState.totalSupply) {
+        throw new Error(
+          `Refusing to decrease proven reserves below current on-chain supply (manifest=${totalSupply}, onchainSupply=${preState.totalSupply}). Seed more serials or burn supply, or set ALLOW_INSOLVENT_UPDATE=true to override.`
+        );
+      }
+      if (totalSupply < preState.provenReserves) {
+        throw new Error(
+          `Refusing to decrease proven reserves below current on-chain proven reserves (manifest=${totalSupply}, onchainReserves=${preState.provenReserves}). Seed more serials or set ALLOW_INSOLVENT_UPDATE=true to override.`
+        );
+      }
+    }
+
     // Update root + reserve count first so submit_proof reserve check passes.
     const globalMerkleRoot = selectGlobalMerkleRoot(submissions);
     const txRoot = await (program.methods as any)

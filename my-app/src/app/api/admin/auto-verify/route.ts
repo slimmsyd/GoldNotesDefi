@@ -305,10 +305,12 @@ export async function POST(request: Request) {
     let currentReserves = 0;
     let w3bMintPubkey: PublicKey | null = null;
     let treasuryPubkey: PublicKey | null = null;
+    let preStateFetched = false;
 
     try {
       const preState = await fetchProtocolStateSnapshot(connection, protocolStatePda);
       if (preState) {
+        preStateFetched = true;
         currentSupply = preState.totalSupply;
         currentReserves = preState.provenReserves;
         w3bMintPubkey = preState.w3bMint;
@@ -321,6 +323,29 @@ export async function POST(request: Request) {
       }
     } catch (err) {
       log(`Warning: Could not fetch pre-state: ${err}`);
+    }
+
+    const allowInsolventUpdate = process.env.ALLOW_INSOLVENT_UPDATE === "true";
+    if (!allowInsolventUpdate) {
+      if (!preStateFetched) {
+        log("Safety check failed: unable to fetch on-chain protocol state");
+        return NextResponse.json(
+          { success: false, error: "Safety check failed: unable to fetch on-chain protocol state." },
+          { status: 503 }
+        );
+      }
+
+      if (serials.length < currentSupply) {
+        const msg = `Refusing to decrease proven reserves below current on-chain supply (supabaseSerials=${serials.length}, onchainSupply=${currentSupply}). Seed more serials or burn supply, or set ALLOW_INSOLVENT_UPDATE=true to override.`;
+        log(msg);
+        return NextResponse.json({ success: false, error: msg }, { status: 409 });
+      }
+
+      if (serials.length < currentReserves) {
+        const msg = `Refusing to decrease proven reserves below current on-chain proven reserves (supabaseSerials=${serials.length}, onchainReserves=${currentReserves}). Seed more serials or set ALLOW_INSOLVENT_UPDATE=true to override.`;
+        log(msg);
+        return NextResponse.json({ success: false, error: msg }, { status: 409 });
+      }
     }
 
     // Submit update_merkle_root

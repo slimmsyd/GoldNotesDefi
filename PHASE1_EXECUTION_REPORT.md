@@ -226,6 +226,41 @@ Final state printed by script after this run:
 ### Acceptance Criteria (Updated)
 1. Security gates return expected status codes: **Met**
 2. Mock pass fully succeeds with tx evidence: **Met**
-3. Live pass fully succeeds with deterministic state delta: **Pending re-run** (the original Phase 1 live pass was attempted before the blocker fixes; should be re-run once for full closure)
+3. Live pass fully succeeds with deterministic state delta: **Met** (re-run completed on 2026-02-12 using live Supabase serials; see devnet resync addendum below)
 4. No redeploy/address rotation/mainnet changes: **Met**
 5. Evidence captured on isolated branch: **Met**
+
+
+---
+
+## Addendum: Devnet Resync + Guardrails (2026-02-12)
+
+### Purpose
+- Restore solvency by bringing on-chain `proven_reserves` back in sync with existing minted supply (`total_supply`).
+- Prevent future accidental insolvency by adding hard guardrails in writer paths.
+
+### Live Supabase Seeding (Dev)
+- Inserted 19 additional dev serials into `goldback_serials` (Supabase) so total serials = 20.
+- Confirmed via `npm run generate-prover`: `Fetched 20 serials from Supabase`.
+
+### Live Devnet Proof Submission (No Mint)
+- Pre-state (from script): `supply=20`, `reserves=1`
+- Submitted update + proof with `claimed=20` and **no mint** (`Mint Delta: 0`).
+
+Evidence (devnet tx signatures):
+- `update_merkle_root` tx: `64VyQJzYf4VJxvs683vMcSz5DQ44EcRHEXLFKrWhF22X5hMGqF5YVpSQ8ZdUajTeWRrH5FFRWneqFrgfnWJ5U3q8`
+  - Explorer: https://explorer.solana.com/tx/64VyQJzYf4VJxvs683vMcSz5DQ44EcRHEXLFKrWhF22X5hMGqF5YVpSQ8ZdUajTeWRrH5FFRWneqFrgfnWJ5U3q8?cluster=devnet
+- `submit_proof` tx: `2HMWY35wgmFFfQKiXxERXZBszUkeDLnBgqrszTFeuaeN49UaCuJnEbRFGrVmCQhThb5JoftXUd38KZC53vZ2oRKP`
+  - Explorer: https://explorer.solana.com/tx/2HMWY35wgmFFfQKiXxERXZBszUkeDLnBgqrszTFeuaeN49UaCuJnEbRFGrVmCQhThb5JoftXUd38KZC53vZ2oRKP?cluster=devnet
+
+Final state printed by script after this run:
+- `proven_reserves = 20`
+- `total_supply = 20`
+- solvency check: ✅
+
+### UI Display Fix: Batch Value Precision
+- Updated dashboard batch `Value` formatting to show cents (2 decimals) so values match the displayed W3B price (e.g. $10.15 not $10).
+
+### Safety Guardrails Added
+- `w3b-token/services/api/scripts/submit_proof.ts`: aborts if manifest total would decrease reserves below on-chain supply/reserves unless `ALLOW_INSOLVENT_UPDATE=true`.
+- `my-app/src/app/api/admin/auto-verify/route.ts`: refuses to update on-chain reserves if Supabase serials would drop below on-chain supply/reserves unless `ALLOW_INSOLVENT_UPDATE=true`.

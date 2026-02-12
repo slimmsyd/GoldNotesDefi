@@ -226,7 +226,7 @@ function MempoolBlock({ block, index, isAnchored, formatAge, goldbackPrice }: Me
             <div className="text-gray-500 text-xs uppercase tracking-wider font-medium mb-0.5">Value</div>
             <div className="text-white font-bold text-2xl tracking-tight">
               {goldbackPrice !== null
-                ? `$${(block.totalValueUsd ?? block.serialCount * goldbackPrice).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                ? `$${(block.totalValueUsd ?? block.serialCount * goldbackPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                 : '—'}
             </div>
           </div>
