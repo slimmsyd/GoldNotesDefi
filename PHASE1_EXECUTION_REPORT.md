@@ -176,3 +176,56 @@ Outcome:
 1. Fix `my-app` auto-verify runtime constructor/account typing issue in route handler.
 2. Resolve on-chain `ReserveCountMismatch` root/count compatibility in proof submission flow.
 3. Re-run Phase 1 mock/live submit until tx signatures are produced for both passes.
+
+---
+
+## Addendum: Blockers Resolved (2026-02-12)
+
+### Code Fix Commit
+- Commit: `e2670089213654d3e533e16510e5a56c892632b3`
+- Branch: `codex/phase1-verify-rehearsal`
+- Files changed:
+  - `/Users/sydneysanders/Desktop/Code_Projects/GoldBackProject/my-app/src/app/api/admin/auto-verify/route.ts`
+  - `/Users/sydneysanders/Desktop/Code_Projects/GoldBackProject/w3b-token/services/api/scripts/submit_proof.ts`
+
+### Blocker 1 Resolution: `my-app` Auto-Verify Success Path
+Status: **RESOLVED**
+
+A signed allowlisted wallet request now completes end-to-end:
+- Auth (wallet signature) -> pass
+- `update_merkle_root` -> success
+- `submit_proof` -> success
+- `mint_w3b` -> success
+
+Evidence (devnet tx signatures):
+- `update_merkle_root` tx: `2zRT7tGHdbT9Abui6zsN49rFVT3v7nPECHNvMa2kxAmHNTrusD48dVhrJqr1TQnm1djbHxveQB9zQmF1FcfLgu9S`
+  - Explorer: https://explorer.solana.com/tx/2zRT7tGHdbT9Abui6zsN49rFVT3v7nPECHNvMa2kxAmHNTrusD48dVhrJqr1TQnm1djbHxveQB9zQmF1FcfLgu9S?cluster=devnet
+- `submit_proof` tx: `5oBMpCW17PqojkTd9uFGHq2g5fHXppgurpwfzpzokDKUqoP4eUoQcYYANAoAtmtMkrtx43eQE8Nc6Cf4ao7YQTJw`
+  - Explorer: https://explorer.solana.com/tx/5oBMpCW17PqojkTd9uFGHq2g5fHXppgurpwfzpzokDKUqoP4eUoQcYYANAoAtmtMkrtx43eQE8Nc6Cf4ao7YQTJw?cluster=devnet
+- `mint_w3b` tx: `2BMuoYDp9FuiAgBXndsDtJSyiTJs5U9Q7VwFvcHqcTxb1DLQAukSLXXHmZR1yCfoSTFLUpQgYcdsfyAiBy3zsswV`
+  - Explorer: https://explorer.solana.com/tx/2BMuoYDp9FuiAgBXndsDtJSyiTJs5U9Q7VwFvcHqcTxb1DLQAukSLXXHmZR1yCfoSTFLUpQgYcdsfyAiBy3zsswV?cluster=devnet
+
+### Blocker 2 Resolution: Proof Submission Pipeline (`ReserveCountMismatch`)
+Status: **RESOLVED**
+
+The `w3b-token/services/api/scripts/submit_proof.ts` flow now updates on-chain reserves first, then submits proof hash(es), then mints supply delta.
+
+Evidence (devnet tx signatures, mock run with 20 serials):
+- `update_merkle_root` tx: `5iWTaCrJtkMKHc3w4cbATRkRqWjrqzDfQZyAcKkziigmMoCUnSpVYYt1dZ7x76gBy4ExVdSJDc9GjZ99Wq6svdby`
+  - Explorer: https://explorer.solana.com/tx/5iWTaCrJtkMKHc3w4cbATRkRqWjrqzDfQZyAcKkziigmMoCUnSpVYYt1dZ7x76gBy4ExVdSJDc9GjZ99Wq6svdby?cluster=devnet
+- `submit_proof` tx: `3SnYnGHc7C631VrgEpGfVkmopcsqomq5FvgtxwNYkuqUPTqWoLGYgUP1yPvP5iZDTKmjSkKCDKdTCyyfgej2ZEcr`
+  - Explorer: https://explorer.solana.com/tx/3SnYnGHc7C631VrgEpGfVkmopcsqomq5FvgtxwNYkuqUPTqWoLGYgUP1yPvP5iZDTKmjSkKCDKdTCyyfgej2ZEcr?cluster=devnet
+- `mint_w3b` tx: `2QnhXQnk8ry5cKiR1wEgcTYF8SPb7KFVpJtrMXYatTXPkCo6vLuNtgWHEqmTGXjrZ8ArU9PhHRnTJ88pnSgHLR3R`
+  - Explorer: https://explorer.solana.com/tx/2QnhXQnk8ry5cKiR1wEgcTYF8SPb7KFVpJtrMXYatTXPkCo6vLuNtgWHEqmTGXjrZ8ArU9PhHRnTJ88pnSgHLR3R?cluster=devnet
+
+Final state printed by script after this run:
+- `proven_reserves = 20`
+- `total_supply = 20`
+- solvency check: ✅
+
+### Acceptance Criteria (Updated)
+1. Security gates return expected status codes: **Met**
+2. Mock pass fully succeeds with tx evidence: **Met**
+3. Live pass fully succeeds with deterministic state delta: **Pending re-run** (the original Phase 1 live pass was attempted before the blocker fixes; should be re-run once for full closure)
+4. No redeploy/address rotation/mainnet changes: **Met**
+5. Evidence captured on isolated branch: **Met**
