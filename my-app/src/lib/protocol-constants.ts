@@ -49,6 +49,8 @@ const getNetworkDisplay = (): string => {
       return 'Testnet';
     default:
       return 'Unknown';
+
+      
   }
 };
 
@@ -210,7 +212,7 @@ export interface GoldbackSerialRecord {
   received_at: string;
   merkle_leaf_hash: Uint8Array;
   included_in_root: string | null;
-  
+
 }
 
 // Combined Protocol Data (what the UI needs)
