@@ -12,6 +12,7 @@
 import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PROTOCOL_CONFIG } from '@/lib/protocol-constants';
 
 interface VerifyResult {
   success: boolean;
@@ -30,8 +31,32 @@ interface VerifyResult {
   elapsed?: number;
 }
 
+function buildAdminVerifyMessage(wallet: string, timestamp: number, nonce: string): string {
+  return [
+    'W3B Admin Verify Request',
+    `wallet:${wallet}`,
+    `timestamp:${timestamp}`,
+    `nonce:${nonce}`,
+    'action:auto_verify',
+  ].join('\n');
+}
+
+function randomNonce(bytes = 16): string {
+  const buffer = new Uint8Array(bytes);
+  window.crypto.getRandomValues(buffer);
+  return Array.from(buffer, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function toBase64(bytes: Uint8Array): string {
+  let binary = '';
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return window.btoa(binary);
+}
+
 export function VerifyNowButton({ onComplete }: { onComplete?: () => void }) {
-  const { publicKey, connected } = useWallet();
+  const { publicKey, connected, signMessage } = useWallet();
   const [isVerifying, setIsVerifying] = useState(false);
   const [result, setResult] = useState<VerifyResult | null>(null);
   const [showResult, setShowResult] = useState(false);
@@ -48,13 +73,29 @@ export function VerifyNowButton({ onComplete }: { onComplete?: () => void }) {
     setShowResult(true);
 
     try {
+      if (!signMessage || !publicKey) {
+        throw new Error('Connected wallet does not support message signing.');
+      }
+
+      const wallet = publicKey.toBase58();
+      const timestamp = Date.now();
+      const nonce = randomNonce();
+      const message = buildAdminVerifyMessage(wallet, timestamp, nonce);
+      const signature = await signMessage(new TextEncoder().encode(message));
+
       const response = await fetch('/api/admin/auto-verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_WEBHOOK_SECRET || 'w3b-auto-verify-secret-dev'}`,
         },
-        body: JSON.stringify({ source: 'dashboard_button' }),
+        body: JSON.stringify({
+          source: 'dashboard_button',
+          wallet,
+          timestamp,
+          nonce,
+          message,
+          signature: toBase64(signature),
+        }),
       });
 
       const data: VerifyResult = await response.json();
@@ -189,7 +230,7 @@ export function VerifyNowButton({ onComplete }: { onComplete?: () => void }) {
                   )}
                   {result.data.updateTx && (
                     <a
-                      href={`https://explorer.solana.com/tx/${result.data.updateTx}?cluster=devnet`}
+                      href={`https://explorer.solana.com/tx/${result.data.updateTx}${PROTOCOL_CONFIG.network === 'mainnet-beta' ? '' : `?cluster=${PROTOCOL_CONFIG.network}`}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block text-[#c9a84c] hover:text-[#e8d48b] mt-2 transition-colors"

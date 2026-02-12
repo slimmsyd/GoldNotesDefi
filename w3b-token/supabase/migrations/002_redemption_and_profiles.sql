@@ -180,7 +180,7 @@ SECURITY DEFINER
 AS $$
 DECLARE
     webhook_url TEXT := 'http://localhost:3000/api/admin/redemption-webhook';
-    webhook_secret TEXT := 'w3b-auto-verify-secret-dev';
+    webhook_secret TEXT := 'REPLACE_WITH_SECURE_WEBHOOK_SECRET';
 BEGIN
     PERFORM net.http_post(
         url := webhook_url,

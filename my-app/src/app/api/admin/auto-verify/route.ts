@@ -25,9 +25,12 @@ import { createClient } from "@supabase/supabase-js";
 import { MerkleTree } from "merkletreejs";
 import crypto from "crypto";
 import { PROTOCOL_CONFIG } from "@/lib/protocol-constants";
+import { assertMyAppSecurityEnv, authenticateAutoVerifyRequest } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Allow up to 60s for Solana transactions
+
+assertMyAppSecurityEnv();
 
 /**
  * Minimal wallet adapter for AnchorProvider (replaces removed anchor.Wallet)
@@ -145,25 +148,6 @@ function hashSerial(serial: string): Buffer {
   return crypto.createHash("sha256").update(serial).digest();
 }
 
-function authenticateRequest(request: Request): boolean {
-  const secret = process.env.ADMIN_WEBHOOK_SECRET;
-  if (!secret) {
-    // If no secret configured, only allow in development
-    console.warn("ADMIN_WEBHOOK_SECRET not set -- allowing request in dev mode");
-    return process.env.NODE_ENV === "development";
-  }
-
-  // Check Authorization header
-  const authHeader = request.headers.get("authorization");
-  if (authHeader === `Bearer ${secret}`) return true;
-
-  // Check x-webhook-secret header (for Supabase webhooks)
-  const webhookSecret = request.headers.get("x-webhook-secret");
-  if (webhookSecret === secret) return true;
-
-  return false;
-}
-
 /* ─── Main Handler ─── */
 
 export async function POST(request: Request) {
@@ -176,35 +160,44 @@ export async function POST(request: Request) {
   }
 
   try {
-    // 1. Authenticate
-    if (!authenticateRequest(request)) {
+    // 1. Parse body once (manual trigger payload or webhook payload)
+    let body: unknown = {};
+    try {
+      body = await request.json();
+    } catch {
+      body = {};
+    }
+
+    // 2. Authenticate (webhook secret OR allowlisted wallet signature)
+    const auth = authenticateAutoVerifyRequest(request, body);
+    if (!auth.ok) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized" },
+        { success: false, error: auth.reason || "Unauthorized" },
         { status: 401 }
       );
     }
 
-    log("Request authenticated");
+    log(`Request authenticated via ${auth.method}`);
 
-    // 2. Parse optional body (webhook payload or manual trigger)
-    let triggerSource = "manual";
-    try {
-      const body = await request.json();
-      if (body?.type === "INSERT" || body?.record) {
-        triggerSource = "supabase_webhook";
-      }
-    } catch {
-      // Empty body is fine for manual triggers
+    // 3. Parse optional body (webhook payload or manual trigger)
+    let triggerSource = auth.method === "webhook" ? "supabase_webhook" : "manual";
+    if (
+      body &&
+      typeof body === "object" &&
+      ((body as Record<string, unknown>).type === "INSERT" ||
+        Boolean((body as Record<string, unknown>).record))
+    ) {
+      triggerSource = "supabase_webhook";
     }
     log(`Trigger source: ${triggerSource}`);
 
-    // 3. Small debounce for webhook triggers (5s wait for bulk inserts)
+    // 4. Small debounce for webhook triggers (5s wait for bulk inserts)
     if (triggerSource === "supabase_webhook") {
       log("Webhook trigger -- waiting 5s for bulk inserts to settle...");
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
 
-    // 4. Fetch all serials from Supabase
+    // 5. Fetch all serials from Supabase
     const supabase = getSupabaseAdmin();
     const { data: serials, error: serialsError } = await supabase
       .from("goldback_serials")
@@ -426,10 +419,12 @@ export async function GET() {
     endpoint: "/api/admin/auto-verify",
     method: "POST",
     description:
-      "Automated reserve verification pipeline. Send POST with Authorization: Bearer <ADMIN_WEBHOOK_SECRET> to trigger.",
+      "Automated reserve verification pipeline. POST supports webhook secret auth or allowlisted wallet-signature auth for manual admin triggers.",
     envVarsRequired: [
       "PROTOCOL_AUTHORITY_KEYPAIR",
       "ADMIN_WEBHOOK_SECRET",
+      "ADMIN_WALLET_ALLOWLIST",
+      "CRON_SECRET",
       "AUTO_MINT_ENABLED (optional, default: true)",
     ],
   });

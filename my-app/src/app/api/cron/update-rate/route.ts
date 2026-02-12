@@ -2,16 +2,17 @@ import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import { getCurrentGoldbackRate } from '@/lib/goldback-scraper';
+import { assertMyAppSecurityEnv, validateCronAuthorization } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic'; // Prevent static caching
 
 export async function GET(request: Request) {
+    assertMyAppSecurityEnv();
+
     try {
-        // Optional: Check for CRON_SECRET if you want to secure this endpoint
-        // const authHeader = request.headers.get('authorization');
-        // if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-        //     return new NextResponse('Unauthorized', { status: 401 });
-        // }
+        if (!validateCronAuthorization(request)) {
+            return new NextResponse('Unauthorized', { status: 401 });
+        }
 
         // 1. Scrape the current rate
         const scrapeResult = await getCurrentGoldbackRate();
