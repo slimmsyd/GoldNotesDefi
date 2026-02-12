@@ -62,55 +62,50 @@ class NodeWallet {
 /* ─── IDL (minimal for the instructions we need) ─── */
 
 const W3B_IDL = {
-  version: "0.1.0",
-  name: "w3b_protocol",
+  address: PROTOCOL_CONFIG.programId,
+  metadata: {
+    name: "w3b_protocol",
+    version: "0.1.0",
+    spec: "0.1.0",
+  },
   instructions: [
     {
-      name: "updateMerkleRoot",
+      name: "update_merkle_root",
+      discriminator: [195, 173, 38, 60, 242, 203, 158, 93],
       accounts: [
-        { name: "protocolState", isMut: true, isSigner: false },
-        { name: "authority", isMut: false, isSigner: true },
+        { name: "protocol_state", writable: true },
+        { name: "operator", signer: true },
       ],
       args: [
-        { name: "newRoot", type: { array: ["u8", 32] } },
-        { name: "totalSerials", type: "u64" },
+        { name: "new_root", type: { array: ["u8", 32] } },
+        { name: "total_serials", type: "u64" },
       ],
     },
     {
-      name: "mintW3B",
+      name: "submit_proof",
+      discriminator: [54, 241, 46, 84, 4, 212, 46, 94],
       accounts: [
-        { name: "protocolState", isMut: true, isSigner: false },
-        { name: "w3bMint", isMut: true, isSigner: false },
-        { name: "treasury", isMut: true, isSigner: false },
-        { name: "authority", isMut: false, isSigner: true },
-        { name: "tokenProgram", isMut: false, isSigner: false },
+        { name: "protocol_state", writable: true },
+        { name: "operator", signer: true },
+      ],
+      args: [
+        { name: "proof_hash", type: "bytes" },
+        { name: "claimed_reserves", type: "u64" },
+      ],
+    },
+    {
+      name: "mint_w3b",
+      discriminator: [248, 247, 23, 67, 218, 96, 151, 122],
+      accounts: [
+        { name: "protocol_state", writable: true },
+        { name: "w3b_mint", writable: true },
+        { name: "treasury", writable: true },
+        { name: "token_program" },
+        { name: "operator", signer: true },
       ],
       args: [{ name: "amount", type: "u64" }],
     },
   ],
-  accounts: [
-    {
-      name: "ProtocolState",
-      type: {
-        kind: "struct" as const,
-        fields: [
-          { name: "authority", type: "publicKey" },
-          { name: "w3bMint", type: "publicKey" },
-          { name: "treasury", type: "publicKey" },
-          { name: "currentMerkleRoot", type: { array: ["u8", 32] } },
-          { name: "lastRootUpdate", type: "i64" },
-          { name: "lastProofTimestamp", type: "i64" },
-          { name: "provenReserves", type: "u64" },
-          { name: "totalSupply", type: "u64" },
-          { name: "isPaused", type: "bool" },
-          { name: "bump", type: "u8" },
-        ],
-      },
-    },
-  ],
-  metadata: {
-    address: PROTOCOL_CONFIG.programId,
-  },
 };
 
 /* ─── Helpers ─── */
@@ -146,6 +141,45 @@ function loadAuthorityKeypair(): Keypair {
 
 function hashSerial(serial: string): Buffer {
   return crypto.createHash("sha256").update(serial).digest();
+}
+
+interface ProtocolStateSnapshot {
+  w3bMint: PublicKey;
+  treasury: PublicKey;
+  totalSupply: number;
+  provenReserves: number;
+  lastRootUpdate: number;
+}
+
+function parseProtocolStateV2(data: Buffer): ProtocolStateSnapshot {
+  if (data.length < 216) {
+    throw new Error(`ProtocolState account too small: ${data.length}`);
+  }
+
+  const w3bMint = new PublicKey(data.slice(72, 104));
+  const treasury = new PublicKey(data.slice(104, 136));
+  const totalSupply = Number(new BN(data.subarray(136, 144), "le").toString());
+  const provenReserves = Number(new BN(data.subarray(184, 192), "le").toString());
+  const lastRootUpdate = Number(new BN(data.subarray(192, 200), "le").toString());
+
+  return {
+    w3bMint,
+    treasury,
+    totalSupply,
+    provenReserves,
+    lastRootUpdate,
+  };
+}
+
+async function fetchProtocolStateSnapshot(
+  connection: Connection,
+  protocolStatePda: PublicKey
+): Promise<ProtocolStateSnapshot | null> {
+  const accountInfo = await connection.getAccountInfo(protocolStatePda, "confirmed");
+  if (!accountInfo) {
+    return null;
+  }
+  return parseProtocolStateV2(accountInfo.data);
 }
 
 /* ─── Main Handler ─── */
@@ -273,16 +307,18 @@ export async function POST(request: Request) {
     let treasuryPubkey: PublicKey | null = null;
 
     try {
-      const preState = await (program.account as any).protocolState.fetch(
-        protocolStatePda
-      );
-      currentSupply = (preState as any).totalSupply.toNumber();
-      currentReserves = (preState as any).provenReserves.toNumber();
-      w3bMintPubkey = (preState as any).w3bMint;
-      treasuryPubkey = (preState as any).treasury;
-      log(
-        `Pre-state: supply=${currentSupply}, reserves=${currentReserves}`
-      );
+      const preState = await fetchProtocolStateSnapshot(connection, protocolStatePda);
+      if (preState) {
+        currentSupply = preState.totalSupply;
+        currentReserves = preState.provenReserves;
+        w3bMintPubkey = preState.w3bMint;
+        treasuryPubkey = preState.treasury;
+        log(
+          `Pre-state: supply=${currentSupply}, reserves=${currentReserves}`
+        );
+      } else {
+        log("Warning: Protocol state account not found");
+      }
     } catch (err) {
       log(`Warning: Could not fetch pre-state: ${err}`);
     }
@@ -293,11 +329,30 @@ export async function POST(request: Request) {
       .updateMerkleRoot(rootArray as number[], new BN(serials.length))
       .accountsPartial({
         protocolState: protocolStatePda,
-        authority: authority.publicKey,
+        operator: authority.publicKey,
       })
       .rpc();
 
     log(`Merkle root updated! Tx: ${updateTx}`);
+
+    // 6.5 Submit proof hash (required for mint_w3b staleness check).
+    // Note: current protocol records the hash and enforces reserve-count logic.
+    const proofHash = crypto
+      .createHash("sha256")
+      .update(Buffer.from(rootBytes))
+      .update(Buffer.from(String(serials.length)))
+      .digest();
+
+    log("Submitting submit_proof to Solana...");
+    const proofTx = await (program.methods as any)
+      .submitProof(proofHash, new BN(serials.length))
+      .accountsPartial({
+        protocolState: protocolStatePda,
+        operator: authority.publicKey,
+      })
+      .rpc();
+
+    log(`Proof submitted! Tx: ${proofTx}`);
 
     // 7. Auto-mint if enabled and reserves > supply
     let mintTx: string | null = null;
@@ -312,10 +367,11 @@ export async function POST(request: Request) {
           .mintW3B(new BN(amountToMint))
           .accountsPartial({
             protocolState: protocolStatePda,
+            w3BMint: w3bMintPubkey,
             w3bMint: w3bMintPubkey,
             treasury: treasuryPubkey,
-            authority: authority.publicKey,
             tokenProgram: TOKEN_2022_PROGRAM_ID,
+            operator: authority.publicKey,
           })
           .rpc();
 
@@ -356,20 +412,20 @@ export async function POST(request: Request) {
     // 9. Fetch final state
     let finalState = null;
     try {
-      const postState = await (program.account as any).protocolState.fetch(
-        protocolStatePda
-      );
-      finalState = {
-        totalSupply: (postState as any).totalSupply.toNumber(),
-        provenReserves: (postState as any).provenReserves.toNumber(),
-        lastProofTimestamp: new Date(
-          (postState as any).lastRootUpdate.toNumber() * 1000
-        ).toISOString(),
-        merkleRoot: rootHex,
-      };
-      log(
-        `Final state: supply=${finalState.totalSupply}, reserves=${finalState.provenReserves}`
-      );
+      const postState = await fetchProtocolStateSnapshot(connection, protocolStatePda);
+      if (postState) {
+        finalState = {
+          totalSupply: postState.totalSupply,
+          provenReserves: postState.provenReserves,
+          lastProofTimestamp: new Date(postState.lastRootUpdate * 1000).toISOString(),
+          merkleRoot: rootHex,
+        };
+        log(
+          `Final state: supply=${finalState.totalSupply}, reserves=${finalState.provenReserves}`
+        );
+      } else {
+        log("Warning: Could not fetch post-state");
+      }
     } catch {
       log("Warning: Could not fetch post-state");
     }
@@ -384,6 +440,7 @@ export async function POST(request: Request) {
         totalSerials: serials.length,
         merkleRoot: rootHex,
         updateTx,
+        proofTx,
         mintTx,
         finalState,
         triggerSource,
