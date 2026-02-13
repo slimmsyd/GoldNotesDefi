@@ -30,6 +30,33 @@ import { useToast } from "@/context/ToastContext";
 // Checkout modes for auto-routing
 type CheckoutMode = 'auto' | 'direct' | 'amazon';
 
+type DirectCheckoutCurrency = 'SOL' | 'USDC';
+
+interface DirectCheckoutCreateResponse {
+    success: boolean;
+    orderId?: string;
+    memo?: string;
+    merchantWallet?: string;
+    currency?: DirectCheckoutCurrency;
+    expectedLamports?: string | null;
+    expectedUsdcBaseUnits?: string | null;
+    subtotalUsd?: number;
+    shippingUsd?: number;
+    totalUsd?: number;
+    pointsPreview?: number;
+    error?: string;
+}
+
+interface DirectCheckoutConfirmResponse {
+    success: boolean;
+    status?: string;
+    walletAddress?: string;
+    pointsAwarded?: number;
+    newBalance?: number;
+    txSignature?: string;
+    error?: string;
+}
+
 export default function CheckoutPage() {
     const {
         cartItems,
@@ -192,6 +219,48 @@ export default function CheckoutPage() {
         fetchSolPrice();
     }, [paymentMethod, solPrice]);
 
+    // Resume a pending direct checkout finalize step (mobile state loss recovery).
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (!connected || !publicKey) return;
+        if (isProcessing) return;
+
+        const raw = window.localStorage.getItem('directCheckoutPending');
+        if (!raw) return;
+
+        try {
+            const pending = JSON.parse(raw) as { orderId?: string; txSignature?: string };
+            if (!pending?.orderId || !pending?.txSignature) return;
+
+            (async () => {
+                try {
+                    setIsProcessing(true);
+                    setStatusMessage('Finalizing previous order...');
+                    const res = await fetch('/api/checkout/direct/confirm', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderId: pending.orderId, txSignature: pending.txSignature }),
+                    });
+                    const data = (await res.json()) as DirectCheckoutConfirmResponse;
+                    if (!res.ok || !data.success) {
+                        throw new Error(data.error || 'Failed to finalize previous order');
+                    }
+                    window.localStorage.removeItem('directCheckoutPending');
+                    showToast(`Order finalized: +${data.pointsAwarded || 0} points`, 'success');
+                } catch (err: any) {
+                    console.warn('Pending order finalize failed:', err);
+                } finally {
+                    setIsProcessing(false);
+                    setStatusMessage('');
+                }
+            })();
+        } catch {
+            // If the value is malformed, just clear it.
+            window.localStorage.removeItem('directCheckoutPending');
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [connected, publicKey]);
+
     const handleProceedToDetails = () => {
         if (displayItems.length > 0) {
             setStep('details');
@@ -291,10 +360,31 @@ export default function CheckoutPage() {
         }
 
         setIsProcessing(true);
-        setStatusMessage("Validating network connection...");
+        setStatusMessage("Creating order...");
 
         try {
+            // Create server-side order (canonical totals + stable memo) before switching to wallet UI.
+            const createResp = await fetch('/api/checkout/direct/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    items: itemsSnapshot.map((it) => ({ id: it.id, quantity: it.quantity })),
+                    customerName: checkoutData.name,
+                    customerEmail: checkoutData.email,
+                    shippingAddress: checkoutData.address,
+                    isInternational,
+                    shippingMethodId: selectedShippingMethod?.id || null,
+                    currency: paymentMethod as DirectCheckoutCurrency,
+                }),
+            });
+
+            const created = (await createResp.json()) as DirectCheckoutCreateResponse;
+            if (!createResp.ok || !created.success || !created.orderId || !created.memo || !created.merchantWallet) {
+                throw new Error(created.error || 'Failed to create order');
+            }
+
             // Validate network before proceeding
+            setStatusMessage("Validating network connection...");
             const networkValidation = await validateNetworkConnection(connection);
             if (!networkValidation.isValid) {
                 setError(`Network Error: ${networkValidation.errorMessage}\n\n${networkValidation.userInstructions || ''}`);
@@ -305,7 +395,7 @@ export default function CheckoutPage() {
 
             setStatusMessage("Verifying wallet balance...");
 
-            const merchantWallet = new PublicKey("CrQERYcZMnENP85qZBrdimS7oz2Ura9tAPxkZJPMpbNj");
+            const merchantWallet = new PublicKey(created.merchantWallet);
             const transaction = new Transaction();
 
             // Minimum SOL required for transaction fees (0.005 SOL as buffer)
@@ -317,22 +407,18 @@ export default function CheckoutPage() {
             if (paymentMethod === 'SOL') {
                 // ============ SOL PAYMENT FLOW ============
 
-                if (!solPrice) {
-                    setError("Unable to get SOL price. Please try again.");
-                    setIsErrorModalOpen(true);
-                    setIsProcessing(false);
-                    return;
+                if (!created.expectedLamports) {
+                    throw new Error('Order quote missing expectedLamports');
                 }
 
-                // Calculate SOL amount needed (payment + fees)
-                const solPaymentAmount = Math.ceil((finalTotal / solPrice) * LAMPORTS_PER_SOL);
-                const totalSolNeeded = solPaymentAmount + MIN_SOL_FOR_FEES;
+                const solPaymentAmountLamports = Number(created.expectedLamports);
+                const totalSolNeeded = solPaymentAmountLamports + MIN_SOL_FOR_FEES;
 
                 // Check if user has enough SOL for payment + fees
                 if (solBalance < totalSolNeeded) {
                     const solNeeded = (totalSolNeeded - solBalance) / LAMPORTS_PER_SOL;
                     const currentBalance = solBalance / LAMPORTS_PER_SOL;
-                    setError(`Insufficient SOL balance. You have ${currentBalance.toFixed(4)} SOL but need ~${(totalSolNeeded / LAMPORTS_PER_SOL).toFixed(4)} SOL (${(solPaymentAmount / LAMPORTS_PER_SOL).toFixed(4)} payment + ~0.005 fees). Please add ${solNeeded.toFixed(4)} more SOL.`);
+                    setError(`Insufficient SOL balance. You have ${currentBalance.toFixed(4)} SOL but need ~${(totalSolNeeded / LAMPORTS_PER_SOL).toFixed(4)} SOL (${(solPaymentAmountLamports / LAMPORTS_PER_SOL).toFixed(4)} payment + ~0.005 fees). Please add ${solNeeded.toFixed(4)} more SOL.`);
                     setIsErrorModalOpen(true);
                     setIsProcessing(false);
                     return;
@@ -348,7 +434,7 @@ export default function CheckoutPage() {
                 // Add Memo Instruction
                 transaction.add(
                     createMemoInstruction(
-                        `GoldBack Order: ${new Date().toISOString()}`,
+                        created.memo,
                         [publicKey]
                     )
                 );
@@ -358,12 +444,15 @@ export default function CheckoutPage() {
                     SystemProgram.transfer({
                         fromPubkey: publicKey,
                         toPubkey: merchantWallet,
-                        lamports: solPaymentAmount,
+                        lamports: solPaymentAmountLamports,
                     })
                 );
 
                 const signature = await sendTransaction(transaction, connection);
-                await handleTransactionConfirmation(signature, blockhash, lastValidBlockHeight, 'SOL', solPaymentAmount / LAMPORTS_PER_SOL, {
+                if (typeof window !== 'undefined') {
+                    window.localStorage.setItem('directCheckoutPending', JSON.stringify({ orderId: created.orderId, txSignature: signature }));
+                }
+                await handleTransactionConfirmation(created.orderId, signature, blockhash, lastValidBlockHeight, 'SOL', solPaymentAmountLamports / LAMPORTS_PER_SOL, {
                     items: itemsSnapshot,
                     subtotal: subtotalSnapshot,
                     total: totalSnapshot,
@@ -376,8 +465,10 @@ export default function CheckoutPage() {
 
                 // Use network-specific USDC mint address from config
                 const USDC_MINT = new PublicKey(PROTOCOL_CONFIG.usdcMint);
-                const USDC_DECIMALS = 6;
-                const amountUSDC = Math.floor(finalTotal * Math.pow(10, USDC_DECIMALS));
+                if (!created.expectedUsdcBaseUnits) {
+                    throw new Error('Order quote missing expectedUsdcBaseUnits');
+                }
+                const amountUSDC = BigInt(created.expectedUsdcBaseUnits);
 
                 // Check SOL balance for transaction fees
                 if (solBalance < MIN_SOL_FOR_FEES) {
@@ -402,12 +493,13 @@ export default function CheckoutPage() {
 
                 // Check USDC balance
                 const tokenBalance = await connection.getTokenAccountBalance(senderTokenAccount);
-                const userUsdcBalance = Number(tokenBalance.value.amount);
+                const userUsdcBalance = BigInt(tokenBalance.value.amount);
 
                 if (userUsdcBalance < amountUSDC) {
-                    const usdcNeeded = (amountUSDC - userUsdcBalance) / Math.pow(10, USDC_DECIMALS);
-                    const currentBalance = userUsdcBalance / Math.pow(10, USDC_DECIMALS);
-                    setError(`Insufficient USDC balance. You have ${currentBalance.toFixed(2)} USDC but need ${finalTotal.toFixed(2)} USDC. Please add ${usdcNeeded.toFixed(2)} more USDC to your wallet.`);
+                    const USDC_DECIMALS = 6;
+                    const usdcNeeded = Number(amountUSDC - userUsdcBalance) / Math.pow(10, USDC_DECIMALS);
+                    const currentBalance = Number(userUsdcBalance) / Math.pow(10, USDC_DECIMALS);
+                    setError(`Insufficient USDC balance. You have ${currentBalance.toFixed(2)} USDC but need ${Number(created.totalUsd ?? finalTotal).toFixed(2)} USDC. Please add ${usdcNeeded.toFixed(2)} more USDC to your wallet.`);
                     setIsErrorModalOpen(true);
                     setIsProcessing(false);
                     return;
@@ -423,7 +515,7 @@ export default function CheckoutPage() {
                 // Add Memo Instruction
                 transaction.add(
                     createMemoInstruction(
-                        `GoldBack Order: ${new Date().toISOString()}`,
+                        created.memo,
                         [publicKey]
                     )
                 );
@@ -455,7 +547,10 @@ export default function CheckoutPage() {
                 );
 
                 const signature = await sendTransaction(transaction, connection);
-                await handleTransactionConfirmation(signature, blockhash, lastValidBlockHeight, 'USDC', finalTotal, {
+                if (typeof window !== 'undefined') {
+                    window.localStorage.setItem('directCheckoutPending', JSON.stringify({ orderId: created.orderId, txSignature: signature }));
+                }
+                await handleTransactionConfirmation(created.orderId, signature, blockhash, lastValidBlockHeight, 'USDC', Number(created.totalUsd ?? finalTotal), {
                     items: itemsSnapshot,
                     subtotal: subtotalSnapshot,
                     total: totalSnapshot,
@@ -475,6 +570,7 @@ export default function CheckoutPage() {
 
     // Shared transaction confirmation and post-payment logic
     const handleTransactionConfirmation = async (
+        orderId: string,
         signature: string,
         blockhash: string,
         lastValidBlockHeight: number,
@@ -520,76 +616,31 @@ export default function CheckoutPage() {
             statusTimeouts.forEach(timeout => clearTimeout(timeout));
         }
 
-        // Decrement stock (only for direct items) - using snapshot to prevent state loss
-        console.log('=== Decrementing stock after successful payment ===');
-        console.log('Items in snapshot:', orderSnapshot.items.length);
-        const stockResult = await decrementStock(
-            orderSnapshot.items.map(item => ({ id: item.id, quantity: item.quantity }))
-        );
+        setStatusMessage("Finalizing order...");
+        const confirmResp = await fetch('/api/checkout/direct/confirm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId, txSignature: signature }),
+        });
 
-        if (!stockResult.success) {
-            console.error("Stock decrement failed, but payment succeeded. Manual intervention may be needed.");
+        const confirmData = (await confirmResp.json()) as DirectCheckoutConfirmResponse;
+        if (!confirmResp.ok || !confirmData.success) {
+            throw new Error(confirmData.error || 'Order finalization failed');
         }
 
+        if (typeof window !== 'undefined') {
+            window.localStorage.removeItem('directCheckoutPending');
+        }
 
-        // Prepare order data - using snapshot to prevent mobile state loss
-        const orderData = {
-            formType: "checkout",
-            transactionSignature: signature,
-            customerName: checkoutData.name,
-            customerEmail: checkoutData.email,
-            shippingAddress: checkoutData.address,
-            isInternational: isInternational,
-            shippingMethod: orderSnapshot.shippingMethod?.name,
-            shippingCost: orderSnapshot.shippingCost,
-            items: orderSnapshot.items,
-            subtotal: orderSnapshot.subtotal,
-            totalAmount: orderSnapshot.total,
-            currency: currency,
-            paymentAmount: amount,
-            solPriceAtPurchase: currency === 'SOL' ? solPrice : null,
-            timestamp: new Date().toISOString(),
-            walletAddress: publicKey!.toBase58(),
-            stockUpdateSuccess: stockResult.success,
-            checkoutMode: checkoutMode
-        };
+        if (typeof confirmData.pointsAwarded === 'number') {
+            showToast(`+${confirmData.pointsAwarded} points earned`, 'success');
+        }
 
         // Store the success details BEFORE clearing the cart
         setSuccessSignature(signature);
         setSuccessAmount(amount);
         setSuccessCurrency(currency);
         setIsSuccessModalOpen(true);
-
-        // Webhook with retry logic
-        const webhookUrl = "https://oncode.app.n8n.cloud/webhook/40f3a2d0-8390-44c8-a2af-b3add7651a9c";
-        let webhookSuccess = false;
-
-        for (let attempt = 1; attempt <= 3 && !webhookSuccess; attempt++) {
-            try {
-                console.log(`Webhook attempt ${attempt}/3...`);
-                const response = await fetch(webhookUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(orderData),
-                });
-
-                if (response.ok) {
-                    webhookSuccess = true;
-                    console.log("Webhook notification sent successfully");
-                } else {
-                    console.warn(`Webhook attempt ${attempt} returned status ${response.status}`);
-                }
-            } catch (webhookError) {
-                console.warn(`Webhook attempt ${attempt} failed:`, webhookError);
-                if (attempt < 3) {
-                    await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt - 1)));
-                }
-            }
-        }
-
-        if (!webhookSuccess) {
-            console.error("All webhook attempts failed - order notification not sent. Transaction signature:", signature);
-        }
 
         // Clear only the items that were just purchased
         if (checkoutMode === 'direct') {
@@ -1017,6 +1068,9 @@ export default function CheckoutPage() {
                                                     Breaks the on-chain link between your wallet and this purchase
                                                 </p>
                                             </button>
+                                            <p className="mt-2 text-[10px] text-neutral-400">
+                                                Loyalty points are not awarded for private payments yet.
+                                            </p>
                                         </div>
 
                                         {paymentMethod === 'SOL' && (
@@ -1179,7 +1233,7 @@ export default function CheckoutPage() {
                                                 </p>
                                                 <button
                                                     onClick={handlePayment}
-                                                    disabled={isProcessing || (paymentMethod === 'SOL' && !solPrice) || paymentMethod === 'PRIVATE'}
+                                                    disabled={isProcessing || paymentMethod === 'PRIVATE'}
                                                     className="px-8 py-3 cursor-pointer bg-neutral-900 text-white text-xs font-bold uppercase tracking-[0.2em] hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     {isProcessing
@@ -1190,7 +1244,7 @@ export default function CheckoutPage() {
                                                                 ? 'Click Private Payment above'
                                                                 : solPrice
                                                                     ? `Pay ~${solAmount.toFixed(4)} SOL`
-                                                                    : 'Loading price...'
+                                                                    : 'Pay SOL (quote)'
                                                     }
                                                 </button>
                                                 <div className="flex flex-col items-center gap-2 mt-3 pt-3 border-t border-neutral-100">

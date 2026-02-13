@@ -187,6 +187,11 @@ export default function SettingsPage() {
   const { showToast } = useToast();
   const { cartItems, cartCount, loadSavedCart } = useCart();
 
+  // Loyalty points state
+  const [loyaltyBalance, setLoyaltyBalance] = useState<number | null>(null);
+  const [loyaltyEvents, setLoyaltyEvents] = useState<Array<{ id: string; source: string; points: number; createdAt: string }>>([]);
+  const [isLoadingLoyalty, setIsLoadingLoyalty] = useState(false);
+
   // Form state
   const [email, setEmail] = useState('');
   const [emailOrderUpdates, setEmailOrderUpdates] = useState(true);
@@ -218,6 +223,41 @@ export default function SettingsPage() {
       setShippingCountry(profile.shippingCountry || '');
     }
   }, [profile]);
+
+  // Fetch loyalty balance for connected wallet
+  useEffect(() => {
+    const fetchLoyalty = async () => {
+      if (!publicKey || !connected) {
+        setLoyaltyBalance(null);
+        setLoyaltyEvents([]);
+        return;
+      }
+
+      setIsLoadingLoyalty(true);
+      try {
+        const res = await fetch('/api/loyalty/balance', {
+          method: 'GET',
+          headers: {
+            'X-Wallet-Address': publicKey.toBase58(),
+          },
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'Failed to fetch loyalty balance');
+        }
+        setLoyaltyBalance(data.balance ?? 0);
+        setLoyaltyEvents(Array.isArray(data.events) ? data.events : []);
+      } catch (err: any) {
+        console.warn('Failed to fetch loyalty balance:', err);
+        setLoyaltyBalance(null);
+        setLoyaltyEvents([]);
+      } finally {
+        setIsLoadingLoyalty(false);
+      }
+    };
+
+    fetchLoyalty();
+  }, [publicKey, connected]);
 
   const handleSaveEmail = async () => {
     setIsSavingEmail(true);
@@ -371,6 +411,51 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
+
+          {/* Loyalty Points Section */}
+          <section className="mb-12">
+            <h2 className="text-lg font-medium tracking-wider uppercase mb-6 pb-2 border-b border-neutral-200">
+              Loyalty Points
+            </h2>
+            <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-6">
+              <div className="flex items-start justify-between gap-6">
+                <div>
+                  <p className="text-xs text-neutral-400 uppercase tracking-wider mb-1">Current Balance</p>
+                  <p className="text-3xl font-semibold tabular-nums">
+                    {isLoadingLoyalty ? '…' : (loyaltyBalance ?? 0)}
+                  </p>
+                  <p className="text-xs text-neutral-500 mt-2">
+                    Earn 1 point per $1 subtotal on direct checkout purchases.
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-neutral-400 uppercase tracking-wider mb-1">Wallet</p>
+                  <p className="text-xs font-mono text-neutral-600 break-all">
+                    {publicKey?.toBase58()}
+                  </p>
+                </div>
+              </div>
+
+              {loyaltyEvents.length > 0 && (
+                <div className="mt-6 pt-4 border-t border-neutral-200">
+                  <p className="text-xs text-neutral-400 uppercase tracking-wider mb-3">Recent Events</p>
+                  <div className="space-y-2">
+                    {loyaltyEvents.slice(0, 5).map((e) => (
+                      <div key={e.id} className="flex items-center justify-between text-sm">
+                        <span className="text-neutral-600">
+                          {e.source.replace(/_/g, ' ')}
+                          <span className="text-xs text-neutral-400 ml-2">
+                            {new Date(e.createdAt).toLocaleDateString()}
+                          </span>
+                        </span>
+                        <span className="font-medium text-green-700 tabular-nums">+{e.points}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
 
           {isLoading && !profile && (
             <div className="text-center py-12">
