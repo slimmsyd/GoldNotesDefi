@@ -7,6 +7,34 @@ node_modules/
 .env
 .env.local
 .env.*.local
+.env.development
+.env.production
+.env.test
+
+# Build artifacts
 dist/
 build/
 .next/
+out/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Key material / wallet files
+*.pem
+*.key
+*keypair*.json
+*wallet*.json
+*authority*.json
+**/id.json
+**/w3b-authority.json
+
+# Local-only workspace noise
+/Documents/
+
+# Circuit inputs are generated during proving
+w3b-token/circuits/reserve_proof/Prover.toml

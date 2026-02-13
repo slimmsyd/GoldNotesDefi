@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import { timingSafeEqual } from 'crypto';
 import { Pool } from 'pg';
 import { buildMerkleTree, hashSerial } from './merkle';
 
@@ -20,6 +21,51 @@ const pool = new Pool({
 app.use(cors());
 app.use(express.json());
 
+const isProduction = process.env.NODE_ENV === "production";
+const serviceApiSecret = process.env.SERVICE_API_SECRET;
+
+if (isProduction && !serviceApiSecret) {
+    throw new Error("Missing required production env var: SERVICE_API_SECRET");
+}
+
+function safeEqual(a: string, b: string): boolean {
+    const left = Buffer.from(a);
+    const right = Buffer.from(b);
+
+    if (left.length !== right.length) {
+        return false;
+    }
+
+    return timingSafeEqual(left, right);
+}
+
+function extractBearerToken(req: express.Request): string | null {
+    const authHeader = req.header("authorization");
+    if (!authHeader) return null;
+
+    const [scheme, token] = authHeader.split(" ");
+    if (!scheme || !token || scheme.toLowerCase() !== "bearer") {
+        return null;
+    }
+
+    return token;
+}
+
+const requireServiceAuth: express.RequestHandler = (req, res, next) => {
+    if (!serviceApiSecret) {
+        res.status(500).json({ error: "Service auth misconfigured" });
+        return;
+    }
+
+    const token = extractBearerToken(req);
+    if (!token || !safeEqual(token, serviceApiSecret)) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+    }
+
+    next();
+};
+
 // --- Routes ---
 
 // Health check
@@ -31,7 +77,7 @@ app.get('/health', (req, res) => {
  * POST /api/v1/goldback/new_batch
  * Receives a batch of new serial numbers from Goldback Inc. (Simulated)
  */
-app.post('/api/v1/goldback/new_batch', async (req, res) => {
+app.post('/api/v1/goldback/new_batch', requireServiceAuth, async (req, res) => {
     try {
         const { batchId, serials } = req.body;
 
@@ -224,7 +270,7 @@ app.get('/api/v1/redemption/status/:wallet', async (req, res) => {
  * PATCH /api/v1/redemption/:id/claim
  * Update a redemption request when it's claimed on-chain by a fulfiller.
  */
-app.patch('/api/v1/redemption/:id/claim', async (req, res) => {
+app.patch('/api/v1/redemption/:id/claim', requireServiceAuth, async (req, res) => {
     try {
         const { id } = req.params;
         const { fulfiller_wallet, claim_tx_hash } = req.body;
@@ -261,7 +307,7 @@ app.patch('/api/v1/redemption/:id/claim', async (req, res) => {
  * PATCH /api/v1/redemption/:id/confirm
  * Update a redemption request when delivery is confirmed on-chain.
  */
-app.patch('/api/v1/redemption/:id/confirm', async (req, res) => {
+app.patch('/api/v1/redemption/:id/confirm', requireServiceAuth, async (req, res) => {
     try {
         const { id } = req.params;
         const { confirm_tx_hash, tracking_number } = req.body;
@@ -293,7 +339,7 @@ app.patch('/api/v1/redemption/:id/confirm', async (req, res) => {
  * PATCH /api/v1/redemption/:id/cancel
  * Cancel a redemption request (Admin only — no auth middleware yet).
  */
-app.patch('/api/v1/redemption/:id/cancel', async (req, res) => {
+app.patch('/api/v1/redemption/:id/cancel', requireServiceAuth, async (req, res) => {
     try {
         const { id } = req.params;
 

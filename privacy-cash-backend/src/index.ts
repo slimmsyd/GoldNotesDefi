@@ -1,27 +1,59 @@
 /**
  * Privacy Cash Backend Server
- * 
+ *
  * Dedicated Express server for Privacy Cash SDK operations.
  * Deploy to Railway, Render, or any Node.js hosting.
  */
 
 import express from 'express';
-import cors from 'cors';
-import { createDepositHandler, submitDepositHandler, getBalanceHandler, depositHandler } from './routes/deposit.js';
+import cors, { CorsOptions } from 'cors';
+import { createDepositHandler, submitDepositHandler, getBalanceHandler } from './routes/deposit.js';
 import { withdrawHandler } from './routes/withdraw.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const isProduction = process.env.NODE_ENV === 'production';
 
-// CORS configuration - Simplified for debugging
-app.use(cors({
-    origin: true, // Allow all origins
+function parseAllowedOrigins(value: string | undefined): Set<string> {
+    return new Set(
+        (value || '')
+            .split(',')
+            .map((origin) => origin.trim())
+            .filter(Boolean)
+    );
+}
+
+const allowedOrigins = parseAllowedOrigins(process.env.PRIVACY_ALLOWED_ORIGINS);
+
+if (isProduction && allowedOrigins.size === 0) {
+    throw new Error('Missing required production env var: PRIVACY_ALLOWED_ORIGINS');
+}
+
+const corsOptions: CorsOptions = {
+    origin(origin, callback) {
+        // Allow non-browser requests (no Origin header).
+        if (!origin) {
+            callback(null, true);
+            return;
+        }
+
+        if (!isProduction) {
+            callback(null, true);
+            return;
+        }
+
+        if (allowedOrigins.has(origin)) {
+            callback(null, true);
+            return;
+        }
+
+        callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
-}));
+};
 
-// Enable pre-flight requests for all routes
-app.options('*', cors());
-
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 

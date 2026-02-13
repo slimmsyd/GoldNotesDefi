@@ -154,3 +154,62 @@ model UserProfile {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+
+// ============================================
+// Direct Checkout + Loyalty Points (Phase 4)
+// ============================================
+
+model DirectCheckoutOrder {
+  id                   String   @id @default(cuid())
+  status               String   @default("Created") // Created | Paid | Failed | Cancelled
+
+  // Audit / verification context
+  network              String   // devnet | mainnet-beta
+  currency             String   // SOL | USDC
+  merchantWallet       String
+  buyerWallet          String?
+  memo                 String   @unique
+
+  // Order snapshot
+  items                Json
+  customerName         String
+  customerEmail        String
+  shippingAddress      String
+  isInternational      Boolean  @default(false)
+  shippingMethod       String?
+
+  // Canonical server totals (USD)
+  subtotalUsd          Decimal  @db.Decimal(10, 2)
+  shippingUsd          Decimal  @db.Decimal(10, 2)
+  totalUsd             Decimal  @db.Decimal(10, 2)
+
+  // Quote-time pricing (SOL only)
+  solPriceUsd          Decimal? @db.Decimal(10, 2)
+
+  // Expected payment amounts
+  expectedLamports     BigInt?
+  expectedUsdcBaseUnits BigInt?
+
+  // On-chain proof
+  txSignature          String?  @unique
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([buyerWallet])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model LoyaltyPointsEvent {
+  id           String   @id @default(cuid())
+  walletAddress String
+  source       String   // direct_checkout
+  sourceRef    String   @unique // idempotency key (use orderId)
+  points       Int
+  orderId      String   @unique // 1:1 with DirectCheckoutOrder for direct checkout awarding
+  createdAt    DateTime @default(now())
+
+  @@index([walletAddress])
+  @@index([createdAt])
+}

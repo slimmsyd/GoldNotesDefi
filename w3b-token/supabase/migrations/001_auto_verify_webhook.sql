@@ -36,7 +36,7 @@ SECURITY DEFINER
 AS $$
 DECLARE
   webhook_url TEXT := 'http://localhost:3000/api/admin/auto-verify';
-  webhook_secret TEXT := 'w3b-auto-verify-secret-dev';
+  webhook_secret TEXT := 'REPLACE_WITH_SECURE_WEBHOOK_SECRET';
 BEGIN
   -- Use pg_net to make an async HTTP POST request
   -- This is non-blocking and won't slow down the INSERT
