@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
       success: true,
       walletAddress,
       balance: sum._sum.points ?? 0,
+      lastUpdated: new Date().toISOString(),
       events: events.map((e) => ({
         id: e.id,
         source: e.source,

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import Link from 'next/link';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -189,8 +190,10 @@ export default function SettingsPage() {
 
   // Loyalty points state
   const [loyaltyBalance, setLoyaltyBalance] = useState<number | null>(null);
-  const [loyaltyEvents, setLoyaltyEvents] = useState<Array<{ id: string; source: string; points: number; createdAt: string }>>([]);
+  const [loyaltyEvents, setLoyaltyEvents] = useState<Array<{ id: string; source: string; points: number; createdAt: string; orderId?: string; sourceRef?: string }>>([]);
   const [isLoadingLoyalty, setIsLoadingLoyalty] = useState(false);
+  const [isLoyaltyError, setIsLoyaltyError] = useState(false);
+  const [copiedWallet, setCopiedWallet] = useState(false);
 
   // Form state
   const [email, setEmail] = useState('');
@@ -225,39 +228,55 @@ export default function SettingsPage() {
   }, [profile]);
 
   // Fetch loyalty balance for connected wallet
+  const fetchLoyalty = async () => {
+    if (!publicKey || !connected) {
+      setLoyaltyBalance(null);
+      setLoyaltyEvents([]);
+      setIsLoyaltyError(false);
+      return;
+    }
+
+    setIsLoadingLoyalty(true);
+    setIsLoyaltyError(false);
+    try {
+      const res = await fetch('/api/loyalty/balance', {
+        method: 'GET',
+        headers: {
+          'X-Wallet-Address': publicKey.toBase58(),
+        },
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to fetch loyalty balance');
+      }
+      setLoyaltyBalance(data.balance ?? 0);
+      setLoyaltyEvents(Array.isArray(data.events) ? data.events : []);
+    } catch (err: any) {
+      console.warn('Failed to fetch loyalty balance:', err);
+      setIsLoyaltyError(true);
+      setLoyaltyBalance(null);
+      setLoyaltyEvents([]);
+    } finally {
+      setIsLoadingLoyalty(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchLoyalty = async () => {
-      if (!publicKey || !connected) {
-        setLoyaltyBalance(null);
-        setLoyaltyEvents([]);
-        return;
-      }
-
-      setIsLoadingLoyalty(true);
-      try {
-        const res = await fetch('/api/loyalty/balance', {
-          method: 'GET',
-          headers: {
-            'X-Wallet-Address': publicKey.toBase58(),
-          },
-        });
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-          throw new Error(data.error || 'Failed to fetch loyalty balance');
-        }
-        setLoyaltyBalance(data.balance ?? 0);
-        setLoyaltyEvents(Array.isArray(data.events) ? data.events : []);
-      } catch (err: any) {
-        console.warn('Failed to fetch loyalty balance:', err);
-        setLoyaltyBalance(null);
-        setLoyaltyEvents([]);
-      } finally {
-        setIsLoadingLoyalty(false);
-      }
-    };
-
     fetchLoyalty();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [publicKey, connected]);
+
+  const handleCopyWallet = async () => {
+    try {
+      const address = publicKey?.toBase58();
+      if (!address) return;
+      await navigator.clipboard.writeText(address);
+      setCopiedWallet(true);
+      setTimeout(() => setCopiedWallet(false), 1500);
+    } catch {
+      showToast('Failed to copy', 'error');
+    }
+  };
 
   const handleSaveEmail = async () => {
     setIsSavingEmail(true);
@@ -414,46 +433,125 @@ export default function SettingsPage() {
 
           {/* Loyalty Points Section */}
           <section className="mb-12">
-            <h2 className="text-lg font-medium tracking-wider uppercase mb-6 pb-2 border-b border-neutral-200">
-              Loyalty Points
-            </h2>
+            <div className="flex items-center justify-between mb-6 pb-2 border-b border-neutral-200">
+              <h2 className="text-lg font-medium tracking-wider uppercase">
+                Loyalty Points
+              </h2>
+              <button
+                type="button"
+                onClick={fetchLoyalty}
+                className="text-xs text-neutral-500 hover:text-neutral-900 underline"
+              >
+                Refresh
+              </button>
+            </div>
             <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-6">
+              {/* Status Row */}
               <div className="flex items-start justify-between gap-6">
                 <div>
                   <p className="text-xs text-neutral-400 uppercase tracking-wider mb-1">Current Balance</p>
                   <p className="text-3xl font-semibold tabular-nums">
                     {isLoadingLoyalty ? '…' : (loyaltyBalance ?? 0)}
                   </p>
-                  <p className="text-xs text-neutral-500 mt-2">
-                    Earn 1 point per $1 subtotal on direct checkout purchases.
-                  </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-neutral-400 uppercase tracking-wider mb-1">Wallet</p>
-                  <p className="text-xs font-mono text-neutral-600 break-all">
-                    {publicKey?.toBase58()}
-                  </p>
+                <div
+                  className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
+                    isLoadingLoyalty
+                      ? 'border-neutral-200 text-neutral-500 bg-white'
+                      : isLoyaltyError
+                        ? 'border-amber-200 text-amber-700 bg-amber-50'
+                        : 'border-green-200 text-green-700 bg-green-50'
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      isLoadingLoyalty ? 'bg-neutral-400' : isLoyaltyError ? 'bg-amber-500' : 'bg-green-500'
+                    }`}
+                  />
+                  {isLoadingLoyalty ? 'Loading' : isLoyaltyError ? 'Unavailable' : 'Earning Active'}
                 </div>
               </div>
 
-              {loyaltyEvents.length > 0 && (
-                <div className="mt-6 pt-4 border-t border-neutral-200">
-                  <p className="text-xs text-neutral-400 uppercase tracking-wider mb-3">Recent Events</p>
-                  <div className="space-y-2">
-                    {loyaltyEvents.slice(0, 5).map((e) => (
-                      <div key={e.id} className="flex items-center justify-between text-sm">
-                        <span className="text-neutral-600">
-                          {e.source.replace(/_/g, ' ')}
-                          <span className="text-xs text-neutral-400 ml-2">
-                            {new Date(e.createdAt).toLocaleDateString()}
-                          </span>
-                        </span>
-                        <span className="font-medium text-green-700 tabular-nums">+{e.points}</span>
-                      </div>
-                    ))}
+              {/* Identity Block */}
+              <div className="mt-6 pt-4 border-t border-neutral-200">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <p className="text-xs text-neutral-400 uppercase tracking-wider mb-2">Linked Wallet (Loyalty ID)</p>
+                    <p className="text-xs font-mono text-neutral-700 break-all">{publicKey?.toBase58()}</p>
+                    <p className="text-xs text-neutral-500 mt-3">
+                      Points are credited to the wallet that pays on-chain. Switching wallets switches your points balance.
+                    </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyWallet}
+                    className="shrink-0 text-xs text-neutral-500 hover:text-neutral-900 underline"
+                  >
+                    {copiedWallet ? 'Copied' : 'Copy'}
+                  </button>
                 </div>
-              )}
+              </div>
+
+              {/* How It Works */}
+              <div className="mt-6 pt-4 border-t border-neutral-200">
+                <p className="text-xs text-neutral-400 uppercase tracking-wider mb-3">How It Works</p>
+                <p className="text-sm text-neutral-700">
+                  Earn 1 point per $1 subtotal on direct checkout.
+                </p>
+                <ul className="mt-3 text-xs text-neutral-500 list-disc pl-5 space-y-1">
+                  <li>Shipping is excluded.</li>
+                  <li>Points post after payment verification.</li>
+                  <li>Private payments don’t earn points yet.</li>
+                </ul>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="mt-6 pt-4 border-t border-neutral-200">
+                <p className="text-xs text-neutral-400 uppercase tracking-wider mb-3">Recent Activity</p>
+
+                {loyaltyEvents.length === 0 ? (
+                  <div className="bg-white border border-neutral-200 rounded-lg p-4">
+                    <p className="text-sm text-neutral-600">
+                      No points yet. Complete a direct checkout purchase to start earning.
+                    </p>
+                    <Link
+                      href="/shop-gold-backs"
+                      className="inline-block mt-3 text-xs font-bold uppercase tracking-wider px-4 py-2 bg-neutral-900 text-white rounded hover:bg-neutral-800 transition-colors"
+                    >
+                      Shop Goldbacks
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {loyaltyEvents.slice(0, 5).map((e) => {
+                      const ref = (e.orderId || e.sourceRef || '').toString();
+                      const shortRef = ref ? ref.slice(0, 8) : '—';
+                      const sourceLabel = e.source === 'direct_checkout'
+                        ? 'DIRECT CHECKOUT'
+                        : e.source.replace(/_/g, ' ').toUpperCase();
+
+                      return (
+                        <div key={e.id} className="bg-white border border-neutral-200 rounded-lg p-3">
+                          <div className="flex items-center justify-between gap-4">
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500">
+                              {sourceLabel}
+                            </span>
+                            <span className="text-xs font-mono text-neutral-500">
+                              Order {shortRef}
+                            </span>
+                            <span className="text-sm font-medium text-green-700 tabular-nums">
+                              +{e.points}
+                            </span>
+                          </div>
+                          <div className="mt-1 text-xs text-neutral-400">
+                            {new Date(e.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 
