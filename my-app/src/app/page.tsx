@@ -14,7 +14,7 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       <Header />
-    
+
       <main>
         <section id="hero">
           <Hero />
@@ -44,7 +44,7 @@ export default function Home() {
       <Footer />
 
       {/* Global Chatbot Input */}
-      {/* <ChatbotInput /> */}
+      <ChatbotInput />
     </div>
   );
 }
