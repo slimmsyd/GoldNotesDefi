@@ -96,7 +96,8 @@ export function createBuyW3bInstruction(
 
   // Account metas for buy_w3b instruction
   const keys = [
-    { pubkey: PROTOCOL_STATE_PDA, isSigner: false, isWritable: false },
+    // On-chain BuyW3B expects protocol_state as `mut`, so the client must mark it writable.
+    { pubkey: PROTOCOL_STATE_PDA, isSigner: false, isWritable: true },
     { pubkey: buyer, isSigner: true, isWritable: true },
     { pubkey: buyerTokenAccount, isSigner: false, isWritable: true },
     { pubkey: TREASURY, isSigner: false, isWritable: true },
@@ -150,8 +151,9 @@ export function getRedemptionRequestPDA(
   userPubkey: PublicKey,
   requestId: bigint
 ): [PublicKey, number] {
+  // Avoid Buffer.writeBigUInt64LE: it may not exist in browser Buffer polyfills.
   const idBuffer = Buffer.alloc(8);
-  idBuffer.writeBigUInt64LE(requestId);
+  writeU64LE(requestId, idBuffer, 0);
   return PublicKey.findProgramAddressSync(
     [Buffer.from('redemption'), userPubkey.toBuffer(), idBuffer],
     PROGRAM_ID

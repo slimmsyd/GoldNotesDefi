@@ -385,9 +385,13 @@ export async function POST(request: Request) {
       process.env.AUTO_MINT_ENABLED !== "false"; // Enabled by default
 
     if (autoMintEnabled && w3bMintPubkey && treasuryPubkey) {
-      const amountToMint = serials.length - currentSupply;
+      // Mint ONLY when reserves increased (new ingestion), never to fill gaps caused by burns.
+      // Using currentReserves (pre-state proven reserves) ensures a burn does not trigger minting.
+      const amountToMint = Math.max(0, serials.length - currentReserves);
       if (amountToMint > 0) {
-        log(`Auto-minting ${amountToMint} W3B tokens...`);
+        log(
+          `Auto-minting ${amountToMint} W3B tokens due to reserve increase (newSerials=${serials.length - currentReserves})...`
+        );
         mintTx = await (program.methods as any)
           .mintW3B(new BN(amountToMint))
           .accountsPartial({
@@ -402,9 +406,15 @@ export async function POST(request: Request) {
 
         log(`Minted ${amountToMint} tokens! Tx: ${mintTx}`);
       } else {
-        log(
-          `No minting needed (supply ${currentSupply} >= serials ${serials.length})`
-        );
+        if (currentSupply < serials.length) {
+          log(
+            `Not minting to fill burn gap (supply ${currentSupply} < reserves ${serials.length}).`
+          );
+        } else {
+          log(
+            `No minting needed (supply ${currentSupply} >= reserves ${serials.length}).`
+          );
+        }
       }
     } else if (!autoMintEnabled) {
       log("Auto-mint disabled (AUTO_MINT_ENABLED=false)");
@@ -467,6 +477,8 @@ export async function POST(request: Request) {
         updateTx,
         proofTx,
         mintTx,
+        mintedAmount: Math.max(0, serials.length - currentReserves),
+        mintReason: Math.max(0, serials.length - currentReserves) > 0 ? "reserve_increase" : "none",
         finalState,
         triggerSource,
       },
