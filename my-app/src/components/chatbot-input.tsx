@@ -24,10 +24,10 @@ export function ChatbotInput() {
 
   const getCurrentTime = () => {
     const now = new Date();
-    return now.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
+    return now.toLocaleTimeString('en-US', {
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
   };
 
@@ -168,7 +168,7 @@ export function ChatbotInput() {
       sender: 'user',
       timestamp: currentTime,
     };
-    
+
     // AI placeholder (streamed in)
     const aiId = `ai-${Date.now()}`;
     const aiResponse: Message = {
@@ -177,7 +177,7 @@ export function ChatbotInput() {
       sender: 'ai',
       timestamp: currentTime,
     };
-    
+
     // Update messages
     setMessages(prev => [...prev, userMessage, aiResponse]);
 
@@ -382,7 +382,7 @@ export function ChatbotInput() {
                 type="text"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder="Ask For Help"
+                placeholder="Ask For Gnosis"
                 className="flex-1 bg-transparent px-6 py-4 text-gray-900 placeholder-gray-500 focus:outline-none text-base font-light"
               />
 
@@ -411,7 +411,7 @@ export function ChatbotInput() {
       )}
 
       {/* Chat Modal */}
-      <ChatModal 
+      <ChatModal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         messages={messages}
