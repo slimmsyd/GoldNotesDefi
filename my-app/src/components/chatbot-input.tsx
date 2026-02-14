@@ -90,6 +90,35 @@ export function ChatbotInput() {
     return out;
   };
 
+  const stripSourcesSection = (text: string): string => {
+    if (!text) return text;
+
+    // Upstream sometimes appends a trailing "Sources" section. We don't want to show that in the app UI.
+    // Only strip when it looks like a true appended citations block (pdf/doc + relevance-ish metadata).
+    const patterns: RegExp[] = [
+      /(?:\n---\n|\n)\*\*Sources:\*\*[\s\S]*$/i,
+      /(?:\n---\n|\n)Sources:\s*[\s\S]*$/i,
+    ];
+
+    for (const re of patterns) {
+      const m = re.exec(text);
+      if (!m || m.index == null) continue;
+      const idx = m.index;
+      const tail = text.slice(idx);
+      const looksLikeCitations = /(\brelevance\b|\.pdf\b|\.docx?\b|visibilityLabel|documentsReferenced|sourcesReferenced)/i.test(
+        tail
+      );
+      if (!looksLikeCitations) continue;
+      return text.slice(0, idx).trimEnd();
+    }
+
+    return text;
+  };
+
+  const sanitizeAssistantText = (text: string): string => {
+    return stripSourcesSection(stripThinking(text));
+  };
+
   useEffect(() => {
     // Desktop push-layout-left: reserve space so the drawer doesn't cover content.
     const mq = window.matchMedia('(min-width: 768px)');
@@ -202,14 +231,14 @@ export function ChatbotInput() {
           (typeof json?.response === 'string' && json.response) ||
           (typeof json?.text === 'string' && json.text) ||
           JSON.stringify(json);
-        scheduleMessageUpdate(stripThinking(finalText));
+        scheduleMessageUpdate(sanitizeAssistantText(finalText));
         return;
       }
 
       const reader = res.body?.getReader();
       if (!reader) {
         const finalText = await res.text();
-        scheduleMessageUpdate(stripThinking(finalText));
+        scheduleMessageUpdate(sanitizeAssistantText(finalText));
         return;
       }
 
@@ -243,7 +272,7 @@ export function ChatbotInput() {
           if (t === 'token') {
             if (typeof obj.content === 'string') {
               rawAnswer += obj.content;
-              scheduleMessageUpdate(stripThinking(rawAnswer));
+              scheduleMessageUpdate(sanitizeAssistantText(rawAnswer));
             }
             return;
           }
@@ -253,7 +282,7 @@ export function ChatbotInput() {
               (typeof obj.content === 'string' && obj.content) ||
               rawAnswer;
             rawAnswer = answer;
-            scheduleMessageUpdate(stripThinking(rawAnswer));
+            scheduleMessageUpdate(sanitizeAssistantText(rawAnswer));
             return;
           }
           return;
@@ -261,7 +290,7 @@ export function ChatbotInput() {
 
         // Plain text payload: treat as tokens.
         rawAnswer += payload;
-        scheduleMessageUpdate(stripThinking(rawAnswer));
+        scheduleMessageUpdate(sanitizeAssistantText(rawAnswer));
       };
 
       const handleSseBlock = (block: string) => {
