@@ -44,7 +44,7 @@ export default function Home() {
       <Footer />
 
       {/* Global Chatbot Input */}
-      <ChatbotInput />
+      {/* <ChatbotInput /> */}
     </div>
   );
 }

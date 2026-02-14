@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { ChatModal } from './chat-modal';
 
 interface Message {
@@ -11,6 +12,7 @@ interface Message {
 }
 
 export function ChatbotInput() {
+  const { publicKey } = useWallet();
   const [draft, setDraft] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -208,10 +210,14 @@ export function ChatbotInput() {
     }, 650);
 
     try {
+      const walletAddress = publicKey?.toBase58();
+      const pagePath = typeof window !== 'undefined' ? window.location.pathname : undefined;
+      const pageUrl = typeof window !== 'undefined' ? window.location.href : undefined;
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, userId }),
+        body: JSON.stringify({ message: text, userId, walletAddress, pagePath, pageUrl }),
       });
 
       if (!res.ok) {

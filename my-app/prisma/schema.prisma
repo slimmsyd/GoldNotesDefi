@@ -213,3 +213,31 @@ model LoyaltyPointsEvent {
   @@index([walletAddress])
   @@index([createdAt])
 }
+
+// ============================================
+// Chat Analytics
+// ============================================
+
+model ChatInteraction {
+  id              String   @id @default(cuid())
+  userId          String
+  walletAddress   String?
+  pagePath        String?
+  pageUrl         String?
+  question        String
+  answer          String?
+  status          String   @default("Started") // Started | Completed | Error
+  statusLatest    String?
+  statusHistory   Json?
+  model           String?
+  processingTimeMs Int?
+  errorMessage    String?
+  userAgent       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([walletAddress])
+  @@index([status])
+}
