@@ -5,6 +5,7 @@ import { DigitalTokenFeatures } from "@/components/digital-token-features";
 import { HowItWorksSection } from "@/components/how-it-works-section";
 import { AuditedSection } from "@/components/audited-section";
 import { SwapSection } from "@/components/swap-section";
+import { WhitePaperSection } from "@/components/white-paper-section";
 import { LearnMoreSection } from "@/components/learn-more-section";
 import { FAQSection } from "@/components/faq-section";
 import { Footer } from "@/components/footer";
@@ -33,6 +34,9 @@ export default function Home() {
         </section>
         <section id="swap">
           <SwapSection />
+        </section>
+        <section id="whitepaper">
+          <WhitePaperSection />
         </section>
         <section id="learn-more">
           <LearnMoreSection />
