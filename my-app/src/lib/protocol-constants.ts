@@ -118,14 +118,14 @@ export const PROTOCOL_CONFIG = {
   // Token Mint (SPL Token-2022) - stored in ProtocolState
   w3bMint: requireEnvOnMainnet(
     'NEXT_PUBLIC_W3B_MINT',
-    'G8iL4yvsctALHZbz9nVP2gsw1A1x1kzjfZ7iHLDnHoYZ',
+    '5gw6McYxM3gCCiamCMCms9t6q2ytjPTD5P15ocjtVTVQ',
     'W3B Mint'
   ),
   
   // Treasury Token Account - PDA-controlled (owner = protocolState PDA)
   treasury: requireEnvOnMainnet(
     'NEXT_PUBLIC_W3B_TREASURY_ACCOUNT',
-    'F2vQ2a3ahHyN9KtLbPXfGj6n7Yms7veVEiCgmjfwviaX',
+    'FfADSgooHXMW4jHjF4KpBUJdmbsx3Nnw3PAbcemt8Ark',
     'Treasury Account'
   ),
   

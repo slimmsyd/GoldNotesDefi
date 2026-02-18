@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "GoldBack Mobile",
+    "slug": "goldback-mobile",
+    "scheme": "goldbackmobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "android": {
+      "package": "com.goldback.mobile"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "ios": {
+      "bundleIdentifier": "com.goldback.mobile"
+    },
+    "plugins": [
+      "expo-dev-client"
+    ]
+  }
+}

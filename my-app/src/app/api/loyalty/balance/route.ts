@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { resolveAuthenticatedRequest } from '@/lib/mobile-auth';
 
 export const runtime = 'nodejs';
 
@@ -9,9 +10,10 @@ export const runtime = 'nodejs';
  */
 export async function GET(request: NextRequest) {
   try {
-    const walletAddress = request.headers.get('X-Wallet-Address');
+    const auth = await resolveAuthenticatedRequest(request);
+    const walletAddress = auth.context?.walletAddress;
     if (!walletAddress) {
-      return NextResponse.json({ error: 'Wallet address required' }, { status: 400 });
+      return NextResponse.json({ error: auth.error || 'Authentication required' }, { status: 401 });
     }
 
     const sum = await prisma.loyaltyPointsEvent.aggregate({

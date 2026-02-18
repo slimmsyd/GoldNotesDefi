@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { resolveAuthenticatedRequest } from '@/lib/mobile-auth';
 
 /**
  * GET /api/user/profile
@@ -8,12 +9,12 @@ import prisma from '@/lib/prisma';
  */
 export async function GET(request: NextRequest) {
   try {
-    const walletAddress = request.headers.get('X-Wallet-Address');
-
+    const auth = await resolveAuthenticatedRequest(request);
+    const walletAddress = auth.context?.walletAddress;
     if (!walletAddress) {
       return NextResponse.json(
-        { error: 'Wallet address required' },
-        { status: 400 }
+        { error: auth.error || 'Authentication required' },
+        { status: 401 }
       );
     }
 
@@ -64,12 +65,12 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const walletAddress = request.headers.get('X-Wallet-Address');
-
+    const auth = await resolveAuthenticatedRequest(request);
+    const walletAddress = auth.context?.walletAddress;
     if (!walletAddress) {
       return NextResponse.json(
-        { error: 'Wallet address required' },
-        { status: 400 }
+        { error: auth.error || 'Authentication required' },
+        { status: 401 }
       );
     }
 

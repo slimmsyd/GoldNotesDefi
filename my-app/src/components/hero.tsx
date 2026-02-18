@@ -7,65 +7,13 @@ import { D3WorldTourBg } from './d3-world-tour-bg';
 import { LearnMoreModal } from './learn-more-modal';
 import { Button } from '@/components/ui/button';
 
-function ComingSoonModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-10000 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-          onClick={onClose}
-        >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="relative bg-white rounded-2xl p-8 max-w-md mx-4 text-center shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-linear-to-r from-[#FFE860] to-[#FEFDD6] flex items-center justify-center">
-                <svg
-                  className="w-8 h-8 text-gray-900"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Coming Soon</h3>
-              <p className="text-gray-600">
-                Our white paper is currently being developed. Stay tuned for updates!
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              className="w-full px-6 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors duration-200"
-            >
-              Got it
-            </button>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
+
 
 export function Hero() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [isLearnMoreModalOpen, setIsLearnMoreModalOpen] = useState(false);
-  const [isComingSoonModalOpen, setIsComingSoonModalOpen] = useState(false);
+
   const [isLoading, setIsLoading] = useState(true);
 
   const words = ['Everyone', 'Investors', 'Traders', 'Builders', 'Innovators', 'Visionaries'];
@@ -290,7 +238,7 @@ export function Hero() {
           >
             <Button
               asChild
-              className = "text-white"
+              className="text-white"
               variant="primary"
               size="lg"
             >
@@ -312,7 +260,7 @@ export function Hero() {
       </section>
 
       <LearnMoreModal isOpen={isLearnMoreModalOpen} onClose={() => setIsLearnMoreModalOpen(false)} />
-      <ComingSoonModal isOpen={isComingSoonModalOpen} onClose={() => setIsComingSoonModalOpen(false)} />
+
     </>
   );
 }

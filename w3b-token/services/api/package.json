@@ -11,6 +11,8 @@
     "generate-prover": "ts-node scripts/generate_prover_toml.ts",
     "prove-batches": "ts-node scripts/prove_batches.ts",
     "submit-proof": "ts-node scripts/submit_proof.ts",
+    "seed-devnet": "ts-node scripts/devnet_seed_reserves_and_mint.ts",
+    "verify-devnet": "ts-node scripts/devnet_verify_buy_burn_points.ts",
     "setup-token": "ts-node scripts/setup_token.ts",
     "full-pipeline": "npm run generate-prover && npm run prove-batches && npm run submit-proof",
     "reset": "ts-node scripts/reset_protocol.ts"

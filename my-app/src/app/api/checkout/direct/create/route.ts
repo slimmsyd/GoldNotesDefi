@@ -5,8 +5,11 @@ import { calculateShippingMethod, getAvailableShippingMethods } from '@/config/s
 import { getSolPriceUsd } from '@/lib/sol-price';
 import { Prisma } from '@prisma/client';
 import crypto from 'crypto';
+import { assertCheckoutSecurityEnv, resolveMerchantWalletAddress } from '@/lib/checkout-security';
+import { sendOpsAlert } from '@/lib/ops-alerts';
 
 export const runtime = 'nodejs';
+assertCheckoutSecurityEnv();
 
 type Currency = 'SOL' | 'USDC';
 
@@ -107,10 +110,7 @@ export async function POST(request: NextRequest) {
     const shippingUsd = round2(method.cost);
     const totalUsd = round2(subtotalUsd + shippingUsd);
 
-    const merchantWallet =
-      process.env.MERCHANT_WALLET_ADDRESS ||
-      process.env.NEXT_PUBLIC_MERCHANT_WALLET ||
-      'CrQERYcZMnENP85qZBrdimS7oz2Ura9tAPxkZJPMpbNj';
+    const merchantWallet = resolveMerchantWalletAddress();
 
     // Generate an order id up-front so we can embed it in the memo.
     const orderId = crypto.randomUUID();
@@ -155,6 +155,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.info('[checkout.create] created order', { orderId, currency, totalUsd, subtotalUsd, shippingUsd });
+
     return NextResponse.json({
       success: true,
       orderId,
@@ -172,6 +174,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Direct checkout create error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
+    await sendOpsAlert({
+      scope: 'checkout.create',
+      severity: 'error',
+      message: 'Direct checkout create failed',
+      context: { error: message },
+    });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

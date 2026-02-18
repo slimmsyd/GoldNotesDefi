@@ -143,7 +143,6 @@ export function ShopGoldBacksContent({ initialPackages, goldPriceInfo, goldbackR
             const url = URL.createObjectURL(file);
             setImagePreview(url);
             setImageFile(file);
-            setNewItem(prev => ({ ...prev, image: url }));
         }
     };
 
@@ -161,7 +160,7 @@ export function ShopGoldBacksContent({ initialPackages, goldPriceInfo, goldbackR
         if (newItem.name && newItem.price && newItem.description) {
             setIsSubmitting(true);
             try {
-                let imageUrl = imagePreview || "";
+                let imageUrl = editingItem?.image || "";
 
                 if (imageFile) {
                     try {
@@ -187,6 +186,14 @@ export function ShopGoldBacksContent({ initialPackages, goldPriceInfo, goldbackR
                         showToast("Failed to upload image", 'error');
                         return;
                     }
+                } else if (imagePreview && !imagePreview.startsWith('blob:')) {
+                    // Keep existing persisted image URL on edit when no new upload is selected.
+                    imageUrl = imagePreview;
+                }
+
+                if (imageUrl.startsWith('blob:')) {
+                    showToast("Image must be uploaded before saving (blob URLs are not persisted).", 'error');
+                    return;
                 }
 
                 const pkgData = {
@@ -423,22 +430,12 @@ export function ShopGoldBacksContent({ initialPackages, goldPriceInfo, goldbackR
                                 className="group flex flex-col"
                             >
                                 <div className="relative aspect-[4/5] w-full mb-8 bg-neutral-50 overflow-hidden">
-                                    {pkg.image && !pkg.image.startsWith('/') ? (
-                                        // For uploaded images (blob URLs) - Note: Blob URLs won't persist across sessions for other users
-                                        // In a real app, we'd upload to storage. For now, we are storing the blob URL string in DB which is not ideal but matches current logic.
-                                        // Wait, storing blob URL in DB won't work for other users. 
-                                        // But the user asked to "ensure you are pulling from the backend".
-                                        // I will proceed with this limitation for now as image upload wasn't explicitly requested to be fixed, just data fetching.
+                                    {pkg.image ? (
                                         <Image src={pkg.image} alt={pkg.name} fill className="object-cover" />
                                     ) : (
-                                        // Placeholder or static images
-                                        pkg.image ? (
-                                            <Image src={pkg.image} alt={pkg.name} fill className="object-cover" />
-                                        ) : (
-                                            <div className="absolute inset-0 flex items-center justify-center text-neutral-200 bg-neutral-50 group-hover:bg-neutral-100 transition-colors duration-500">
-                                                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={0.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-                                            </div>
-                                        )
+                                        <div className="absolute inset-0 flex items-center justify-center text-neutral-200 bg-neutral-50 group-hover:bg-neutral-100 transition-colors duration-500">
+                                            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={0.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                                        </div>
                                     )}
 
                                     {pkg.isPopular && (
@@ -674,16 +671,17 @@ export function ShopGoldBacksContent({ initialPackages, goldPriceInfo, goldbackR
                                                     <button
                                                         onClick={() => {
                                                             setEditingItem(pkg);
-                                                            setNewItem({
-                                                                name: pkg.name,
-                                                                price: pkg.price,
-                                                                description: pkg.description,
-                                                                features: pkg.features,
-                                                                stock: pkg.stock,
-                                                                minQty: pkg.minQty || 3,
-                                                            });
-                                                            setImagePreview(pkg.image);
-                                                        }}
+                                                        setNewItem({
+                                                            name: pkg.name,
+                                                            price: pkg.price,
+                                                            description: pkg.description,
+                                                            features: pkg.features,
+                                                            stock: pkg.stock,
+                                                            minQty: pkg.minQty || 3,
+                                                        });
+                                                        setImagePreview(pkg.image);
+                                                        setImageFile(null);
+                                                    }}
                                                         className="p-2 text-neutral-300 hover:text-blue-600 transition-colors cursor-pointer"
                                                         title="Edit Item"
                                                     >

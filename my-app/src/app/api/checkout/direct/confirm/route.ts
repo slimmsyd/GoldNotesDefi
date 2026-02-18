@@ -3,8 +3,12 @@ import prisma from '@/lib/prisma';
 import { PROTOCOL_CONFIG } from '@/lib/protocol-constants';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
+import { Prisma } from '@prisma/client';
+import { assertCheckoutSecurityEnv } from '@/lib/checkout-security';
+import { sendOpsAlert } from '@/lib/ops-alerts';
 
 export const runtime = 'nodejs';
+assertCheckoutSecurityEnv();
 
 const MEMO_PROGRAM_ID = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
 
@@ -43,7 +47,10 @@ function instructionMemoMatches(ix: unknown, expectedMemo: string): boolean {
   return memo === expectedMemo;
 }
 
-async function postFulfillmentWebhook(payload: unknown): Promise<void> {
+async function postFulfillmentWebhook(
+  payload: unknown,
+  alertContext: Record<string, unknown>
+): Promise<boolean> {
   const webhookUrl =
     process.env.N8N_CHECKOUT_WEBHOOK_URL ||
     'https://oncode.app.n8n.cloud/webhook/40f3a2d0-8390-44c8-a2af-b3add7651a9c';
@@ -55,16 +62,39 @@ async function postFulfillmentWebhook(payload: unknown): Promise<void> {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (res.ok) return;
+      if (res.ok) return true;
+
+      if (attempt === 3) {
+        await sendOpsAlert({
+          scope: 'checkout.fulfillment_webhook',
+          severity: 'error',
+          message: `Fulfillment webhook failed with status ${res.status}`,
+          context: {
+            ...alertContext,
+            status: res.status,
+          },
+        });
+      }
     } catch (err) {
       if (attempt === 3) {
         console.error('Fulfillment webhook failed:', err);
+        await sendOpsAlert({
+          scope: 'checkout.fulfillment_webhook',
+          severity: 'error',
+          message: 'Fulfillment webhook failed after retries',
+          context: {
+            ...alertContext,
+            error: err instanceof Error ? err.message : 'Unknown webhook error',
+          },
+        });
       }
     }
 
     // Exponential backoff
     await new Promise((r) => setTimeout(r, 500 * Math.pow(2, attempt - 1)));
   }
+
+  return false;
 }
 
 export async function POST(request: NextRequest) {
@@ -81,15 +111,41 @@ export async function POST(request: NextRequest) {
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
+    if (order.status !== 'Created' && order.status !== 'Paid') {
+      return NextResponse.json({ error: `Order is not payable in status ${order.status}` }, { status: 409 });
+    }
+
+    const duplicateSignatureOrder = await prisma.directCheckoutOrder.findFirst({
+      where: {
+        txSignature,
+        NOT: { id: order.id },
+      },
+      select: { id: true },
+    });
+    if (duplicateSignatureOrder) {
+      return NextResponse.json(
+        { error: 'Transaction signature already belongs to another order' },
+        { status: 409 }
+      );
+    }
 
     // Idempotency: if already paid, return existing event/balance.
     if (order.status === 'Paid' && order.buyerWallet) {
+      const points = Math.floor(Number(order.subtotalUsd));
+      const existingEvent = await prisma.loyaltyPointsEvent.upsert({
+        where: { orderId: order.id },
+        update: {},
+        create: {
+          walletAddress: order.buyerWallet,
+          source: 'direct_checkout',
+          sourceRef: order.id,
+          points,
+          orderId: order.id,
+        },
+      });
       const sum = await prisma.loyaltyPointsEvent.aggregate({
         where: { walletAddress: order.buyerWallet },
         _sum: { points: true },
-      });
-      const existingEvent = await prisma.loyaltyPointsEvent.findUnique({
-        where: { orderId: order.id },
       });
 
       return NextResponse.json({
@@ -191,19 +247,57 @@ export async function POST(request: NextRequest) {
 
     const points = Math.floor(Number(order.subtotalUsd));
 
-    const result = await prisma.$transaction(async (txdb) => {
-      const updatedOrder = await txdb.directCheckoutOrder.update({
-        where: { id: order.id },
-        data: {
-          status: 'Paid',
-          txSignature,
-          buyerWallet,
-        },
-      });
+    const result = await prisma.$transaction(
+      async (txdb) => {
+        // Claim payment exactly once.
+        const markedPaid = await txdb.directCheckoutOrder.updateMany({
+          where: { id: order.id, status: 'Created' },
+          data: {
+            status: 'Paid',
+            txSignature,
+            buyerWallet,
+          },
+        });
 
-      // Decrement stock for all items in this order.
-      const items = Array.isArray(updatedOrder.items) ? (updatedOrder.items as Array<{ id: string; quantity: number }>) : [];
-      if (items.length > 0) {
+        // Another request may have already transitioned this order to Paid.
+        if (markedPaid.count === 0) {
+          const paidOrder = await txdb.directCheckoutOrder.findUnique({ where: { id: order.id } });
+          if (paidOrder?.status === 'Paid' && paidOrder.buyerWallet) {
+            const event = await txdb.loyaltyPointsEvent.upsert({
+              where: { orderId: paidOrder.id },
+              update: {},
+              create: {
+                walletAddress: paidOrder.buyerWallet,
+                source: 'direct_checkout',
+                sourceRef: paidOrder.id,
+                points,
+                orderId: paidOrder.id,
+              },
+            });
+            const sum = await txdb.loyaltyPointsEvent.aggregate({
+              where: { walletAddress: paidOrder.buyerWallet },
+              _sum: { points: true },
+            });
+            return {
+              event,
+              newBalance: sum._sum.points ?? 0,
+              alreadyPaid: true,
+              walletAddress: paidOrder.buyerWallet,
+            };
+          }
+
+          throw new Error(`Order is not payable in status ${paidOrder?.status ?? 'Unknown'}`);
+        }
+
+        const updatedOrder = await txdb.directCheckoutOrder.findUnique({ where: { id: order.id } });
+        if (!updatedOrder) {
+          throw new Error('Order disappeared during payment finalization');
+        }
+
+        // Decrement stock for all items in this order only on the first successful paid transition.
+        const items = Array.isArray(updatedOrder.items)
+          ? (updatedOrder.items as Array<{ id: string; quantity: number }>)
+          : [];
         for (const it of items) {
           const qty = Math.floor(Number(it.quantity));
           if (!Number.isFinite(qty) || qty <= 0) continue;
@@ -212,27 +306,33 @@ export async function POST(request: NextRequest) {
             data: { stock: { decrement: qty } },
           });
         }
-      }
 
-      const event = await txdb.loyaltyPointsEvent.upsert({
-        where: { orderId: updatedOrder.id },
-        update: {},
-        create: {
+        const event = await txdb.loyaltyPointsEvent.upsert({
+          where: { orderId: updatedOrder.id },
+          update: {},
+          create: {
+            walletAddress: buyerWallet,
+            source: 'direct_checkout',
+            sourceRef: updatedOrder.id,
+            points,
+            orderId: updatedOrder.id,
+          },
+        });
+
+        const sum = await txdb.loyaltyPointsEvent.aggregate({
+          where: { walletAddress: buyerWallet },
+          _sum: { points: true },
+        });
+
+        return {
+          event,
+          newBalance: sum._sum.points ?? 0,
+          alreadyPaid: false,
           walletAddress: buyerWallet,
-          source: 'direct_checkout',
-          sourceRef: updatedOrder.id,
-          points,
-          orderId: updatedOrder.id,
-        },
-      });
-
-      const sum = await txdb.loyaltyPointsEvent.aggregate({
-        where: { walletAddress: buyerWallet },
-        _sum: { points: true },
-      });
-
-      return { updatedOrder, event, newBalance: sum._sum.points ?? 0 };
-    });
+        };
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    );
 
     // Fire-and-forget fulfillment webhook (still await, but errors won't fail the order).
     const webhookPayload = {
@@ -255,13 +355,28 @@ export async function POST(request: NextRequest) {
       orderId: order.id,
     };
 
-    // Don't block the response on webhook failures.
-    postFulfillmentWebhook(webhookPayload).catch(() => undefined);
+    // Don't block response on fulfillment callback; still alert on terminal failure.
+    if (!result.alreadyPaid) {
+      postFulfillmentWebhook(webhookPayload, {
+        orderId: order.id,
+        txSignature,
+        buyerWallet,
+        checkoutMode: 'direct',
+      }).catch(() => undefined);
+    }
+
+    console.info('[checkout.confirm] finalized order', {
+      orderId: order.id,
+      txSignature,
+      walletAddress: result.walletAddress,
+      pointsAwarded: result.event.points,
+      idempotent: result.alreadyPaid,
+    });
 
     return NextResponse.json({
       success: true,
       status: 'Paid',
-      walletAddress: buyerWallet,
+      walletAddress: result.walletAddress,
       pointsAwarded: result.event.points,
       newBalance: result.newBalance,
       txSignature,
@@ -269,6 +384,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Direct checkout confirm error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
+    await sendOpsAlert({
+      scope: 'checkout.confirm',
+      severity: 'error',
+      message: 'Direct checkout confirm failed',
+      context: { error: message },
+    });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
