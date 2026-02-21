@@ -59,7 +59,7 @@ function StatCard({ title, value, subtitle, icon, color, delay = 0, href, trend 
       <div className="relative z-10">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
-          <div className={`w-10 h-10 ${config.bg} flex items-center justify-center`}>
+          <div className={`w-10 h-10 bg-transparent flex items-center justify-center`}>
             <div className={config.icon}>{icon}</div>
           </div>
           {href && (

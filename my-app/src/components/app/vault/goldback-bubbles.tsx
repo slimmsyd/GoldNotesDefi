@@ -227,10 +227,12 @@ export function GoldbackBubbles() {
   if (batches.length === 0) {
     return (
       <div className="bg-gray-900/50 border border-gray-800 p-6 h-[400px] flex flex-col items-center justify-center">
-        <div className="text-6xl mb-4">🏦</div>
+        <div className="mb-4 bg-transparent flex items-center justify-center">
+          <img src="/AppAssets/PNG Renders/safe_black.png" alt="Empty Vault" className="w-16 h-16 object-contain drop-shadow-md" />
+        </div>
         <p className="text-gray-500">Vault is empty</p>
         <p className="text-gray-600 text-sm mt-1">Verified batches will appear as bubbles</p>
-      </div>
+      </div >
     );
   }
 

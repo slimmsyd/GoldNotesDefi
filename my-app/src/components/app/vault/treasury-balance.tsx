@@ -35,8 +35,8 @@ export function TreasuryBalance({ treasuryBalance, isLoading, onRefresh }: Treas
             <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-[#c9a84c] flex items-center justify-center">
-                            <span className="text-black font-bold text-sm">G</span>
+                        <div className="w-8 h-8 bg-transparent flex items-center justify-center">
+                            <img src="/AppAssets/BlackW3BCoin.jpg" alt="W3B" className="w-8 h-8 object-contain rounded-full drop-shadow-md" />
                         </div>
                         <div>
                             <h3 className="text-white font-semibold">Treasury Vault</h3>

@@ -167,11 +167,11 @@ export function VerifyNowButton({ onComplete }: { onComplete?: () => void }) {
               {/* Header */}
               <div className="flex items-center gap-3 mb-3">
                 {result.success ? (
-                  <div className="w-8 h-8 bg-green-500/20 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 bg-transparent flex items-center justify-center shrink-0">
                     <img src="/AppAssets/PNG Renders/safe_open_coins_black.png" alt="Success" className="w-6 h-6 object-contain drop-shadow-md" />
                   </div>
                 ) : (
-                  <div className="w-8 h-8 bg-red-500/20 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 bg-transparent flex items-center justify-center shrink-0">
                     <img src="/AppAssets/PNG Renders/umbrella_black.png" alt="Failed" className="w-6 h-6 object-contain drop-shadow-md" />
                   </div>
                 )}

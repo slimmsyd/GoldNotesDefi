@@ -56,7 +56,7 @@ export function ArchitectureExplainer() {
         className="w-full px-5 py-3.5 flex items-center justify-between text-left hover:bg-gray-800/30 transition-colors focus:outline-none"
       >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#c9a84c]/10 flex items-center justify-center">
+          <div className="w-8 h-8 bg-transparent flex items-center justify-center">
             <img src="/AppAssets/PNG Renders/calculator_black.png" alt="How W3B Works" className="w-5 h-5 object-contain drop-shadow-md" />
           </div>
           <span className="text-sm font-medium text-gray-300">How W3B Works</span>
@@ -96,7 +96,7 @@ export function ArchitectureExplainer() {
                     className="bg-gray-800/30 p-4 border border-gray-800/50 group hover:border-gray-700 transition-colors"
                   >
                     <div className="flex items-center gap-2.5 mb-2">
-                      <div className="w-6 h-6 bg-[#c9a84c]/10 flex items-center justify-center text-[#c9a84c]">
+                      <div className="w-6 h-6 bg-transparent flex items-center justify-center text-[#c9a84c]">
                         {layer.icon}
                       </div>
                       <div>
@@ -125,7 +125,7 @@ export function ArchitectureExplainer() {
               {/* Trust Statement */}
               <div className="bg-gradient-to-r from-green-500/5 to-transparent p-3 border border-green-500/10">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 bg-transparent flex items-center justify-center flex-shrink-0">
                     <img src="/AppAssets/PNG Renders/safe_black.png" alt="Certainty" className="w-5 h-5 object-contain drop-shadow-md" />
                   </div>
                   <div>

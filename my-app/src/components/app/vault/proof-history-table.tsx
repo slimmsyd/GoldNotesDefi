@@ -77,9 +77,7 @@ export function ProofHistoryTable() {
         >
             <div className="p-6 border-b border-gray-800">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                    <svg className="w-5 h-5 text-[#e8d48b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                    </svg>
+                    <img src="/AppAssets/PNG Renders/dollar_coin_black.png" alt="Proof History" className="w-6 h-6 object-contain drop-shadow-md" />
                     Proof History (Audit Log)
                 </h3>
                 <p className="text-gray-400 text-sm mt-1">
@@ -133,8 +131,8 @@ export function ProofHistoryTable() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium ${record.status === 'anchored'
-                                                ? 'bg-emerald-900/50 text-emerald-400'
-                                                : 'bg-yellow-900/50 text-yellow-400'
+                                            ? 'bg-emerald-900/50 text-emerald-400'
+                                            : 'bg-yellow-900/50 text-yellow-400'
                                             }`}>
                                             {record.status === 'anchored' ? '✓ Anchored' : record.status}
                                         </span>

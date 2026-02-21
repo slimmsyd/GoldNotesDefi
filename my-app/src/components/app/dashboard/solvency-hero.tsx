@@ -72,8 +72,7 @@ export function SolvencyHero({ data, isLoading }: SolvencyHeroProps) {
         <div className="flex items-start gap-4 mb-6">
           {/* Status Icon */}
           <div
-            className={`w-14 h-14 flex-shrink-0 flex items-center justify-center ${isSolvent ? 'bg-green-500/20' : 'bg-red-500/20'
-              }`}
+            className={`w-14 h-14 flex-shrink-0 flex items-center justify-center bg-transparent`}
           >
             {isSolvent ? (
               <img src="/AppAssets/PNG Renders/profit_shield_black.png" alt="Solvent" className="w-10 h-10 object-contain drop-shadow-md" />

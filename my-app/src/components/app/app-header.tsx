@@ -57,8 +57,8 @@ function NetworkBadge() {
   return (
     <span
       className={`text-[10px] font-mono px-2 py-0.5 border ${PROTOCOL_CONFIG.isMainnet
-          ? 'bg-[#c9a84c]/10 text-[#c9a84c] border-[#c9a84c]/30'
-          : 'bg-[#c9a84c]/10 text-[#c9a84c] border-[#c9a84c]/30'
+        ? 'bg-[#c9a84c]/10 text-[#c9a84c] border-[#c9a84c]/30'
+        : 'bg-[#c9a84c]/10 text-[#c9a84c] border-[#c9a84c]/30'
         }`}
     >
       {PROTOCOL_CONFIG.networkDisplay}
@@ -82,14 +82,14 @@ function NavLink({
     <Link
       href={href}
       className={`relative flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors duration-150 ${isActive
-          ? 'text-white bg-[#1a1a1a]'
-          : 'text-gray-400 hover:text-[#e8d48b]'
+        ? 'text-white'
+        : 'text-gray-400 hover:text-[#e8d48b]'
         }`}
     >
       {icon}
       {children}
       {isActive && (
-        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#c9a84c]" />
+        <div className="absolute bottom-0 left-0 right-0 h-[0.5px] bg-[#c9a84c]" />
       )}
     </Link>
   );
@@ -396,8 +396,8 @@ export function AppHeader() {
                       href={item.href}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`flex items-center gap-3 px-4 py-5 text-lg font-medium transition-colors border-b border-white/5 ${isActive(item.href)
-                          ? 'text-[#e8d48b]'
-                          : 'text-white hover:text-[#c9a84c]'
+                        ? 'text-[#e8d48b]'
+                        : 'text-white hover:text-[#c9a84c]'
                         }`}
                     >
                       <span className={isActive(item.href) ? 'text-[#c9a84c]' : 'text-gray-500'}>

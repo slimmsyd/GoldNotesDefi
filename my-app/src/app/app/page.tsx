@@ -85,7 +85,7 @@ export default function AppDashboard() {
           className="bg-red-500/20 border border-red-500/30 p-4 flex items-center justify-between"
         >
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-red-500/20 flex items-center justify-center">
+            <div className="w-10 h-10 bg-transparent flex items-center justify-center">
               <img src="/AppAssets/PNG Renders/umbrella_black.png" alt="Error" className="w-5 h-5 object-contain" />
             </div>
             <div>

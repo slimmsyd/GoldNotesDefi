@@ -23,7 +23,7 @@ export function ReserveGrowthChart() {
     async function loadData() {
       try {
         const roots = await fetchMerkleRootHistory(20);
-        
+
         // Transform to cumulative data points
         const points: DataPoint[] = roots
           .reverse() // Oldest first
@@ -274,7 +274,7 @@ export function ReserveGrowthChart() {
     return (
       <div className="bg-gray-900/50 border border-gray-800 p-6 h-[500px] flex flex-col items-center justify-center">
         <svg className="w-16 h-16 text-gray-700 mb-4" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+          <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
         </svg>
         <p className="text-gray-500">No reserve data yet</p>
         <p className="text-gray-600 text-sm mt-1">Run the pipeline to see growth over time</p>
@@ -290,16 +290,14 @@ export function ReserveGrowthChart() {
       <div className="p-6 border-b border-gray-800 flex justify-between items-start">
         <div>
           <h3 className="text-white font-semibold text-lg flex items-center gap-2">
-            <svg className="w-5 h-5 text-[#c9a84c]" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
-            </svg>
+            <img src="/AppAssets/PNG Renders/scale_black.png" alt="Vault" className="w-6 h-6 object-contain drop-shadow-md" />
             Reserve Growth Since Inception
           </h3>
           <p className="text-gray-500 text-sm mt-1">
             Cumulative verified Goldbacks anchored on-chain
           </p>
         </div>
-        
+
         <div className="text-right">
           <div className="text-3xl font-bold text-[#c9a84c]">
             {latestPoint?.totalSerials.toLocaleString()}

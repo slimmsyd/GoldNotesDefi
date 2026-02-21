@@ -72,7 +72,7 @@ export function AuditTrail() {
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-800/50 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-[#c9a84c]/20 flex items-center justify-center">
+          <div className="w-10 h-10 bg-transparent flex items-center justify-center">
             <img src="/AppAssets/PNG Renders/laptop_security_black.png" alt="Proof History" className="w-6 h-6 object-contain drop-shadow-md" />
           </div>
           <div>
@@ -95,7 +95,7 @@ export function AuditTrail() {
           </div>
         ) : roots.length === 0 ? (
           <div className="text-center py-12">
-            <div className="w-16 h-16 bg-green-500/10 flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-transparent flex items-center justify-center mx-auto mb-4">
               <img src="/AppAssets/PNG Renders/safe_open_coins_black.png" alt="Building Proof History" className="w-10 h-10 object-contain drop-shadow-md" />
             </div>
             <p className="text-white font-medium mb-1">Building Proof History</p>
@@ -135,7 +135,7 @@ export function AuditTrail() {
                   >
                     <div className="flex items-start gap-4">
                       {/* Status Icon */}
-                      <div className={`w-10 h-10 ${statusConfig.bg} flex items-center justify-center flex-shrink-0`}>
+                      <div className={`w-10 h-10 bg-transparent flex items-center justify-center flex-shrink-0`}>
                         {root.status === 'anchored' || root.status === 'confirmed' ? (
                           <img src="/AppAssets/PNG Renders/safe_open_coins_black.png" alt="Confirmed" className="w-6 h-6 object-contain drop-shadow-md" />
                         ) : root.status === 'unconfirmed' ? (

@@ -86,7 +86,7 @@ export function MempoolBlocks({ goldbackPrice }: MempoolBlocksProps) {
   if (blocks.length === 0) {
     return (
       <div className="bg-gray-900/50 border border-gray-800 p-8 text-center">
-        <div className="w-16 h-16 bg-[#c9a84c]/10 flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 bg-transparent flex items-center justify-center mx-auto mb-4">
           <img src="/AppAssets/PNG Renders/laptop_security_black.png" alt="Awaiting Proofs" className="w-10 h-10 object-contain drop-shadow-md" />
         </div>
         <p className="text-white font-medium mb-1">Awaiting ZK Proofs</p>
@@ -104,7 +104,7 @@ export function MempoolBlocks({ goldbackPrice }: MempoolBlocksProps) {
       {/* Header */}
       <div className="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-800/50">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-[#c9a84c]/20 flex items-center justify-center">
+          <div className="w-10 h-10 bg-transparent flex items-center justify-center">
             <img src="/AppAssets/PNG Renders/cheque_black.png" alt="Verified Batches" className="w-6 h-6 object-contain drop-shadow-md" />
           </div>
           <div>
@@ -227,7 +227,7 @@ function MempoolBlock({ block, index, isAnchored, formatAge, goldbackPrice }: Me
 
           {/* Serial Count */}
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#c9a84c]/20 flex items-center justify-center">
+            <div className="w-8 h-8 bg-transparent flex items-center justify-center">
               <img src="/AppAssets/PNG Renders/coin_stack_gold_black.png" alt="Serials" className="w-5 h-5 object-contain drop-shadow-md" />
             </div>
             <div>
