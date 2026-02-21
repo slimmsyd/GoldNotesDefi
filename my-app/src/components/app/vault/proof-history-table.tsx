@@ -49,11 +49,11 @@ export function ProofHistoryTable() {
 
     if (isLoading) {
         return (
-            <div className="bg-gray-900/50 border border-gray-800 p-6 animate-pulse">
-                <div className="h-6 bg-gray-700 rounded w-48 mb-4"></div>
+            <div className="bg-gray-900/50 border border-gray-800 p-6 animate-pulse rounded-[4.5px]">
+                <div className="h-6 bg-gray-700 rounded-[4.5px] w-48 mb-4"></div>
                 <div className="space-y-3">
                     {[1, 2, 3].map(i => (
-                        <div key={i} className="h-12 bg-gray-800 rounded"></div>
+                        <div key={i} className="h-12 bg-gray-800 rounded-[4.5px]"></div>
                     ))}
                 </div>
             </div>
@@ -62,7 +62,7 @@ export function ProofHistoryTable() {
 
     if (error) {
         return (
-            <div className="bg-gray-900/50 border border-gray-800 p-6">
+            <div className="bg-gray-900/50 border border-gray-800 p-6 rounded-[4.5px]">
                 <p className="text-red-400">{error}</p>
             </div>
         );
@@ -73,7 +73,7 @@ export function ProofHistoryTable() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-gray-900/50 border border-gray-800 overflow-hidden"
+            className="bg-gray-900/50 border border-gray-800 overflow-hidden rounded-[4.5px]"
         >
             <div className="p-6 border-b border-gray-800">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
@@ -125,12 +125,12 @@ export function ProofHistoryTable() {
                                         <span className="text-gray-500 text-sm ml-1">Goldbacks</span>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <code className="text-xs text-gray-400 bg-gray-800 px-2 py-1 font-mono">
+                                        <code className="text-xs text-gray-400 bg-gray-800 px-2 py-1 font-mono rounded-[4.5px]">
                                             {record.root_hash.slice(0, 10)}...{record.root_hash.slice(-8)}
                                         </code>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium ${record.status === 'anchored'
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-[4.5px] ${record.status === 'anchored'
                                             ? 'bg-emerald-900/50 text-emerald-400'
                                             : 'bg-yellow-900/50 text-yellow-400'
                                             }`}>

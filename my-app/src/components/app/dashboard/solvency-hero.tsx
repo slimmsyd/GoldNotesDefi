@@ -33,7 +33,7 @@ const formatTimeAgo = (hoursAgo: number): string => {
 export function SolvencyHero({ data, isLoading }: SolvencyHeroProps) {
   if (isLoading || !data) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 p-6 h-full animate-pulse">
+      <div className="bg-gray-900/50 border border-gray-800 p-6 rounded-[4.5px] h-full animate-pulse">
         <div className="flex items-start gap-4">
           <div className="w-14 h-14 bg-gray-800" />
           <div className="flex-1 space-y-3">
@@ -56,7 +56,7 @@ export function SolvencyHero({ data, isLoading }: SolvencyHeroProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className={`relative overflow-hidden border h-full ${isSolvent
+      className={`relative overflow-hidden border rounded-[4.5px] h-full ${isSolvent
         ? 'bg-gradient-to-br from-green-500/5 via-gray-900/50 to-gray-900/50 border-green-500/20'
         : 'bg-gradient-to-br from-red-500/5 via-gray-900/50 to-gray-900/50 border-red-500/20'
         }`}

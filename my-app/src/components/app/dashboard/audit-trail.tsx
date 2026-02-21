@@ -67,7 +67,7 @@ export function AuditTrail() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.4 }}
-      className="bg-gray-900/50 border border-gray-800 overflow-hidden"
+      className="bg-gray-900/50 border border-gray-800 rounded-[4.5px] overflow-hidden"
     >
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-800/50 flex items-center justify-between">
@@ -80,7 +80,7 @@ export function AuditTrail() {
             <p className="text-gray-500 text-xs">ZK-verified merkle roots</p>
           </div>
         </div>
-        <span className="text-xs text-gray-500 bg-gray-800/50 px-3 py-1">
+        <span className="text-xs text-gray-500 bg-gray-800/50 px-3 py-1 rounded-[4.5px]">
           {roots.length} records
         </span>
       </div>
@@ -90,7 +90,7 @@ export function AuditTrail() {
         {isLoading ? (
           <div className="space-y-3">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-20 bg-gray-800/50 animate-pulse" />
+              <div key={i} className="h-20 bg-gray-800/50 rounded-[4.5px] animate-pulse" />
             ))}
           </div>
         ) : roots.length === 0 ? (
@@ -100,7 +100,7 @@ export function AuditTrail() {
             </div>
             <p className="text-white font-medium mb-1">Building Proof History</p>
             <p className="text-gray-500 text-sm mb-3">ZK-verified merkle roots will be recorded here for transparent auditing</p>
-            <div className="inline-flex items-center gap-2 text-xs text-gray-500 bg-gray-800/50 px-3 py-1.5">
+            <div className="inline-flex items-center gap-2 text-xs text-gray-500 bg-gray-800/50 px-3 py-1.5 rounded-[4.5px]">
               <svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
@@ -130,7 +130,7 @@ export function AuditTrail() {
                 >
                   <Wrapper
                     {...wrapperProps}
-                    className={`block bg-gray-800/30 p-4 border border-gray-800/50 transition-all duration-200 ${explorerUrl ? 'hover:bg-gray-800/50 hover:border-gray-600 hover:translate-y-[-2px] hover:shadow-lg cursor-pointer group focus:outline-none' : ''
+                    className={`block bg-gray-800/30 p-4 border border-gray-800/50 rounded-[4.5px] transition-all duration-200 ${explorerUrl ? 'hover:bg-gray-800/50 hover:border-gray-600 hover:translate-y-[-2px] hover:shadow-lg cursor-pointer group focus:outline-none' : ''
                       }`}
                   >
                     <div className="flex items-start gap-4">

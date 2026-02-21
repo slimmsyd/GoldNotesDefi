@@ -121,7 +121,7 @@ export function VerifyNowButton({ onComplete }: { onComplete?: () => void }) {
       <button
         onClick={handleVerify}
         disabled={isVerifying}
-        className="flex items-center gap-2 bg-[#c9a84c]/10 border border-[#c9a84c]/30 px-4 py-2 text-[#e8d48b] hover:bg-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-colors disabled:opacity-50 focus:outline-none cursor-pointer"
+        className="flex items-center gap-2 bg-[#c9a84c]/10 border border-[#c9a84c]/30 px-4 py-2 text-[#e8d48b] hover:bg-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-colors disabled:opacity-50 focus:outline-none cursor-pointer rounded-[4.5px]"
       >
         {isVerifying ? (
           <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -149,7 +149,7 @@ export function VerifyNowButton({ onComplete }: { onComplete?: () => void }) {
             className="fixed bottom-6 right-6 z-50 max-w-md"
           >
             <div
-              className={`border p-4 shadow-2xl ${result.success
+              className={`border p-4 shadow-2xl rounded-[4.5px] ${result.success
                 ? 'bg-gray-900 border-green-500/30'
                 : 'bg-gray-900 border-red-500/30'
                 }`}

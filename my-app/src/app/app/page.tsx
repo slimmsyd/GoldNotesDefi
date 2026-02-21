@@ -65,7 +65,7 @@ export default function AppDashboard() {
           <button
             onClick={refresh}
             disabled={isLoading}
-            className="flex items-center gap-2 bg-gray-900/50 border border-gray-800 px-4 py-2 text-gray-400 hover:text-white hover:border-[#c9a84c]/50 transition-colors disabled:opacity-50 focus:outline-none cursor-pointer"
+            className="flex items-center gap-2 bg-gray-900/50 border border-gray-800 px-4 py-2 text-gray-400 hover:text-white hover:border-[#c9a84c]/50 transition-colors disabled:opacity-50 focus:outline-none cursor-pointer rounded-[4.5px]"
           >
             <img
               src="/AppAssets/PNG Renders/calculator_black.png"
@@ -82,7 +82,7 @@ export default function AppDashboard() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-red-500/20 border border-red-500/30 p-4 flex items-center justify-between"
+          className="bg-red-500/20 border border-red-500/30 p-4 flex items-center justify-between rounded-[4.5px]"
         >
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-transparent flex items-center justify-center">
@@ -95,7 +95,7 @@ export default function AppDashboard() {
           </div>
           <button
             onClick={refresh}
-            className="bg-red-500/20 text-red-400 font-medium px-4 py-3 hover:bg-red-500/30 border border-red-500/30 transition-colors text-sm focus:outline-none"
+            className="bg-red-500/20 text-red-400 font-medium px-4 py-3 hover:bg-red-500/30 border border-red-500/30 transition-colors text-sm focus:outline-none rounded-[4.5px]"
           >
             Retry
           </button>

@@ -15,9 +15,9 @@ interface TreasuryBalanceProps {
 export function TreasuryBalance({ treasuryBalance, isLoading, onRefresh }: TreasuryBalanceProps) {
     if (isLoading) {
         return (
-            <div className="bg-gray-900/50 border border-gray-800 p-6 animate-pulse">
-                <div className="h-6 bg-gray-700 w-32 mb-3"></div>
-                <div className="h-10 bg-gray-700 w-24"></div>
+            <div className="bg-gray-900/50 border border-gray-800 p-6 animate-pulse rounded-[4.5px]">
+                <div className="h-6 bg-gray-700 w-32 mb-3 rounded-[4.5px]"></div>
+                <div className="h-10 bg-gray-700 w-24 rounded-[4.5px]"></div>
             </div>
         );
     }
@@ -27,7 +27,7 @@ export function TreasuryBalance({ treasuryBalance, isLoading, onRefresh }: Treas
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-gradient-to-br from-[#c9a84c]/10 to-gray-900 border border-[#c9a84c]/30 p-6 relative overflow-hidden"
+            className="bg-gradient-to-br from-[#c9a84c]/10 to-gray-900 border border-[#c9a84c]/30 p-6 relative overflow-hidden rounded-[4.5px]"
         >
             {/* Animated gold shimmer effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#c9a84c]/5 to-transparent animate-shimmer"></div>
@@ -36,7 +36,7 @@ export function TreasuryBalance({ treasuryBalance, isLoading, onRefresh }: Treas
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-transparent flex items-center justify-center">
-                            <img src="/AppAssets/BlackW3BCoin.jpg" alt="W3B" className="w-8 h-8 object-contain rounded-full drop-shadow-md" />
+                            <img src="/AppAssets/BlackW3BCoin.jpg" alt="W3B" className="w-8 h-8 object-contain rounded-[4.5px] drop-shadow-md" />
                         </div>
                         <div>
                             <h3 className="text-white font-semibold">Treasury Vault</h3>

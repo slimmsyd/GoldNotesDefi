@@ -354,13 +354,12 @@ export function SwapInterface() {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="bg-[#111111] border border-gray-800/50 p-6 shadow-2xl relative overflow-hidden max-w-[480px] w-full mx-auto">
+      <div className="bg-[#111111] border border-gray-800/50 p-6 shadow-2xl relative overflow-hidden max-w-[480px] w-full mx-auto rounded-[4.5px]">
         {/* Header */}
         <div className="flex flex-col mb-8">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-2">
               <h2 className="text-white font-semibold text-xl tracking-tight">Swap</h2>
-              <img src="/AppAssets/PNG Renders/calculator_black.png" alt="Swap Info" className="w-5 h-5 hover:scale-110 cursor-pointer object-contain transition-transform drop-shadow-md" />
             </div>
             <span className="text-gray-500 text-sm font-medium">{currentStepIndex + 1}/{PROGRESS_STEPS.length}</span>
           </div>
@@ -409,7 +408,7 @@ export function SwapInterface() {
               {/* Pay Input */}
               <div className="space-y-2">
                 <div className="text-gray-500 text-sm mb-1 ml-1">You send</div>
-                <div className="bg-[#1A1A1A] p-4 border border-transparent hover:border-gray-700/50 transition-all group">
+                <div className="bg-[#1A1A1A] p-4 border border-transparent hover:border-gray-700/50 transition-all group rounded-[4.5px]">
                   <div className="flex items-center justify-between gap-4">
                     {/* Token Selector - Left Side */}
                     <div className="flex-shrink-0">
@@ -444,8 +443,10 @@ export function SwapInterface() {
 
               {/* Arrow */}
               <div className="flex justify-center -my-2 relative z-10">
-                <div className="bg-gray-800 p-2 border-4 border-gray-900">
-                  <img src="/AppAssets/PNG Renders/send_money_black.png" alt="Swap direction" className="w-5 h-5 object-contain drop-shadow-md" />
+                <div className="bg-gray-800 p-2 border-4 border-[#111111] rounded-[4.5px]">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
                 </div>
               </div>
 
@@ -457,15 +458,15 @@ export function SwapInterface() {
                   <div className="text-gray-600 text-xs mt-1">estimated</div>
                 </div>
 
-                <div className="bg-[#1A1A1A] p-4 border border-transparent hover:border-gray-700/50 transition-all">
+                <div className="bg-[#1A1A1A] p-4 border border-transparent hover:border-gray-700/50 transition-all rounded-[4.5px]">
                   <div className="flex items-center justify-between gap-4">
                     {/* Fixed WGB Token Display */}
                     <div className="flex-shrink-0">
-                      <div className="bg-[#2A2A2A] hover:bg-[#333] pl-2 pr-4 py-1.5 flex items-center gap-3 transition-colors cursor-default border border-gray-800">
+                      <div className="bg-[#2A2A2A] hover:bg-[#333] pl-2 pr-4 py-1.5 flex items-center gap-3 transition-colors cursor-default border border-gray-800 rounded-[4.5px]">
                         <img
                           src="/AppAssets/BlackW3BCoin.jpg"
                           alt="WGB Token"
-                          className="w-8 h-8 shadow-lg shadow-[#c9a84c]/20 rounded-full"
+                          className="w-8 h-8 shadow-lg shadow-[#c9a84c]/20 rounded-[4.5px]"
                         />
                         <div className="text-left">
                           <span className="text-white font-bold block leading-none">WGB</span>
@@ -493,7 +494,7 @@ export function SwapInterface() {
               </div>
 
               {/* Rate Info */}
-              <div className="bg-gray-950/50 p-3 text-xs space-y-2">
+              <div className="bg-gray-950/50 p-3 text-xs space-y-2 rounded-[4.5px]">
                 <div className="flex justify-between text-gray-400">
                   <span>Rate</span>
                   <span className="text-white">
@@ -513,7 +514,7 @@ export function SwapInterface() {
 
               {/* Error Display */}
               {error && (
-                <div className="bg-red-900/30 border border-red-800 p-3 text-red-400 text-sm">
+                <div className="bg-red-900/30 border border-red-800 p-3 text-red-400 text-sm rounded-[4.5px]">
                   {error}
                 </div>
               )}
@@ -527,7 +528,7 @@ export function SwapInterface() {
                 <button
                   disabled={!payAmount || parseFloat(payAmount) <= 0}
                   onClick={() => setStep('review')}
-                  className="w-full bg-linear-to-r from-[#c9a84c] to-[#a48a3a] cursor-pointer text-black font-bold py-4 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-[0_4px_16px_rgba(201,168,76,0.35)]"
+                  className="w-full bg-linear-to-r from-[#c9a84c] to-[#a48a3a] cursor-pointer text-black font-bold py-4 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-[0_4px_16px_rgba(201,168,76,0.35)] rounded-[4.5px]"
                 >
                   Review Swap
                 </button>
@@ -553,7 +554,7 @@ export function SwapInterface() {
                 </div>
               </div>
 
-              <div className="bg-gray-950 p-4 space-y-3 text-sm">
+              <div className="bg-gray-950 p-4 space-y-3 text-sm rounded-[4.5px]">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Rate</span>
                   <span className="text-white">1 WGB = {w3bPriceUsd} USD</span>
@@ -589,7 +590,7 @@ export function SwapInterface() {
 
               {/* Fallback pricing warning */}
               {isPriceFallback && (
-                <div className="bg-amber-900/30 border border-amber-700 p-3 text-amber-400 text-sm flex items-center gap-2">
+                <div className="bg-amber-900/30 border border-amber-700 p-3 text-amber-400 text-sm flex items-center gap-2 rounded-[4.5px]">
                   <img src="/AppAssets/PNG Renders/discount_black.png" alt="Rate Warning" className="w-6 h-6 flex-shrink-0 object-contain drop-shadow-md" />
                   <span>Using default rate (${w3bPriceUsd.toFixed(2)}). Live pricing is currently unavailable.</span>
                 </div>
@@ -597,14 +598,14 @@ export function SwapInterface() {
 
               {/* Price staleness warning */}
               {!isPriceFallback && priceMinutesSinceUpdate !== null && priceMinutesSinceUpdate > 30 && (
-                <div className="bg-yellow-900/30 border border-yellow-800 p-3 text-yellow-400 text-sm flex items-center gap-2">
+                <div className="bg-yellow-900/30 border border-yellow-800 p-3 text-yellow-400 text-sm flex items-center gap-2 rounded-[4.5px]">
                   <img src="/AppAssets/PNG Renders/calendar_black.png" alt="Staleness Warning" className="w-6 h-6 flex-shrink-0 object-contain drop-shadow-md" />
                   <span>Price data is {priceMinutesSinceUpdate} minutes old. Fresh verification will occur before swap.</span>
                 </div>
               )}
 
               {error && (
-                <div className="bg-red-900/30 border border-red-800 p-3 text-red-400 text-sm">
+                <div className="bg-red-900/30 border border-red-800 p-3 text-red-400 text-sm rounded-[4.5px]">
                   {error}
                 </div>
               )}
@@ -612,14 +613,14 @@ export function SwapInterface() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setStep('input')}
-                  className="flex-1 bg-gray-800 text-white font-medium py-3 hover:bg-gray-700 transition-colors"
+                  className="flex-1 bg-gray-800 text-white font-medium py-3 hover:bg-gray-700 transition-colors rounded-[4.5px]"
                 >
                   Back
                 </button>
                 <button
                   onClick={handleSwap}
                   disabled={isLoading || isPriceVerifying}
-                  className="flex-[2] cursor-pointer bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black font-bold py-3 hover:brightness-110 disabled:opacity-80 transition-all active:scale-95 shadow-[0_4px_16px_rgba(201,168,76,0.35)] relative"
+                  className="flex-[2] cursor-pointer bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black font-bold py-3 hover:brightness-110 disabled:opacity-80 transition-all active:scale-95 shadow-[0_4px_16px_rgba(201,168,76,0.35)] relative rounded-[4.5px]"
                 >
                   {isLoading || isPriceVerifying ? (
                     <span className="flex items-center justify-center gap-2">
@@ -647,13 +648,13 @@ export function SwapInterface() {
             >
               {/* Animated spinner */}
               <div className="relative w-20 h-20 mx-auto">
-                <div className="absolute inset-0 border-4 border-gray-800 rounded-full" />
+                <div className="absolute inset-0 border-4 border-gray-800 rounded-[4.5px]" />
                 <div className="absolute inset-0 border-4 border-transparent border-t-[#c9a84c] rounded-full animate-spin" />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <img
                     src="/AppAssets/BlackW3BCoin.jpg"
                     alt="WGB"
-                    className="w-8 h-8 rounded-full"
+                    className="w-8 h-8 rounded-[4.5px]"
                   />
                 </div>
               </div>
@@ -670,7 +671,7 @@ export function SwapInterface() {
               </div>
 
               {/* Transaction details summary */}
-              <div className="bg-gray-950/50 p-4 text-sm space-y-2 mx-4">
+              <div className="bg-gray-950/50 p-4 text-sm space-y-2 mx-4 rounded-[4.5px]">
                 <div className="flex justify-between text-gray-400">
                   <span>Sending</span>
                   <span className="text-white">{payAmount} {selectedPayToken.symbol}</span>
@@ -694,7 +695,7 @@ export function SwapInterface() {
               animate={{ opacity: 1, scale: 1 }}
               className="text-center py-8"
             >
-              <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 relative overflow-hidden">
+              <div className="w-24 h-24 bg-green-500/10 rounded-[4.5px] flex items-center justify-center mx-auto mb-6 relative overflow-hidden">
                 <div className="absolute inset-0 bg-green-500/20 animate-pulse" />
                 <img src="/AppAssets/PNG Renders/safe_open_coins_black.png" alt="Success" className="w-16 h-16 object-contain relative z-10 drop-shadow-xl" />
               </div>
@@ -714,7 +715,7 @@ export function SwapInterface() {
               )}
               <button
                 onClick={reset}
-                className="w-full bg-gray-800 text-white font-medium py-3 hover:bg-gray-700 transition-colors"
+                className="w-full bg-gray-800 text-white font-medium py-3 hover:bg-gray-700 transition-colors rounded-[4.5px]"
               >
                 Start New Swap
               </button>

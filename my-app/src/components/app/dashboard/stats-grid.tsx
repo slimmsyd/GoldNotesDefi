@@ -51,7 +51,7 @@ function StatCard({ title, value, subtitle, icon, color, delay = 0, href, trend 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={`group bg-gray-900/50 border ${config.border} p-5 relative overflow-hidden transition-all duration-200 hover:translate-y-[-2px] ${config.glow} group-hover:shadow-lg h-full`}
+      className={`group bg-gray-900/50 border ${config.border} p-5 relative overflow-hidden transition-all duration-200 hover:translate-y-[-2px] ${config.glow} rounded-[4.5px] group-hover:shadow-lg h-full`}
     >
       {/* Background Gradient */}
       <div className={`absolute inset-0 ${config.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
@@ -62,40 +62,44 @@ function StatCard({ title, value, subtitle, icon, color, delay = 0, href, trend 
           <div className={`w-10 h-10 bg-transparent flex items-center justify-center`}>
             <div className={config.icon}>{icon}</div>
           </div>
-          {href && (
-            <svg className="w-4 h-4 text-gray-600 group-hover:text-gray-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          )}
-        </div>
+          {
+            href && (
+              <svg className="w-4 h-4 text-gray-600 group-hover:text-gray-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            )
+          }
+        </div >
 
         {/* Label */}
-        <p className="text-gray-500 text-xs font-medium uppercase tracking-wider mb-1">{title}</p>
+        < p className="text-gray-500 text-xs font-medium uppercase tracking-wider mb-1" > {title}</p >
 
         {/* Value */}
-        <div className="flex items-end gap-2">
+        < div className="flex items-end gap-2" >
           <p className="text-2xl font-bold text-white tracking-tight">{value}</p>
-          {trend && (
-            <span
-              className={`flex items-center gap-0.5 text-xs font-medium mb-1 ${trend.isPositive ? 'text-green-400' : 'text-red-400'
-                }`}
-            >
-              <svg
-                className={`w-3 h-3 ${trend.isPositive ? '' : 'rotate-180'}`}
-                fill="currentColor"
-                viewBox="0 0 20 20"
+          {
+            trend && (
+              <span
+                className={`flex items-center gap-0.5 text-xs font-medium mb-1 ${trend.isPositive ? 'text-green-400' : 'text-red-400'
+                  }`}
               >
-                <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-              </svg>
-              {trend.value}%
-            </span>
-          )}
-        </div>
+                <svg
+                  className={`w-3 h-3 ${trend.isPositive ? '' : 'rotate-180'}`}
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+                {trend.value}%
+              </span>
+            )
+          }
+        </div >
 
         {/* Subtitle */}
         {subtitle && <p className="text-gray-500 text-xs mt-1">{subtitle}</p>}
-      </div>
-    </motion.div>
+      </div >
+    </motion.div >
   );
 
   if (href) {
@@ -114,7 +118,7 @@ export function StatsGrid({ data, isLoading }: StatsGridProps) {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-gray-900/50 border border-gray-800 p-5 animate-pulse">
+          <div key={i} className="bg-gray-900/50 border border-gray-800 p-5 rounded-[4.5px] animate-pulse">
             <div className="w-10 h-10 bg-gray-800 mb-3" />
             <div className="w-20 h-3 bg-gray-800 mb-2" />
             <div className="w-24 h-7 bg-gray-800" />

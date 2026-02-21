@@ -65,7 +65,7 @@ export function MempoolBlocks({ goldbackPrice }: MempoolBlocksProps) {
 
   if (isLoading) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 p-6">
+      <div className="bg-gray-900/50 border border-gray-800 p-6 rounded-[4.5px]">
         <div className="flex items-center justify-between mb-6">
           <div className="h-6 w-48 bg-gray-800 animate-pulse" />
           <div className="h-5 w-24 bg-gray-800 animate-pulse" />
@@ -74,7 +74,7 @@ export function MempoolBlocks({ goldbackPrice }: MempoolBlocksProps) {
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
-              className="shrink-0 w-44 h-48 bg-gray-800/50 animate-pulse"
+              className="shrink-0 w-44 h-48 bg-gray-800/50 rounded-[4.5px] animate-pulse"
               style={{ animationDelay: `${i * 0.1}s` }}
             />
           ))}
@@ -85,7 +85,7 @@ export function MempoolBlocks({ goldbackPrice }: MempoolBlocksProps) {
 
   if (blocks.length === 0) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 p-8 text-center">
+      <div className="bg-gray-900/50 border border-gray-800 p-8 rounded-[4.5px] text-center">
         <div className="w-16 h-16 bg-transparent flex items-center justify-center mx-auto mb-4">
           <img src="/AppAssets/PNG Renders/laptop_security_black.png" alt="Awaiting Proofs" className="w-10 h-10 object-contain drop-shadow-md" />
         </div>
@@ -100,7 +100,7 @@ export function MempoolBlocks({ goldbackPrice }: MempoolBlocksProps) {
   }
 
   return (
-    <div className="bg-gray-900/50 border border-gray-800 overflow-hidden">
+    <div className="bg-gray-900/50 border border-gray-800 rounded-[4.5px] overflow-hidden">
       {/* Header */}
       <div className="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-800/50">
         <div className="flex items-center gap-4">
@@ -187,7 +187,7 @@ function MempoolBlock({ block, index, isAnchored, formatAge, goldbackPrice }: Me
       className="shrink-0 cursor-pointer group"
     >
       <div
-        className={`relative w-44 border overflow-hidden transition-all duration-200 ${isAnchored
+        className={`relative w-44 border rounded-[4.5px] overflow-hidden transition-all duration-200 ${isAnchored
           ? 'bg-gradient-to-b from-gray-800 to-gray-900 border-gray-700/50 group-hover:border-[#c9a84c]/30 group-hover:shadow-lg group-hover:shadow-[#c9a84c]/10'
           : 'bg-gradient-to-b from-[#c9a84c]/10 to-gray-900 border-[#c9a84c]/30 group-hover:shadow-lg group-hover:shadow-[#c9a84c]/10'
           }`}

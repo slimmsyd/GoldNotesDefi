@@ -67,7 +67,7 @@ function NetworkBadge() {
   if (!mounted) return null;
 
   return (
-    <span className={`text-[10px] font-mono px-2 py-0.5 border ${PROTOCOL_CONFIG.isMainnet
+    <span className={`text-[10px] font-mono px-2 py-0.5 border rounded-[4.5px] ${PROTOCOL_CONFIG.isMainnet
       ? 'bg-[#c9a84c]/10 text-[#c9a84c] border-[#c9a84c]/30'
       : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
       }`}>
@@ -89,11 +89,9 @@ interface NavLinkProps {
 function NavLink({ href, children, isComingSoon = false, isInverted = false }: NavLinkProps) {
   if (isComingSoon) {
     return (
-      <div className={`relative px-3 py-2 text-sm font-medium cursor-not-allowed ${
-        isInverted ? 'text-gray-400' : 'text-gray-500'
-      }`}>
-        {children}
-        <span className="absolute -top-2 -right-2 text-[10px] px-2 py-0.5 uppercase font-mono bg-[#c9a84c]/20 text-[#c9a84c] leading-none">
+      <div className={`relative px-3 py-2 text-sm font-medium cursor-not-allowed ${isInverted ? 'text-gray-400' : 'text-gray-500'
+        }`}>
+        <span className="absolute -top-2 -right-2 text-[10px] px-2 py-0.5 uppercase font-mono bg-[#c9a84c]/20 text-[#c9a84c] leading-none rounded-[4.5px]">
           Soon
         </span>
       </div>
@@ -103,9 +101,8 @@ function NavLink({ href, children, isComingSoon = false, isInverted = false }: N
   return (
     <Link
       href={href}
-      className={`px-3 py-2 text-sm font-medium hover:text-[#c9a84c] transition-colors ${
-        isInverted ? 'text-gray-700' : 'text-gray-300'
-      }`}
+      className={`px-3 py-2 text-sm font-medium hover:text-[#c9a84c] transition-colors ${isInverted ? 'text-gray-700' : 'text-gray-300'
+        }`}
     >
       {children}
     </Link>
@@ -152,8 +149,8 @@ function CustomWalletButton({ isInverted = false }: { isInverted?: boolean }) {
   };
 
   const walletBtnClass = isInverted
-    ? 'ml-4 px-4 py-1.5 text-xs font-medium border border-gray-300 text-gray-700 hover:border-[#c9a84c] hover:text-[#c9a84c] transition-colors'
-    : 'ml-4 px-4 py-1.5 text-xs font-medium border border-[#c9a84c]/50 text-[#e8d48b] hover:bg-[#c9a84c]/10 transition-colors';
+    ? 'ml-4 px-4 py-1.5 text-xs font-medium border border-gray-300 text-gray-700 hover:border-[#c9a84c] hover:text-[#c9a84c] transition-colors rounded-[4.5px]'
+    : 'ml-4 px-4 py-1.5 text-xs font-medium border border-[#c9a84c]/50 text-[#e8d48b] hover:bg-[#c9a84c]/10 transition-colors rounded-[4.5px]';
 
   if (!mounted) {
     return (
@@ -177,7 +174,7 @@ function CustomWalletButton({ isInverted = false }: { isInverted?: boolean }) {
           {`${address.slice(0, 4)}...${address.slice(-4)}`}
         </button>
         {isDropdownOpen && (
-          <div className="absolute right-0 mt-2 w-56 bg-[#1a1a1a] shadow-lg border border-[#c9a84c]/30 py-2 z-50">
+          <div className="absolute right-0 mt-2 w-56 bg-[#1a1a1a] shadow-lg border border-[#c9a84c]/30 py-2 z-50 rounded-[4.5px]">
             <div className="px-4 py-2 border-b border-[#c9a84c]/20">
               <p className="text-xs text-gray-500 uppercase tracking-wider">Connected Wallet</p>
               <p className="text-xs font-mono text-[#c9a84c] truncate">{address}</p>
@@ -251,9 +248,8 @@ function CartButton({ isInverted = false }: { isInverted?: boolean }) {
   if (!mounted) return null;
 
   return (
-    <Link href="/checkout" className={`relative p-2 hover:text-[#c9a84c] transition-colors ${
-      isInverted ? 'text-gray-700' : 'text-gray-300'
-    }`}>
+    <Link href="/checkout" className={`relative p-2 hover:text-[#c9a84c] transition-colors ${isInverted ? 'text-gray-700' : 'text-gray-300'
+      }`}>
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
       </svg>
@@ -303,9 +299,8 @@ export function Header() {
           scrolled: { backgroundColor: 'rgba(255, 255, 255, 0.97)' },
         }}
         transition={{ duration: 0.15, ease: 'easeOut' }}
-        className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b transition-colors duration-150 h-16 px-6 ${
-          isInverted ? 'border-gray-200' : 'border-[#c9a84c]/30'
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b transition-colors duration-150 h-16 px-6 ${isInverted ? 'border-gray-200' : 'border-[#c9a84c]/30'
+          }`}
       >
         <div className="flex items-center justify-between h-full">
           {/* Logo */}
@@ -331,11 +326,10 @@ export function Header() {
             <NavLink href="#" isComingSoon isInverted={isInverted}>Merch</NavLink>
             <NavLink href="#" isComingSoon isInverted={isInverted}>Rewards</NavLink>
             <button
-              className={`text-xs font-bold px-5 py-2 transition-all cursor-pointer active:scale-95 ${
-                isInverted
-                  ? 'bg-[#0a0a0a] text-white hover:bg-[#1a1a1a]'
-                  : 'bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black hover:brightness-110'
-              }`}
+              className={`text-xs font-bold px-5 py-2 transition-all cursor-pointer active:scale-95 rounded-[4.5px] ${isInverted
+                ? 'bg-[#0a0a0a] text-white hover:bg-[#1a1a1a]'
+                : 'bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black hover:brightness-110'
+                }`}
               onClick={() => setIsWaitlistModalOpen(true)}
             >
               Join Waitlist
@@ -349,9 +343,8 @@ export function Header() {
             {/* Animated Hamburger / X toggle */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className={`xl:hidden p-2 transition-colors cursor-pointer ${
-                isInverted ? 'text-gray-700 hover:text-[#c9a84c]' : 'text-gray-300 hover:text-[#c9a84c]'
-              }`}
+              className={`xl:hidden p-2 transition-colors cursor-pointer ${isInverted ? 'text-gray-700 hover:text-[#c9a84c]' : 'text-gray-300 hover:text-[#c9a84c]'
+                }`}
               aria-label="Toggle menu"
             >
               {isMobileMenuOpen ? (
@@ -407,7 +400,7 @@ export function Header() {
                 <div className="flex items-center gap-4">
                   <motion.button
                     whileTap={{ scale: 0.95 }}
-                    className="bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black text-xs font-bold px-5 py-2 cursor-pointer hover:brightness-110 transition-all"
+                    className="bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black text-xs font-bold px-5 py-2 cursor-pointer hover:brightness-110 transition-all rounded-[4.5px]"
                     onClick={() => {
                       setIsWaitlistModalOpen(true);
                       setIsMobileMenuOpen(false);

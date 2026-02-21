@@ -48,7 +48,7 @@ export function ArchitectureExplainer() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.1 }}
-      className="bg-gray-900/30 border border-gray-800/50 overflow-hidden"
+      className="bg-gray-900/30 border border-gray-800/50 rounded-[4.5px] overflow-hidden"
     >
       {/* Toggle Button */}
       <button
@@ -93,7 +93,7 @@ export function ArchitectureExplainer() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 + 0.1 }}
-                    className="bg-gray-800/30 p-4 border border-gray-800/50 group hover:border-gray-700 transition-colors"
+                    className="bg-gray-800/30 p-4 border border-gray-800/50 rounded-[4.5px] group hover:border-gray-700 transition-colors"
                   >
                     <div className="flex items-center gap-2.5 mb-2">
                       <div className="w-6 h-6 bg-transparent flex items-center justify-center text-[#c9a84c]">
@@ -123,7 +123,7 @@ export function ArchitectureExplainer() {
               </div>
 
               {/* Trust Statement */}
-              <div className="bg-gradient-to-r from-green-500/5 to-transparent p-3 border border-green-500/10">
+              <div className="bg-gradient-to-r from-green-500/5 to-transparent p-3 border border-green-500/10 rounded-[4.5px]">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 bg-transparent flex items-center justify-center flex-shrink-0">
                     <img src="/AppAssets/PNG Renders/safe_black.png" alt="Certainty" className="w-5 h-5 object-contain drop-shadow-md" />

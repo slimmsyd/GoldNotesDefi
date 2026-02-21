@@ -189,7 +189,7 @@ export function TokenSelector({
             {/* Trigger Button */}
             <button
                 onClick={() => setIsOpen(true)}
-                className="bg-[#2A2A2A] hover:bg-[#333] pl-2 pr-4 py-1.5 flex items-center gap-3 transition-colors cursor-pointer border border-gray-800 group"
+                className="bg-[#2A2A2A] hover:bg-[#333] pl-2 pr-4 py-1.5 flex items-center gap-3 transition-colors cursor-pointer border border-gray-800 group rounded-[4.5px]"
             >
                 {selectedToken.logoURI ? (
                     <img
@@ -201,7 +201,7 @@ export function TokenSelector({
                         }}
                     />
                 ) : (
-                    <div className="w-8 h-8 bg-gray-600 flex items-center justify-center text-[10px] text-white font-bold">
+                    <div className="w-8 h-8 bg-gray-600 flex items-center justify-center text-[10px] text-white font-bold rounded-[4.5px]">
                         {selectedToken.symbol[0]}
                     </div>
                 )}
@@ -239,7 +239,7 @@ export function TokenSelector({
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             transition={{ duration: 0.2 }}
-                            className="w-full max-w-md bg-[#0B0B0B] border border-gray-800 shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[80vh]"
+                            className="w-full max-w-md bg-[#0B0B0B] border border-gray-800 shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[80vh] rounded-[4.5px]"
                         >
                             {/* Header */}
                             <div className="flex items-center justify-between p-6 pb-2">
@@ -270,7 +270,7 @@ export function TokenSelector({
                                         placeholder="Search by name, ticker, or network..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full bg-[#1A1A1A] text-white text-base pl-12 pr-4 py-3.5 outline-none border border-transparent focus:border-gray-700 placeholder-gray-600 transition-all font-sans"
+                                        className="w-full bg-[#1A1A1A] text-white text-base pl-12 pr-4 py-3.5 outline-none border border-transparent focus:border-gray-700 placeholder-gray-600 transition-all font-sans rounded-[4.5px]"
                                         autoFocus
                                     />
                                 </div>
@@ -313,7 +313,7 @@ export function TokenSelector({
                                                                 }}
                                                             />
                                                         ) : (
-                                                            <div className="w-10 h-10 bg-gray-800 flex items-center justify-center text-white font-bold">
+                                                            <div className="w-10 h-10 bg-gray-800 flex items-center justify-center text-white font-bold rounded-[4.5px]">
                                                                 {token.symbol[0]}
                                                             </div>
                                                         )}

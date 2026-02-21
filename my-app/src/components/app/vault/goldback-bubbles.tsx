@@ -218,7 +218,7 @@ export function GoldbackBubbles() {
 
   if (isLoading) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 p-6 h-[400px] animate-pulse flex items-center justify-center">
+      <div className="bg-gray-900/50 border border-raidus border-gray-800 p-6 h-[400px] animate-pulse flex items-center justify-center">
         <div className="text-gray-500">Loading batch data...</div>
       </div>
     );
@@ -226,7 +226,7 @@ export function GoldbackBubbles() {
 
   if (batches.length === 0) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 p-6 h-[400px] flex flex-col items-center justify-center">
+      <div className="bg-gray-900/50 rounded-[4.5px]  border border-gray-800 p-6 h-[400px] flex flex-col items-center justify-center rounded-[4.5px]">
         <div className="mb-4 bg-transparent flex items-center justify-center">
           <img src="/AppAssets/PNG Renders/safe_black.png" alt="Empty Vault" className="w-16 h-16 object-contain drop-shadow-md" />
         </div>
@@ -239,7 +239,7 @@ export function GoldbackBubbles() {
   const totalSerials = batches.reduce((sum, b) => sum + b.serialCount, 0);
 
   // return (
-  //   <div className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden">
+  //   <div className="bg-gray-900/50 border border-gray-800 rounded-[4.5px] overflow-hidden">
   //     {/* Header */}
   //     <div className="p-6 border-b border-gray-800 flex justify-between items-start">
   //       <div>
@@ -260,7 +260,7 @@ export function GoldbackBubbles() {
 
   //     {/* Selected Batch Info */}
   //     {selectedBatch && (
-  //       <div className="absolute top-32 left-1/2 -translate-x-1/2 z-20 bg-gray-800/95 backdrop-blur border border-gray-700 rounded-xl p-4 shadow-2xl min-w-[200px]">
+  //       <div className="absolute top-32 left-1/2 -translate-x-1/2 z-20 bg-gray-800/95 backdrop-blur border border-gray-700 rounded-[4.5px] p-4 shadow-2xl min-w-[200px]">
   //         <div className="text-amber-500 font-bold text-lg">{selectedBatch.serialCount} Goldbacks</div>
   //         <div className="text-gray-400 text-xs mt-1">Batch ID: {selectedBatch.id.split('-').pop()}</div>
   //         <div className="text-gray-500 text-[10px] mt-1">
