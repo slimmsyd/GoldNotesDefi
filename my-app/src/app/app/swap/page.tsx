@@ -21,7 +21,7 @@ export default function SwapPage() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 py-2.5 text-sm font-medium transition-all rounded-[4.5px] ${activeTab === tab.key
+            className={`flex-1 py-2.5 text-sm  cursor-pointer font-medium transition-all rounded-[4.5px] ${activeTab === tab.key
               ? tab.key === 'redeem'
                 ? 'bg-red-600/20 text-red-400 border border-red-600/30'
                 : 'bg-[#c9a84c]/20 text-[#c9a84c] border border-[#c9a84c]/30'
