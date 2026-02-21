@@ -72,7 +72,7 @@ export function RedeemInterface() {
       .then(data => {
         if (data.success && data.rate) setW3bPriceUsd(data.rate);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Fetch W3B balance when wallet connects
@@ -255,13 +255,12 @@ export function RedeemInterface() {
             {PROGRESS_STEPS.map((s, i) => (
               <div
                 key={s.key}
-                className={`h-1 w-full transition-all duration-500 ease-out ${
-                  i < currentStepIndex
+                className={`h-1 w-full transition-all duration-500 ease-out ${i < currentStepIndex
                     ? 'bg-red-500'
                     : i === currentStepIndex
                       ? step === 'processing' ? 'bg-red-500 animate-pulse' : 'bg-red-500'
                       : 'bg-gray-800'
-                }`}
+                  }`}
               />
             ))}
           </div>
@@ -291,12 +290,11 @@ export function RedeemInterface() {
                         {new Date(r.created_at).toLocaleDateString()}
                       </span>
                     </div>
-                    <span className={`px-2 py-0.5 font-medium ${
-                      r.status === 3 ? 'bg-green-500/20 text-green-400' :
-                      r.status === 4 ? 'bg-red-500/20 text-red-400' :
-                      r.status === 1 ? 'bg-blue-500/20 text-blue-400' :
-                      'bg-yellow-500/20 text-yellow-400'
-                    }`}>
+                    <span className={`px-2 py-0.5 font-medium ${r.status === 3 ? 'bg-green-500/20 text-green-400' :
+                        r.status === 4 ? 'bg-red-500/20 text-red-400' :
+                          r.status === 1 ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-yellow-500/20 text-yellow-400'
+                      }`}>
                       {getRedemptionStatusLabel(r.status)}
                     </span>
                   </div>
@@ -327,7 +325,7 @@ export function RedeemInterface() {
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-shrink-0">
                       <div className="bg-[#2A2A2A] pl-2 pr-4 py-1.5 flex items-center gap-3 border border-gray-800">
-                        <img src="/logos/BlackWebTokenLogo.png" alt="WGB" className="w-8 h-8" />
+                        <img src="/AppAssets/BlackW3BCoin.jpg" alt="WGB" className="w-8 h-8 rounded-full" />
                         <span className="text-white font-bold">WGB</span>
                       </div>
                     </div>

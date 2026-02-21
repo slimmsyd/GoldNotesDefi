@@ -39,7 +39,7 @@ export function SplashScreen({ navigation }: Props) {
     const timer = setTimeout(() => {
       if (didNavigate.current) return;
       didNavigate.current = true;
-      navigation.replace('Home');
+      navigation.replace('MainTabs');
     }, 2200);
 
     return () => clearTimeout(timer);
@@ -48,7 +48,7 @@ export function SplashScreen({ navigation }: Props) {
   function goToHome() {
     if (didNavigate.current) return;
     didNavigate.current = true;
-    navigation.replace('Home');
+    navigation.replace('MainTabs');
   }
 
   return (

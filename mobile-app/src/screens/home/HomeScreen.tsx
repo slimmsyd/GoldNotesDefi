@@ -1,13 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { getPortfolioSummary } from '../../lib/portfolio/summary-client';
 import { PortfolioSummaryResponse } from '../../lib/api/types';
-import type { RootStackParamList } from '../../navigation';
+import type { MainTabParamList } from '../../navigation';
 import { tokens } from '../../theme/tokens';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
+type Props = BottomTabScreenProps<MainTabParamList, 'Home'>;
 
 const EMPTY_SUMMARY: PortfolioSummaryResponse = {
   success: true,
@@ -99,13 +99,16 @@ export function HomeScreen({ navigation }: Props) {
         </Text>
         <Text style={styles.portfolioMeta}>Updated {updatedLabel}</Text>
 
-        <Pressable style={styles.portfolioButton}>
+        <Pressable style={styles.portfolioButton} onPress={() => navigation.navigate('Web3', { screen: 'Dashboard' })}>
           <Text style={styles.portfolioButtonText}>Portfolio</Text>
         </Pressable>
       </View>
 
       <View style={styles.actionRow}>
-        <Pressable style={[styles.actionButton, styles.actionButtonDark]} onPress={() => navigation.navigate('Redeem')}>
+        <Pressable
+          style={[styles.actionButton, styles.actionButtonDark]}
+          onPress={() => navigation.navigate('Web3', { screen: 'Redeem' })}
+        >
           <Text style={styles.actionButtonText}>Withdraw</Text>
         </Pressable>
         <Pressable style={[styles.actionButton, styles.actionButtonGold]} onPress={() => navigation.navigate('Shop')}>
@@ -151,7 +154,7 @@ const styles = StyleSheet.create({
     padding: tokens.spacing.lg,
     paddingBottom: 40,
     gap: tokens.spacing.lg,
-    backgroundColor: '#0d381f',
+    backgroundColor: tokens.colors.bgBase,
   },
   headerRow: {
     flexDirection: 'row',
@@ -162,27 +165,27 @@ const styles = StyleSheet.create({
   welcome: {
     fontSize: 34,
     lineHeight: 40,
-    color: '#f8fafc',
+    color: tokens.colors.textPrimary,
     fontWeight: '600',
   },
   headerBadge: {
-    backgroundColor: '#69d86c',
+    backgroundColor: tokens.colors.accentGold,
     borderRadius: tokens.radius.pill,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   headerBadgeText: {
-    color: '#0b2d14',
+    color: '#0a0a0a',
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.4,
   },
   portfolioCard: {
-    backgroundColor: '#3f8e37',
-    borderRadius: 26,
+    backgroundColor: tokens.colors.bgElevated,
+    borderRadius: 0,
     padding: 18,
     borderWidth: 1,
-    borderColor: '#79bc66',
+    borderColor: tokens.colors.hairline,
   },
   portfolioHead: {
     flexDirection: 'row',
@@ -190,48 +193,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   portfolioLabel: {
-    color: '#f8fafc',
+    color: tokens.colors.textPrimary,
     fontSize: 19,
     fontWeight: '600',
   },
   pill: {
-    backgroundColor: '#111827',
+    backgroundColor: tokens.colors.bgMuted,
     borderRadius: tokens.radius.pill,
     paddingHorizontal: 12,
     paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: tokens.colors.hairline,
   },
   pillText: {
-    color: '#f8fafc',
+    color: tokens.colors.accentGold,
     fontSize: 11,
     fontWeight: '600',
   },
   portfolioAmount: {
     marginTop: 16,
-    color: '#ffffff',
+    color: tokens.colors.textPrimary,
     fontSize: 42,
     fontWeight: '600',
     letterSpacing: 0.2,
   },
   portfolioSubline: {
     marginTop: 8,
-    color: '#edf7eb',
+    color: tokens.colors.textSecondary,
     fontSize: 14,
     fontWeight: '500',
   },
   portfolioMeta: {
     marginTop: 4,
-    color: '#d4ebcc',
+    color: tokens.colors.textTertiary,
     fontSize: 12,
   },
   portfolioButton: {
     marginTop: 20,
-    backgroundColor: '#5f8f53',
-    borderRadius: 12,
+    backgroundColor: tokens.colors.accentGold,
+    borderRadius: 0,
     paddingVertical: 12,
     alignItems: 'center',
   },
   portfolioButtonText: {
-    color: '#f8fafc',
+    color: '#0a0a0a',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -241,40 +246,40 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    borderRadius: 10,
+    borderRadius: 0,
     paddingVertical: 14,
     alignItems: 'center',
     borderWidth: 1,
   },
   actionButtonDark: {
-    backgroundColor: '#111111',
-    borderColor: '#2f2f2f',
+    backgroundColor: tokens.colors.bgElevated,
+    borderColor: tokens.colors.hairline,
   },
   actionButtonGold: {
-    backgroundColor: '#d7c16f',
-    borderColor: '#c7b25f',
+    backgroundColor: tokens.colors.accentGold,
+    borderColor: tokens.colors.accentGold,
   },
   actionButtonText: {
-    color: '#f8fafc',
+    color: tokens.colors.textPrimary,
     fontSize: 14,
     fontWeight: '600',
     letterSpacing: 0,
   },
   actionButtonTextDark: {
-    color: '#1f2937',
+    color: '#0a0a0a',
   },
   sectionHeader: {
     gap: 4,
     marginTop: 2,
   },
   sectionTitle: {
-    color: '#f8fafc',
+    color: tokens.colors.textPrimary,
     fontSize: 34,
     lineHeight: 40,
     fontWeight: '600',
   },
   sectionSubtitle: {
-    color: '#c6e0cb',
+    color: tokens.colors.textSecondary,
     fontSize: 15,
   },
   grid: {
@@ -285,13 +290,15 @@ const styles = StyleSheet.create({
   },
   featureCard: {
     width: '48.3%',
-    backgroundColor: '#f5f5f1',
-    borderRadius: 16,
+    backgroundColor: tokens.colors.bgElevated,
+    borderRadius: 0,
     paddingVertical: 16,
     paddingHorizontal: 12,
     alignItems: 'center',
     minHeight: 184,
     justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: tokens.colors.hairline,
   },
   featureCardWide: {
     width: '100%',
@@ -307,23 +314,23 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 13,
     fontWeight: '600',
-    color: '#1f2937',
+    color: tokens.colors.textPrimary,
     textAlign: 'center',
     letterSpacing: 0,
   },
   featureMeta: {
     marginTop: 6,
     fontSize: 13,
-    color: '#6b7280',
+    color: tokens.colors.textTertiary,
     textAlign: 'center',
   },
   status: {
     marginTop: 2,
-    color: '#b8d8c0',
+    color: tokens.colors.textSecondary,
     fontSize: 12,
   },
   authHint: {
-    color: '#e2c66a',
+    color: tokens.colors.accentGold,
     fontSize: 12,
     fontWeight: '600',
   },

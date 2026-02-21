@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_CONFIG } from '@/lib/protocol-constants';
+import { resolveAuthenticatedRequest } from '@/lib/mobile-auth';
 
 /**
  * POST /api/redemption/create
@@ -9,6 +10,15 @@ import { SUPABASE_CONFIG } from '@/lib/protocol-constants';
  */
 export async function POST(request: NextRequest) {
   try {
+    const auth = await resolveAuthenticatedRequest(request);
+    const walletAddress = auth.context?.walletAddress;
+    if (!walletAddress) {
+      return NextResponse.json(
+        { success: false, error: auth.error || 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const {
       user_wallet,
@@ -23,10 +33,17 @@ export async function POST(request: NextRequest) {
       shipping_country,
     } = body;
 
-    if (!user_wallet || request_id === undefined || !amount) {
+    if (request_id === undefined || !amount) {
       return NextResponse.json(
-        { success: false, error: 'user_wallet, request_id, and amount are required.' },
+        { success: false, error: 'request_id and amount are required.' },
         { status: 400 }
+      );
+    }
+
+    if (user_wallet && user_wallet !== walletAddress) {
+      return NextResponse.json(
+        { success: false, error: 'Wallet mismatch for redemption create' },
+        { status: 403 }
       );
     }
 
@@ -47,7 +64,7 @@ export async function POST(request: NextRequest) {
       .from('redemption_requests')
       .upsert(
         {
-          user_wallet,
+          user_wallet: walletAddress,
           request_id,
           amount,
           status: 0,

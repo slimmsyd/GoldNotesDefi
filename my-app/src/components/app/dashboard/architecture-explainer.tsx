@@ -17,9 +17,7 @@ const layers = [
     description: 'Goldback serial numbers in custody',
     detail: 'Each physical Goldback has a unique serial number tracked in our database',
     icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-      </svg>
+      <img src="/AppAssets/PNG Renders/goldbar_black.png" alt="Physical" className="w-6 h-6 object-contain drop-shadow-md" />
     ),
   },
   {
@@ -28,9 +26,7 @@ const layers = [
     description: 'ZK proofs verify reserves',
     detail: 'Zero-knowledge proofs prove reserves without revealing individual serials',
     icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-      </svg>
+      <img src="/AppAssets/PNG Renders/laptop_security_black.png" alt="Cryptographic" className="w-6 h-6 object-contain drop-shadow-md" />
     ),
   },
   {
@@ -39,9 +35,7 @@ const layers = [
     description: 'Solana stores verified roots',
     detail: 'Merkle roots are immutably stored on Solana blockchain',
     icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-      </svg>
+      <img src="/AppAssets/PNG Renders/btc_contract_black.png" alt="On-Chain" className="w-6 h-6 object-contain drop-shadow-md" />
     ),
   },
 ];
@@ -63,9 +57,7 @@ export function ArchitectureExplainer() {
       >
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-[#c9a84c]/10 flex items-center justify-center">
-            <svg className="w-4 h-4 text-[#c9a84c]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <img src="/AppAssets/PNG Renders/calculator_black.png" alt="How W3B Works" className="w-5 h-5 object-contain drop-shadow-md" />
           </div>
           <span className="text-sm font-medium text-gray-300">How W3B Works</span>
           <span className="text-xs text-gray-500 bg-gray-800/50 px-2 py-0.5">Trust Model</span>
@@ -134,9 +126,7 @@ export function ArchitectureExplainer() {
               <div className="bg-gradient-to-r from-green-500/5 to-transparent p-3 border border-green-500/10">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
+                    <img src="/AppAssets/PNG Renders/safe_black.png" alt="Certainty" className="w-5 h-5 object-contain drop-shadow-md" />
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-green-400 mb-0.5">Mathematical Certainty</p>

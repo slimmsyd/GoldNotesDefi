@@ -133,14 +133,7 @@ export function VerifyNowButton({ onComplete }: { onComplete?: () => void }) {
             />
           </svg>
         ) : (
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-            />
-          </svg>
+          <img src="/AppAssets/PNG Renders/key_black.png" alt="Verify" className="w-5 h-5 object-contain drop-shadow-md" />
         )}
         <span className="text-xs font-medium">{isVerifying ? 'Verifying...' : 'Verify Now'}</span>
       </button>
@@ -156,11 +149,10 @@ export function VerifyNowButton({ onComplete }: { onComplete?: () => void }) {
             className="fixed bottom-6 right-6 z-50 max-w-md"
           >
             <div
-              className={`border p-4 shadow-2xl ${
-                result.success
-                  ? 'bg-gray-900 border-green-500/30'
-                  : 'bg-gray-900 border-red-500/30'
-              }`}
+              className={`border p-4 shadow-2xl ${result.success
+                ? 'bg-gray-900 border-green-500/30'
+                : 'bg-gray-900 border-red-500/30'
+                }`}
             >
               {/* Close button */}
               <button
@@ -176,15 +168,11 @@ export function VerifyNowButton({ onComplete }: { onComplete?: () => void }) {
               <div className="flex items-center gap-3 mb-3">
                 {result.success ? (
                   <div className="w-8 h-8 bg-green-500/20 flex items-center justify-center shrink-0">
-                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
+                    <img src="/AppAssets/PNG Renders/safe_open_coins_black.png" alt="Success" className="w-6 h-6 object-contain drop-shadow-md" />
                   </div>
                 ) : (
                   <div className="w-8 h-8 bg-red-500/20 flex items-center justify-center shrink-0">
-                    <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <img src="/AppAssets/PNG Renders/umbrella_black.png" alt="Failed" className="w-6 h-6 object-contain drop-shadow-md" />
                   </div>
                 )}
                 <div>

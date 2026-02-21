@@ -56,17 +56,15 @@ export function SolvencyHero({ data, isLoading }: SolvencyHeroProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className={`relative overflow-hidden border h-full ${
-        isSolvent
-          ? 'bg-gradient-to-br from-green-500/5 via-gray-900/50 to-gray-900/50 border-green-500/20'
-          : 'bg-gradient-to-br from-red-500/5 via-gray-900/50 to-gray-900/50 border-red-500/20'
-      }`}
+      className={`relative overflow-hidden border h-full ${isSolvent
+        ? 'bg-gradient-to-br from-green-500/5 via-gray-900/50 to-gray-900/50 border-green-500/20'
+        : 'bg-gradient-to-br from-red-500/5 via-gray-900/50 to-gray-900/50 border-red-500/20'
+        }`}
     >
       {/* Background glow */}
       <div
-        className={`absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl opacity-30 ${
-          isSolvent ? 'bg-green-500' : 'bg-red-500'
-        }`}
+        className={`absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl opacity-30 ${isSolvent ? 'bg-green-500' : 'bg-red-500'
+          }`}
       />
 
       <div className="relative z-10 p-6">
@@ -74,18 +72,13 @@ export function SolvencyHero({ data, isLoading }: SolvencyHeroProps) {
         <div className="flex items-start gap-4 mb-6">
           {/* Status Icon */}
           <div
-            className={`w-14 h-14 flex-shrink-0 flex items-center justify-center ${
-              isSolvent ? 'bg-green-500/20' : 'bg-red-500/20'
-            }`}
+            className={`w-14 h-14 flex-shrink-0 flex items-center justify-center ${isSolvent ? 'bg-green-500/20' : 'bg-red-500/20'
+              }`}
           >
             {isSolvent ? (
-              <svg className="w-7 h-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
+              <img src="/AppAssets/PNG Renders/profit_shield_black.png" alt="Solvent" className="w-10 h-10 object-contain drop-shadow-md" />
             ) : (
-              <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
+              <img src="/AppAssets/PNG Renders/umbrella_black.png" alt="Insolvent" className="w-10 h-10 object-contain drop-shadow-md" />
             )}
           </div>
 
@@ -95,9 +88,8 @@ export function SolvencyHero({ data, isLoading }: SolvencyHeroProps) {
                 {isSolvent ? 'Fully Backed' : 'Under-Collateralized'}
               </h2>
               <span
-                className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium ${
-                  isSolvent ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
-                }`}
+                className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium ${isSolvent ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                  }`}
               >
                 <span className="relative flex h-1.5 w-1.5">
                   <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isSolvent ? 'bg-green-400' : 'bg-red-400'}`} />
@@ -110,9 +102,7 @@ export function SolvencyHero({ data, isLoading }: SolvencyHeroProps) {
                 className="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium bg-gray-800/50 text-gray-400 border border-gray-700"
                 title="Minting is blocked if reserves fall below token supply"
               >
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+                <img src="/AppAssets/PNG Renders/lock_black.png" alt="Circuit Breaker" className="w-5 h-5 object-contain drop-shadow-md" />
                 Circuit Breaker
               </span>
             </div>
@@ -150,11 +140,10 @@ export function SolvencyHero({ data, isLoading }: SolvencyHeroProps) {
               initial={{ width: 0 }}
               animate={{ width: `${solvencyRatio}%` }}
               transition={{ duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.3 }}
-              className={`h-full ${
-                isSolvent
-                  ? 'bg-gradient-to-r from-green-600 to-green-400'
-                  : 'bg-gradient-to-r from-red-600 to-red-400'
-              }`}
+              className={`h-full ${isSolvent
+                ? 'bg-gradient-to-r from-green-600 to-green-400'
+                : 'bg-gradient-to-r from-red-600 to-red-400'
+                }`}
             />
           </div>
         </div>

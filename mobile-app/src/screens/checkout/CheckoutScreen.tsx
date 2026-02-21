@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import {
   clearPendingDirectCheckout,
   loadPendingDirectCheckout,
@@ -32,10 +32,10 @@ import { createDirectCheckout, confirmDirectCheckout } from '../../lib/checkout/
 import { buildSolDirectCheckoutTransaction } from '../../lib/solana/transactions';
 import { ShippingOption } from '../../lib/api/types';
 import { env } from '../../config/env';
-import type { RootStackParamList } from '../../navigation';
+import type { MainTabParamList } from '../../navigation';
 import { tokens } from '../../theme/tokens';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Checkout'>;
+type Props = BottomTabScreenProps<MainTabParamList, 'Checkout'>;
 type Step = 'cart' | 'details' | 'payment';
 
 function parseAddress(input: string): {
@@ -116,22 +116,26 @@ export function CheckoutScreen({ navigation }: Props) {
     setCartItems(items);
   }
 
+  async function syncCartFromRemote(): Promise<void> {
+    const token = await getAuthToken();
+    setHasAuthToken(Boolean(token));
+    if (!token) return;
+
+    const remote = await getRemoteCart();
+    if (remote.cart && Array.isArray(remote.cart)) {
+      await saveCart(remote.cart);
+      setCartItems(remote.cart as CartItem[]);
+    }
+  }
+
   useFocusEffect(
     useCallback(() => {
       void (async () => {
         const localCart = await loadCart();
         setCartItems(localCart);
 
-        const token = await getAuthToken();
-        setHasAuthToken(Boolean(token));
-        if (!token) return;
-
         try {
-          const remote = await getRemoteCart();
-          if (remote.cart && Array.isArray(remote.cart)) {
-            await saveCart(remote.cart);
-            setCartItems(remote.cart as CartItem[]);
-          }
+          await syncCartFromRemote();
         } catch {
           // Keep local cart if remote load fails.
         }
@@ -213,10 +217,10 @@ export function CheckoutScreen({ navigation }: Props) {
 
   async function clearPostCheckoutState(): Promise<void> {
     const token = await getAuthToken();
-    await Promise.all([clearPendingDirectCheckout(), clearCart()]);
     if (token) {
-      await clearRemoteCart().catch(() => undefined);
+      await clearRemoteCart();
     }
+    await Promise.all([clearPendingDirectCheckout(), clearCart()]);
     setCartItems([]);
   }
 
@@ -354,6 +358,11 @@ export function CheckoutScreen({ navigation }: Props) {
       setStatus('Transaction sent. Confirming order...');
       await finalizePendingOrder(pending);
     } catch (error) {
+      try {
+        await syncCartFromRemote();
+      } catch {
+        // Preserve current local cart state when sync fails.
+      }
       setStatus(error instanceof Error ? error.message : 'Checkout failed');
     } finally {
       setIsSubmitting(false);
@@ -633,45 +642,45 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1.2,
-    color: '#9ca3af',
+    color: tokens.colors.textTertiary,
   },
   stepLabelActive: {
-    color: '#111827',
+    color: tokens.colors.accentGold,
   },
   stepLabelDisabled: {
-    color: '#d1d5db',
+    color: '#333333',
   },
   stepSlash: {
-    color: '#d1d5db',
+    color: '#333333',
     fontSize: 14,
     fontWeight: '600',
   },
   successCard: {
-    backgroundColor: '#ecfdf3',
-    borderColor: '#86efac',
+    backgroundColor: 'rgba(0,255,0,0.08)',
+    borderColor: 'rgba(0,255,0,0.30)',
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 0,
     padding: 14,
     gap: 5,
   },
-  successTitle: { fontSize: 14, fontWeight: '700', color: '#14532d' },
-  successText: { fontSize: 12, color: '#166534' },
+  successTitle: { fontSize: 14, fontWeight: '700', color: tokens.colors.success },
+  successText: { fontSize: 12, color: 'rgba(0,255,0,0.70)' },
   noticeCard: {
-    borderColor: '#fcd34d',
+    borderColor: tokens.colors.hairline,
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 0,
     padding: 12,
-    backgroundColor: '#fffbeb',
+    backgroundColor: tokens.colors.accentGoldMuted,
   },
   noticeText: {
-    color: '#92400e',
+    color: tokens.colors.accentGold,
     fontSize: 12,
   },
   sectionCard: {
-    backgroundColor: '#fff',
+    backgroundColor: tokens.colors.bgElevated,
     borderWidth: 1,
-    borderColor: '#eceff4',
-    borderRadius: 16,
+    borderColor: tokens.colors.hairline,
+    borderRadius: 0,
     padding: 14,
     gap: 10,
   },
@@ -680,7 +689,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: 10,
-    borderBottomColor: '#eef2f7',
+    borderBottomColor: tokens.colors.hairline,
     borderBottomWidth: 1,
     paddingBottom: 10,
     marginBottom: 2,
@@ -688,26 +697,26 @@ const styles = StyleSheet.create({
   itemTextWrap: { flex: 1 },
   itemName: {
     fontSize: 13,
-    color: '#111827',
+    color: tokens.colors.textPrimary,
     fontWeight: '700',
     letterSpacing: 0.4,
     textTransform: 'uppercase',
   },
   itemMeta: {
     fontSize: 12,
-    color: '#6b7280',
+    color: tokens.colors.textTertiary,
     marginTop: 3,
   },
   removeButton: {
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 10,
+    borderRadius: 0,
     borderWidth: 1,
-    borderColor: '#fca5a5',
-    backgroundColor: '#fef2f2',
+    borderColor: 'rgba(255,0,0,0.30)',
+    backgroundColor: 'rgba(255,0,0,0.08)',
   },
   removeButtonText: {
-    color: '#991b1b',
+    color: tokens.colors.danger,
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.3,
@@ -716,20 +725,20 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   emptyTitle: {
-    color: '#6b7280',
+    color: tokens.colors.textTertiary,
     fontSize: 14,
   },
   returnButton: {
     alignSelf: 'flex-start',
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 12,
+    borderColor: tokens.colors.hairline,
+    borderRadius: 0,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: '#fff',
+    backgroundColor: tokens.colors.bgElevated,
   },
   returnButtonText: {
-    color: '#111827',
+    color: tokens.colors.textPrimary,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -739,11 +748,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   totalLabel: {
-    color: '#6b7280',
+    color: tokens.colors.textTertiary,
     fontSize: 13,
   },
   totalValue: {
-    color: '#111827',
+    color: tokens.colors.textPrimary,
     fontSize: 15,
     fontWeight: '700',
   },
@@ -753,7 +762,7 @@ const styles = StyleSheet.create({
   },
   prefillNote: {
     fontSize: 12,
-    color: '#166534',
+    color: tokens.colors.success,
     fontWeight: '600',
   },
   fieldGroup: {
@@ -763,14 +772,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 3,
-    color: '#9ca3af',
+    color: tokens.colors.textTertiary,
   },
   fieldInput: {
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: tokens.colors.hairline,
     paddingBottom: 10,
     fontSize: 15,
-    color: '#111827',
+    color: tokens.colors.textPrimary,
   },
   addressInput: {
     minHeight: 74,
@@ -785,24 +794,24 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 28,
     height: 28,
-    borderRadius: 7,
+    borderRadius: 0,
     borderWidth: 1.5,
-    borderColor: '#9ca3af',
+    borderColor: tokens.colors.textTertiary,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: tokens.colors.bgElevated,
   },
   checkboxChecked: {
-    borderColor: '#2563eb',
+    borderColor: tokens.colors.accentGold,
   },
   checkboxDot: {
     width: 14,
     height: 14,
-    borderRadius: 4,
-    backgroundColor: '#2563eb',
+    borderRadius: 0,
+    backgroundColor: tokens.colors.accentGold,
   },
   checkboxText: {
-    color: '#374151',
+    color: tokens.colors.textSecondary,
     fontSize: 16,
   },
   infoRow: {
@@ -810,7 +819,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
+    borderTopColor: tokens.colors.hairline,
     paddingTop: 12,
   },
   infoRowStatic: {
@@ -818,7 +827,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
+    borderTopColor: tokens.colors.hairline,
     paddingTop: 12,
   },
   infoIcon: {
@@ -826,32 +835,32 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#9ca3af',
+    borderColor: tokens.colors.textTertiary,
     textAlign: 'center',
     lineHeight: 18,
-    color: '#6b7280',
+    color: tokens.colors.textTertiary,
     fontSize: 12,
     fontWeight: '700',
   },
   infoText: {
-    color: '#6b7280',
+    color: tokens.colors.textTertiary,
     fontSize: 14,
     flex: 1,
   },
   shippingPanel: {
     marginTop: 4,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 16,
+    borderColor: tokens.colors.hairline,
+    borderRadius: 0,
     padding: 12,
     gap: 12,
-    backgroundColor: '#fcfcfd',
+    backgroundColor: tokens.colors.bgMuted,
   },
   shippingPanelTitle: {
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 3,
-    color: '#9ca3af',
+    color: tokens.colors.textTertiary,
   },
   shippingOptionRow: {
     flexDirection: 'row',
@@ -870,20 +879,20 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 13,
     borderWidth: 1.5,
-    borderColor: '#9ca3af',
+    borderColor: tokens.colors.textTertiary,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
-    backgroundColor: '#fff',
+    backgroundColor: tokens.colors.bgElevated,
   },
   radioOuterActive: {
-    borderColor: '#2563eb',
+    borderColor: tokens.colors.accentGold,
   },
   radioInner: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#2563eb',
+    backgroundColor: tokens.colors.accentGold,
   },
   shippingCopy: {
     flex: 1,
@@ -892,14 +901,14 @@ const styles = StyleSheet.create({
   shippingName: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111827',
+    color: tokens.colors.textPrimary,
   },
   shippingMeta: {
-    color: '#6b7280',
+    color: tokens.colors.textTertiary,
     fontSize: 13,
   },
   shippingPrice: {
-    color: '#111827',
+    color: tokens.colors.textPrimary,
     fontSize: 16,
     fontWeight: '700',
     marginTop: 2,
@@ -910,28 +919,28 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     flex: 1,
-    backgroundColor: '#111827',
+    backgroundColor: tokens.colors.accentGold,
     paddingVertical: 13,
-    borderRadius: 12,
+    borderRadius: 0,
     alignItems: 'center',
   },
   primaryButtonText: {
-    color: '#fff',
+    color: '#0a0a0a',
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0.4,
   },
   secondaryButton: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: tokens.colors.bgElevated,
     paddingVertical: 13,
-    borderRadius: 12,
+    borderRadius: 0,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: tokens.colors.hairline,
   },
   secondaryButtonText: {
-    color: '#374151',
+    color: tokens.colors.textSecondary,
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0.3,
@@ -943,27 +952,27 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '400',
     letterSpacing: 2,
-    color: '#111827',
+    color: tokens.colors.textPrimary,
     textTransform: 'uppercase',
     marginBottom: 4,
   },
   paymentTotalLabel: {
-    color: '#111827',
+    color: tokens.colors.textPrimary,
     fontSize: 15,
     fontWeight: '700',
   },
   paymentTotalValue: {
-    color: '#111827',
+    color: tokens.colors.accentGold,
     fontSize: 17,
     fontWeight: '800',
   },
   meta: {
     fontSize: 12,
-    color: '#6b7280',
+    color: tokens.colors.textTertiary,
   },
   status: {
     marginTop: 4,
-    color: '#4b5563',
+    color: tokens.colors.textSecondary,
     fontSize: 12,
   },
 });

@@ -117,7 +117,7 @@ export function WalletSheet({ visible, onClose }: WalletSheetProps) {
           <Text style={styles.buttonText}>Sign-In With Wallet Signature</Text>
         </Pressable>
 
-        {__DEV__ ? (
+        {__DEV__ && !env.isProduction ? (
           <Pressable
             style={[styles.buttonSecondary, busy ? styles.buttonDisabled : null]}
             disabled={busy}

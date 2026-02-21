@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { getRemoteCart, saveRemoteCart } from '../../lib/auth/auth-client';
 import { ShopCatalogItem } from '../../lib/api/types';
 import { getShopCatalog } from '../../lib/shop/catalog-client';
 import { CartItem, loadCart, saveCart } from '../../state/cart';
 import { getAuthToken } from '../../state/auth';
-import type { RootStackParamList } from '../../navigation';
+import type { MainTabParamList } from '../../navigation';
 import { shadows, tokens } from '../../theme/tokens';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Shop'>;
+type Props = BottomTabScreenProps<MainTabParamList, 'Shop'>;
 
 interface CatalogState {
   goldbackRate: number;
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   },
   hero: {
     backgroundColor: tokens.colors.bgElevated,
-    borderRadius: 26,
+    borderRadius: 0,
     borderWidth: 1,
     borderColor: tokens.colors.hairline,
     padding: tokens.spacing.xl,
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: tokens.colors.bgElevated,
-    borderRadius: 16,
+    borderRadius: 0,
     padding: tokens.spacing.md,
     borderWidth: 1,
     borderColor: tokens.colors.hairline,
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   imageFrame: {
     width: '100%',
     height: 204,
-    borderRadius: 16,
+    borderRadius: 0,
     overflow: 'hidden',
     backgroundColor: tokens.colors.bgMuted,
     marginBottom: 4,
@@ -343,17 +343,17 @@ const styles = StyleSheet.create({
   },
   addButton: {
     marginTop: tokens.spacing.sm,
-    backgroundColor: tokens.colors.accentDark,
-    borderRadius: 10,
+    backgroundColor: tokens.colors.accentGold,
+    borderRadius: 0,
     paddingVertical: 12,
     alignItems: 'center',
   },
-  addButtonText: { color: '#fff', fontWeight: '700', fontSize: 14, letterSpacing: 0.2 },
+  addButtonText: { color: '#0a0a0a', fontWeight: '700', fontSize: 14, letterSpacing: 0.2 },
   emptyState: {
     backgroundColor: tokens.colors.bgElevated,
     borderWidth: 1,
     borderColor: tokens.colors.hairline,
-    borderRadius: 16,
+    borderRadius: 0,
     padding: tokens.spacing.xl,
     alignItems: 'center',
     gap: tokens.spacing.sm,
@@ -370,8 +370,8 @@ const styles = StyleSheet.create({
     left: tokens.spacing.md,
     right: tokens.spacing.md,
     bottom: tokens.spacing.md,
-    backgroundColor: '#fffffff0',
-    borderRadius: 16,
+    backgroundColor: '#1a1a1ae0',
+    borderRadius: 0,
     padding: tokens.spacing.md,
     borderWidth: 1,
     borderColor: tokens.colors.hairline,
@@ -388,10 +388,10 @@ const styles = StyleSheet.create({
   summaryValue: { color: tokens.colors.textPrimary, fontWeight: '800', fontSize: 16, marginTop: 2 },
   checkoutButton: {
     backgroundColor: tokens.colors.accentGold,
-    borderRadius: 10,
+    borderRadius: 0,
     paddingVertical: 11,
     paddingHorizontal: 16,
   },
-  checkoutButtonText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  checkoutButtonText: { color: '#0a0a0a', fontSize: 13, fontWeight: '800' },
   disabled: { opacity: 0.55 },
 });

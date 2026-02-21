@@ -67,19 +67,11 @@ export default function AppDashboard() {
             disabled={isLoading}
             className="flex items-center gap-2 bg-gray-900/50 border border-gray-800 px-4 py-2 text-gray-400 hover:text-white hover:border-[#c9a84c]/50 transition-colors disabled:opacity-50 focus:outline-none cursor-pointer"
           >
-            <svg
-              className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+            <img
+              src="/AppAssets/PNG Renders/calculator_black.png"
+              alt="Refresh"
+              className={`w-4 h-4 object-contain ${isLoading ? 'animate-spin' : ''}`}
+            />
             <span className="text-xs font-medium">Refresh</span>
           </button>
         </div>
@@ -94,13 +86,7 @@ export default function AppDashboard() {
         >
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-red-500/20 flex items-center justify-center">
-              <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              <img src="/AppAssets/PNG Renders/umbrella_black.png" alt="Error" className="w-5 h-5 object-contain" />
             </div>
             <div>
               <p className="text-red-400 font-medium text-sm">Connection Error</p>
