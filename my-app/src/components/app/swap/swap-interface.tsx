@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import {
   LAMPORTS_PER_SOL,
-  PublicKey,
   Transaction
 } from '@solana/web3.js';
 import {
@@ -15,6 +14,7 @@ import {
 } from '@solana/spl-token';
 import { PROTOCOL_CONFIG } from '@/lib/protocol-constants';
 import { getExplorerUrl } from '@/lib/network-utils';
+import { buildUsdcToSolSwapTx, getUsdcToSolQuote } from '@/lib/jupiter-swap';
 import {
   W3B_MINT,
   createBuyW3bInstruction,
@@ -43,18 +43,34 @@ const WGB_TOKEN: TokenInfo = {
   logoURI: '/AppAssets/BlackW3BCoin.jpg'
 };
 
+const SOL_MINT_ADDRESS = 'So11111111111111111111111111111111111111112';
+const SLIPPAGE_BPS = 100;
+const MAX_QUOTE_AGE_MS = 20_000;
+const SOL_FEE_RESERVE_LAMPORTS = BigInt(Math.floor(0.01 * LAMPORTS_PER_SOL));
+
+type CompletedRail = 'SOL_DIRECT' | 'USDC_BRIDGED';
+
+const isSameAddress = (left: string, right: string): boolean =>
+  left.trim().toLowerCase() === right.trim().toLowerCase();
+
 export function SwapInterface() {
   const { connection } = useConnection();
   const { publicKey, sendTransaction, connected } = useWallet();
 
   // Token selection state
-  const [selectedPayToken, setSelectedPayToken] = useState<TokenInfo>(POPULAR_TOKENS[1]); // Default to USDC
+  const [selectedPayToken, setSelectedPayToken] = useState<TokenInfo>(
+    POPULAR_TOKENS.find((token) => token.symbol === 'USDC') ?? POPULAR_TOKENS[0]
+  );
   const [payAmount, setPayAmount] = useState<string>('');
   const [receiveAmount, setReceiveAmount] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'input' | 'review' | 'processing' | 'success'>('input');
   const [error, setError] = useState<string | null>(null);
-  const [txSignature, setTxSignature] = useState<string | null>(null);
+  const [swapSignature, setSwapSignature] = useState<string | null>(null);
+  const [buySignature, setBuySignature] = useState<string | null>(null);
+  const [completedRail, setCompletedRail] = useState<CompletedRail | null>(null);
+  const [processingPhase, setProcessingPhase] = useState<string | null>(null);
+  const [usdcRouteReady, setUsdcRouteReady] = useState(false);
   const [solPrice, setSolPrice] = useState<number | null>(null);
   const [w3bPriceUsd, setW3bPriceUsd] = useState<number>(DEFAULT_W3B_PRICE_USD);
 
@@ -125,7 +141,7 @@ export function SwapInterface() {
   // Fetch SOL price when needed
   useEffect(() => {
     const fetchSolPrice = async () => {
-      if (selectedPayToken.symbol === 'SOL' && !solPrice) {
+      if (isSameAddress(selectedPayToken.address, SOL_MINT_ADDRESS) && !solPrice) {
         try {
           const res = await fetch('/api/sol-price');
           const data = await res.json();
@@ -138,14 +154,32 @@ export function SwapInterface() {
       }
     };
     fetchSolPrice();
-  }, [selectedPayToken.symbol, solPrice]);
+  }, [selectedPayToken.address, solPrice]);
+
+  const clearExecutionState = () => {
+    setSwapSignature(null);
+    setBuySignature(null);
+    setCompletedRail(null);
+    setUsdcRouteReady(false);
+    setProcessingPhase(null);
+  };
+
+  const getSelectedRail = (): CompletedRail | null => {
+    if (isSameAddress(selectedPayToken.address, SOL_MINT_ADDRESS)) {
+      return 'SOL_DIRECT';
+    }
+    if (isSameAddress(selectedPayToken.address, PROTOCOL_CONFIG.usdcMint)) {
+      return 'USDC_BRIDGED';
+    }
+    return null;
+  };
 
   // Get USD value based on selected token
   const getUsdValue = (amount: number): number => {
-    if (selectedPayToken.symbol === 'SOL' && solPrice) {
+    if (isSameAddress(selectedPayToken.address, SOL_MINT_ADDRESS) && solPrice) {
       return amount * solPrice;
     }
-    if (['USDC', 'USDT'].includes(selectedPayToken.symbol)) {
+    if (isSameAddress(selectedPayToken.address, PROTOCOL_CONFIG.usdcMint)) {
       return amount;
     }
     return 0;
@@ -153,6 +187,9 @@ export function SwapInterface() {
 
   // Handle pay input changes
   const handlePayChange = (val: string) => {
+    if (usdcRouteReady || swapSignature || buySignature || completedRail) {
+      clearExecutionState();
+    }
     setPayAmount(val);
     if (!val) {
       setReceiveAmount('');
@@ -169,6 +206,9 @@ export function SwapInterface() {
 
   // Handle W3B output changes
   const handleReceiveChange = (val: string) => {
+    if (usdcRouteReady || swapSignature || buySignature || completedRail) {
+      clearExecutionState();
+    }
     setReceiveAmount(val);
     if (!val) {
       setPayAmount('');
@@ -177,7 +217,7 @@ export function SwapInterface() {
     const num = parseFloat(val);
     if (!isNaN(num)) {
       const usdNeeded = num * w3bPriceUsd;
-      if (selectedPayToken.symbol === 'SOL' && solPrice) {
+      if (isSameAddress(selectedPayToken.address, SOL_MINT_ADDRESS) && solPrice) {
         setPayAmount((usdNeeded / solPrice).toFixed(6));
       } else {
         setPayAmount(usdNeeded.toFixed(2));
@@ -196,7 +236,7 @@ export function SwapInterface() {
         }
       }
     }
-  }, [selectedPayToken, solPrice]);
+  }, [selectedPayToken, solPrice, payAmount, w3bPriceUsd]);
 
   const handleSwap = async () => {
     if (!publicKey) {
@@ -204,9 +244,20 @@ export function SwapInterface() {
       return;
     }
 
-    // Only SOL payments are supported for buy_w3b (uses on-chain price)
-    if (selectedPayToken.symbol !== 'SOL') {
-      setError('Only SOL payments are supported for now');
+    const selectedRail = getSelectedRail();
+    if (!selectedRail) {
+      setError('Selected payment token is not supported on this rail');
+      return;
+    }
+
+    const payAmountNum = parseFloat(payAmount);
+    if (isNaN(payAmountNum) || payAmountNum <= 0) {
+      setError('Invalid payment amount');
+      return;
+    }
+
+    if (selectedPayToken.balance !== undefined && payAmountNum > selectedPayToken.balance) {
+      setError(`Insufficient ${selectedPayToken.symbol} balance`);
       return;
     }
 
@@ -226,7 +277,14 @@ export function SwapInterface() {
     setIsLoading(true);
     setError(null);
     setStep('processing');
+    setProcessingPhase(
+      selectedRail === 'USDC_BRIDGED' && !usdcRouteReady
+        ? 'Routing USDC -> SOL'
+        : 'Executing W3B purchase'
+    );
 
+    let didSwapThisAttempt = false;
+    let didBuyThisAttempt = false;
     try {
       // CRITICAL: Verify price freshness before swap
       const priceCheck = await verifyPriceBeforeSwap();
@@ -245,15 +303,75 @@ export function SwapInterface() {
       if (priceLamports === BigInt(0)) {
         setError('WGB price not set on protocol. Contact admin.');
         setIsLoading(false);
+        setStep('review');
         return;
       }
+
+      const requiredBuyLamports = BigInt(w3bAmountInt) * priceLamports;
+      const requiredLamportsWithReserve = requiredBuyLamports + SOL_FEE_RESERVE_LAMPORTS;
+
+      if (selectedRail === 'USDC_BRIDGED' && !usdcRouteReady) {
+        setProcessingPhase('Routing USDC -> SOL');
+
+        const usdcBaseUnits = BigInt(
+          Math.floor(payAmountNum * 10 ** selectedPayToken.decimals)
+        );
+        if (usdcBaseUnits <= BigInt(0)) {
+          throw new Error('USDC amount is too small');
+        }
+
+        const quoteResult = await getUsdcToSolQuote({
+          inputMint: PROTOCOL_CONFIG.usdcMint,
+          outputMint: SOL_MINT_ADDRESS,
+          inputAmountBaseUnits: usdcBaseUnits,
+          slippageBps: SLIPPAGE_BPS,
+        });
+
+        if (Date.now() - quoteResult.fetchedAtMs > MAX_QUOTE_AGE_MS) {
+          throw new Error('Quote expired. Please retry the swap.');
+        }
+
+        const quoteOutLamports = BigInt(quoteResult.quote.outAmount);
+        if (quoteOutLamports < requiredLamportsWithReserve) {
+          throw new Error(
+            'Insufficient USDC for this route after slippage/fees. Increase USDC input and retry.'
+          );
+        }
+
+        const swapTx = await buildUsdcToSolSwapTx({
+          quote: quoteResult.quote,
+          userPublicKey: publicKey.toBase58(),
+        });
+
+        const usdcSwapSig = await sendTransaction(swapTx, connection);
+        await connection.confirmTransaction(usdcSwapSig, 'confirmed');
+        setSwapSignature(usdcSwapSig);
+        setCompletedRail('USDC_BRIDGED');
+        setUsdcRouteReady(true);
+        didSwapThisAttempt = true;
+
+        const solBalanceAfterSwap = await connection.getBalance(publicKey);
+        if (BigInt(solBalanceAfterSwap) < requiredLamportsWithReserve) {
+          throw new Error(
+            'USDC swap completed but SOL is still below required buy amount + fee reserve.'
+          );
+        }
+      }
+
+      if (selectedRail === 'SOL_DIRECT' || usdcRouteReady) {
+        const currentSolBalance = await connection.getBalance(publicKey);
+        if (BigInt(currentSolBalance) < requiredLamportsWithReserve) {
+          throw new Error('Insufficient SOL for buy amount + network fee reserve.');
+        }
+      }
+
+      setProcessingPhase('Executing W3B purchase');
 
       const transaction = new Transaction();
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
 
-      // ============ W3B TOKEN ACCOUNT SETUP ============
       const userW3bAccount = await getUserW3bTokenAccount(publicKey);
       const userW3bAccountInfo = await connection.getAccountInfo(userW3bAccount);
 
@@ -269,15 +387,11 @@ export function SwapInterface() {
         );
       }
 
-      // Initialize user profile for first-time wallets (needed for points profile account constraints)
       const initProfileIx = await maybeCreateInitUserProfileInstruction(connection, publicKey);
       if (initProfileIx) {
         transaction.add(initProfileIx);
       }
 
-      // ============ BUY W3B INSTRUCTION ============
-      // This atomically: transfers SOL from buyer to sol_receiver,
-      // and transfers W3B from treasury to buyer
       const buyInstruction = createBuyW3bInstruction(
         publicKey,
         userW3bAccount,
@@ -286,7 +400,6 @@ export function SwapInterface() {
       );
       transaction.add(buyInstruction);
 
-      // Simulate transaction first to get better error messages
       try {
         const simulation = await connection.simulateTransaction(transaction);
         if (simulation.value.err) {
@@ -294,30 +407,42 @@ export function SwapInterface() {
           console.error('Logs:', simulation.value.logs);
           throw new Error(`Simulation failed: ${JSON.stringify(simulation.value.err)}`);
         }
-        console.log('Simulation succeeded:', simulation.value.logs);
       } catch (simErr: any) {
         console.error('Simulation error:', simErr);
         throw simErr;
       }
 
-      // Send the transaction
-      const signature = await sendTransaction(transaction, connection);
-
-      // Wait for confirmation
+      const w3bBuySig = await sendTransaction(transaction, connection);
       await connection.confirmTransaction({
         blockhash,
         lastValidBlockHeight,
-        signature
+        signature: w3bBuySig
       }, 'confirmed');
 
-      setTxSignature(signature);
+      setBuySignature(w3bBuySig);
+      didBuyThisAttempt = true;
+      setCompletedRail(selectedRail);
+      if (selectedRail === 'SOL_DIRECT') {
+        setSwapSignature(null);
+      }
+      setUsdcRouteReady(false);
+      setProcessingPhase(null);
       setStep('success');
 
     } catch (err: any) {
       console.error('Swap failed:', err);
       console.error('Error details:', err.logs || err.message);
-      // Parse common errors
-      if (err.message?.includes('InsufficientFunds')) {
+
+      if (didSwapThisAttempt && !didBuyThisAttempt) {
+        setUsdcRouteReady(true);
+        setError(
+          'USDC swap completed, but W3B purchase failed. Retry to execute purchase without rerouting USDC.'
+        );
+      } else if (err.message?.includes('Quote unavailable')) {
+        setError('Quote unavailable. Try again in a few seconds.');
+      } else if (err.message?.includes('route')) {
+        setError('No USDC -> SOL route is available on this network right now.');
+      } else if (err.message?.includes('InsufficientFunds')) {
         setError('Insufficient SOL balance');
       } else if (err.message?.includes('PriceNotSet')) {
         setError('WGB price not configured');
@@ -329,6 +454,7 @@ export function SwapInterface() {
       setStep('review');
     } finally {
       setIsLoading(false);
+      setProcessingPhase(null);
     }
   };
 
@@ -336,9 +462,9 @@ export function SwapInterface() {
     setPayAmount('');
     setReceiveAmount('');
     setStep('input');
-    setTxSignature(null);
     setError(null);
     setIsPriceFallback(false);
+    clearExecutionState();
   };
 
   // Progress bar configuration aligned to each swap step
@@ -350,7 +476,6 @@ export function SwapInterface() {
   ] as const;
 
   const currentStepIndex = PROGRESS_STEPS.findIndex(s => s.key === step);
-  const currentStepLabel = PROGRESS_STEPS[currentStepIndex]?.label ?? '';
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -414,11 +539,15 @@ export function SwapInterface() {
                     <div className="flex-shrink-0">
                       <TokenSelector
                         selectedToken={selectedPayToken}
-                        onSelectToken={setSelectedPayToken}
+                        onSelectToken={(token) => {
+                          clearExecutionState();
+                          setError(null);
+                          setSelectedPayToken(token);
+                        }}
                         excludeToken={WGB_TOKEN.address}
                       />
                       <div className="text-gray-500 text-xs mt-1 ml-1">
-                        {selectedPayToken.symbol === 'SOL' ? 'Solana' : selectedPayToken.name}
+                        {isSameAddress(selectedPayToken.address, SOL_MINT_ADDRESS) ? 'Solana' : selectedPayToken.name}
                       </div>
                     </div>
 
@@ -498,7 +627,7 @@ export function SwapInterface() {
                 <div className="flex justify-between text-gray-400">
                   <span>Rate</span>
                   <span className="text-white">
-                    {selectedPayToken.symbol === 'SOL' && solPrice
+                    {isSameAddress(selectedPayToken.address, SOL_MINT_ADDRESS) && solPrice
                       ? `1 WGB ≈ ${(w3bPriceUsd / solPrice).toFixed(6)} SOL`
                       : `1 WGB ≈ ${w3bPriceUsd} ${selectedPayToken.symbol}`
                     }
@@ -516,6 +645,12 @@ export function SwapInterface() {
               {error && (
                 <div className="bg-red-900/30 border border-red-800 p-3 text-red-400 text-sm rounded-[4.5px]">
                   {error}
+                </div>
+              )}
+
+              {isSameAddress(selectedPayToken.address, PROTOCOL_CONFIG.usdcMint) && (
+                <div className="bg-blue-900/20 border border-blue-800/60 p-3 text-blue-300 text-xs rounded-[4.5px]">
+                  USDC rail executes in two steps: USDC -&gt; SOL routing, then on-chain W3B purchase.
                 </div>
               )}
 
@@ -610,6 +745,25 @@ export function SwapInterface() {
                 </div>
               )}
 
+              {isSameAddress(selectedPayToken.address, PROTOCOL_CONFIG.usdcMint) && (
+                <div className="bg-blue-900/20 border border-blue-800/60 p-3 text-blue-300 text-xs rounded-[4.5px]">
+                  {usdcRouteReady
+                    ? 'USDC routing already completed. Confirm now to execute only the W3B buy step.'
+                    : 'Confirm will route USDC -> SOL first, then execute the W3B purchase.'}
+                </div>
+              )}
+
+              {swapSignature && step === 'review' && (
+                <a
+                  href={getExplorerUrl(swapSignature, 'tx')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-xs text-[#e8d48b] hover:text-[#c9a84c] underline"
+                >
+                  View completed USDC -&gt; SOL route transaction -&gt;
+                </a>
+              )}
+
               <div className="flex gap-3">
                 <button
                   onClick={() => setStep('input')}
@@ -631,7 +785,11 @@ export function SwapInterface() {
                       {isPriceVerifying ? 'Verifying Price...' : 'Swapping...'}
                     </span>
                   ) : (
-                    'Confirm Swap'
+                    isSameAddress(selectedPayToken.address, PROTOCOL_CONFIG.usdcMint)
+                      ? usdcRouteReady
+                        ? 'Execute Buy'
+                        : 'Route + Buy'
+                      : 'Confirm Swap'
                   )}
                 </button>
               </div>
@@ -661,12 +819,14 @@ export function SwapInterface() {
 
               <div>
                 <h3 className="text-xl font-bold text-white mb-2">
-                  {isPriceVerifying ? 'Verifying Price...' : 'Processing Swap'}
+                  {isPriceVerifying ? 'Verifying Price...' : (processingPhase || 'Processing Swap')}
                 </h3>
                 <p className="text-gray-400 text-sm">
                   {isPriceVerifying
                     ? 'Checking the latest WGB price for your protection'
-                    : 'Confirming your transaction on Solana'}
+                    : processingPhase === 'Routing USDC -> SOL'
+                      ? 'Executing bridge route to SOL before the protocol buy'
+                      : 'Confirming your transaction on Solana'}
                 </p>
               </div>
 
@@ -703,16 +863,34 @@ export function SwapInterface() {
               <p className="text-gray-400 mb-4">
                 {Math.floor(parseFloat(receiveAmount))} WGB has been transferred to your wallet
               </p>
-              {txSignature && (
-                <a
-                  href={getExplorerUrl(txSignature, 'tx')}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#e8d48b] hover:text-[#c9a84c] text-sm underline mb-8 block"
-                >
-                  View Transaction on Solscan →
-                </a>
-              )}
+              <div className="space-y-2 mb-8">
+                {swapSignature && (
+                  <a
+                    href={getExplorerUrl(swapSignature, 'tx')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#e8d48b] hover:text-[#c9a84c] text-sm underline block"
+                  >
+                    View USDC -&gt; SOL Route Tx -&gt;
+                  </a>
+                )}
+                {buySignature && (
+                  <a
+                    href={getExplorerUrl(buySignature, 'tx')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#e8d48b] hover:text-[#c9a84c] text-sm underline block"
+                  >
+                    View W3B Purchase Tx →
+                  </a>
+                )}
+                {completedRail === 'SOL_DIRECT' && buySignature && !swapSignature && (
+                  <span className="text-xs text-gray-500 block">Rail: SOL direct</span>
+                )}
+                {completedRail === 'USDC_BRIDGED' && (
+                  <span className="text-xs text-gray-500 block">Rail: USDC bridged via SOL</span>
+                )}
+              </div>
               <button
                 onClick={reset}
                 className="w-full bg-gray-800 text-white font-medium py-3 hover:bg-gray-700 transition-colors rounded-[4.5px]"

@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { PROTOCOL_CONFIG } from '@/lib/protocol-constants';
 
-// Popular tokens for Devnet/Mainnet with fallback icons
+const USDC_DISPLAY_NAME = PROTOCOL_CONFIG.isMainnet ? 'USD Coin (Mainnet)' : 'USD Coin (Devnet)';
+
+// Only executable swap rails are listed here.
 const POPULAR_TOKENS: TokenInfo[] = [
     {
         address: 'So11111111111111111111111111111111111111112',
@@ -17,53 +19,11 @@ const POPULAR_TOKENS: TokenInfo[] = [
     },
 
     {
-        address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+        address: PROTOCOL_CONFIG.usdcMint,
         symbol: 'USDC',
-        name: 'USD Coin (Mainnet)',
+        name: USDC_DISPLAY_NAME,
         decimals: 6,
         logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png'
-    },
-    {
-        address: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
-        symbol: 'USDT',
-        name: 'Tether USD',
-        decimals: 6,
-        logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB/logo.svg'
-    },
-    {
-        address: 'mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So',
-        symbol: 'mSOL',
-        name: 'Marinade Staked SOL',
-        decimals: 9,
-        logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So/logo.png'
-    },
-    {
-        address: '7dHbWXmci3dT8UFYWYZweBLXgycu7Y3iL6trKn1Y7ARj',
-        symbol: 'stSOL',
-        name: 'Lido Staked SOL',
-        decimals: 9,
-        logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/7dHbWXmci3dT8UFYWYZweBLXgycu7Y3iL6trKn1Y7ARj/logo.png'
-    },
-    {
-        address: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
-        symbol: 'BONK',
-        name: 'Bonk',
-        decimals: 5,
-        logoURI: 'https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I'
-    },
-    {
-        address: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN',
-        symbol: 'JUP',
-        name: 'Jupiter',
-        decimals: 6,
-        logoURI: 'https://static.jup.ag/jup/icon.png'
-    },
-    {
-        address: 'HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3',
-        symbol: 'PYTH',
-        name: 'Pyth Network',
-        decimals: 6,
-        logoURI: 'https://pyth.network/token.svg'
     }
 ];
 
@@ -176,10 +136,7 @@ export function TokenSelector({
 
     // Helper to get network tag color
     const getNetworkTag = (symbol: string) => {
-        // Mock data to match screenshot vibe
         if (symbol === 'SOL') return { text: 'SOL', bg: 'bg-[#9945FF]' };
-        if (symbol === 'BTC') return { text: 'BTC', bg: 'bg-[#F7931A]' };
-        if (symbol === 'ETH') return { text: 'ETH', bg: 'bg-[#627EEA]' };
         if (symbol === 'USDC') return { text: 'SOL', bg: 'bg-[#2775CA]' };
         return { text: 'SOL', bg: 'bg-gray-600' };
     };
@@ -189,6 +146,7 @@ export function TokenSelector({
             {/* Trigger Button */}
             <button
                 onClick={() => setIsOpen(true)}
+                aria-label={label}
                 className="bg-[#2A2A2A] hover:bg-[#333] pl-2 pr-4 py-1.5 flex items-center gap-3 transition-colors cursor-pointer border border-gray-800 group rounded-[4.5px]"
             >
                 {selectedToken.logoURI ? (
@@ -299,7 +257,7 @@ export function TokenSelector({
                                                 <button
                                                     key={token.address}
                                                     onClick={() => handleSelect(token)}
-                                                    className={`w-full p-3 flex items-center gap-4 hover:bg-[#1A1A1A] transition-all group ${selectedToken.address === token.address ? 'bg-[#1A1A1A] ring-1 ring-gray-800' : ''}`}
+                                                    className={`w-full p-3 flex items-center gap-4 hover:bg-[#1A1A1A] transition-all group cursor-pointer ${selectedToken.address === token.address ? 'bg-[#1A1A1A] ring-1 ring-gray-800' : ''}`}
                                                 >
                                                     {/* Token Icon */}
                                                     <div className="relative">
