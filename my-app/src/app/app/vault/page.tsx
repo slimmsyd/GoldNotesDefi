@@ -22,9 +22,9 @@ export default function VaultPage() {
         <div className="lg:col-span-2">
           <SolvencyBadge />
         </div>
-        <div className="lg:col-span-1">
+        {/* <div className="lg:col-span-1">
           <ArchitectureExplainer />
-        </div>
+        </div> */}
       </section>
 
       {/* 2. The Ledger: Live Flows */}
@@ -49,8 +49,8 @@ export default function VaultPage() {
 
       {/* 4. The Audit Trail: Historical Data Tables */}
       <section className="w-full space-y-6">
-        <div className="flex justify-between items-center border-b border-gray-800/50 pb-4">
-          <h2 className="text-xl font-bold text-white tracking-tight">Immutable Audit Trail</h2>
+        <div className="flex justify-between items-center border-b border-white/5 pb-4">
+          <h2 className="text-xl font-medium text-white tracking-tight">Immutable Audit Trail</h2>
         </div>
         <AuditTrail />
         <ProofHistoryTable />

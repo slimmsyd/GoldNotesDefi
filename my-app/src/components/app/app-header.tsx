@@ -129,7 +129,7 @@ function CustomWalletButton() {
 
   if (!mounted) {
     return (
-      <button className="bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black font-bold px-5 py-1.5 text-xs rounded-[4.5px] hover:brightness-110 active:scale-95 transition-all cursor-pointer">
+      <button className="bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black font-bold px-5 py-1.5 text-xs rounded-full hover:brightness-110 active:scale-95 transition-all cursor-pointer">
         Connect Wallet
       </button>
     );
@@ -141,7 +141,7 @@ function CustomWalletButton() {
       <div className="relative">
         <button
           onClick={handleConnect}
-          className="flex items-center gap-2.5 border border-[#c9a84c]/50 text-[#e8d48b] px-4 py-1.5 font-medium text-xs rounded-[4.5px] hover:bg-[#c9a84c]/10 transition-all duration-150 cursor-pointer"
+          className="flex items-center gap-2.5 border border-[#c9a84c]/50 text-[#e8d48b] px-4 py-1.5 font-medium text-xs rounded-full hover:bg-[#c9a84c]/10 transition-all duration-150 cursor-pointer"
         >
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full bg-green-400 opacity-75" />
@@ -216,7 +216,7 @@ function CustomWalletButton() {
 
       <button
         onClick={handleConnect}
-        className="bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black font-bold px-5 py-1.5 text-xs rounded-[4.5px] hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-[0_4px_16px_rgba(201,168,76,0.35)]"
+        className="bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black font-bold px-5 py-1.5 text-xs rounded-full hover:brightness-110 active:scale-95 transition-all cursor-pointer shadow-[0_4px_16px_rgba(201,168,76,0.35)]"
       >
         Connect Wallet
       </button>

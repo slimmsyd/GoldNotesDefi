@@ -121,7 +121,7 @@ export function VerifyNowButton({ onComplete }: { onComplete?: () => void }) {
       <button
         onClick={handleVerify}
         disabled={isVerifying}
-        className="flex items-center gap-2 bg-[#c9a84c]/10 border border-[#c9a84c]/30 px-4 py-2 text-[#e8d48b] hover:bg-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-colors disabled:opacity-50 focus:outline-none cursor-pointer rounded-[4.5px]"
+        className="flex items-center justify-center gap-2 bg-[#c9a84c]/10 border border-[#c9a84c]/30 px-4 py-2 text-[#e8d48b] hover:bg-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-colors disabled:opacity-50 focus:outline-none cursor-pointer rounded-full min-w-[100px]"
       >
         {isVerifying ? (
           <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -132,9 +132,7 @@ export function VerifyNowButton({ onComplete }: { onComplete?: () => void }) {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-        ) : (
-          <img src="/AppAssets/PNG Renders/key_black.png" alt="Verify" className="w-5 h-5 object-contain drop-shadow-md" />
-        )}
+        ) : null}
         <span className="text-xs font-medium">{isVerifying ? 'Verifying...' : 'Verify Now'}</span>
       </button>
 
