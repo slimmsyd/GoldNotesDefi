@@ -90,7 +90,7 @@ export function SolvencyBadge() {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`relative overflow-hidden p-6 rounded-[4.5px] ${isSolvent
+            className={`relative overflow-hidden p-6 rounded-[4.5px] h-full flex flex-col justify-between ${isSolvent
                 ? 'bg-gradient-to-br from-emerald-900/30 to-gray-900 border border-emerald-700/50'
                 : 'bg-gradient-to-br from-red-900/30 to-gray-900 border border-red-700/50'
                 }`}
@@ -98,7 +98,7 @@ export function SolvencyBadge() {
             {/* Animated glow effect */}
             <div className={`absolute inset-0 ${isSolvent ? 'bg-emerald-500/5' : 'bg-red-500/5'} blur-3xl`}></div>
 
-            <div className="relative z-10">
+            <div className="relative z-10 flex-1 flex flex-col justify-between">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">

@@ -27,40 +27,42 @@ export function TreasuryBalance({ treasuryBalance, isLoading, onRefresh }: Treas
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-gradient-to-br from-[#c9a84c]/10 to-gray-900 border border-[#c9a84c]/30 p-6 relative overflow-hidden rounded-[4.5px]"
+            className="bg-gradient-to-br from-[#c9a84c]/10 to-gray-900 border border-[#c9a84c]/30 p-6 relative overflow-hidden rounded-[4.5px] h-full flex flex-col"
         >
             {/* Animated gold shimmer effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#c9a84c]/5 to-transparent animate-shimmer"></div>
 
-            <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-transparent flex items-center justify-center">
-                            <img src="/AppAssets/BlackW3BCoin.jpg" alt="W3B" className="w-8 h-8 object-contain rounded-[4.5px] drop-shadow-md" />
+            <div className="relative z-10 flex-1 flex flex-col justify-between">
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-transparent flex items-center justify-center">
+                                <img src="/AppAssets/BlackW3BCoin.jpg" alt="W3B" className="w-8 h-8 object-contain rounded-[4.5px] drop-shadow-md" />
+                            </div>
+                            <div>
+                                <h3 className="text-white font-semibold">Treasury Vault</h3>
+                                <p className="text-gray-500 text-xs">Available for Purchase</p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="text-white font-semibold">Treasury Vault</h3>
-                            <p className="text-gray-500 text-xs">Available for Purchase</p>
-                        </div>
+                        {onRefresh && (
+                            <button
+                                onClick={onRefresh}
+                                className="text-gray-400 hover:text-white transition-colors"
+                                title="Refresh"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </button>
+                        )}
                     </div>
-                    {onRefresh && (
-                        <button
-                            onClick={onRefresh}
-                            className="text-gray-400 hover:text-white transition-colors"
-                            title="Refresh"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                        </button>
-                    )}
-                </div>
 
-                <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold text-[#e8d48b]">
-                        {treasuryBalance?.toLocaleString() ?? '—'}
-                    </span>
-                    <span className="text-gray-400 text-lg">W3B</span>
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-4xl font-bold text-[#e8d48b]">
+                            {treasuryBalance?.toLocaleString() ?? '—'}
+                        </span>
+                        <span className="text-gray-400 text-lg">W3B</span>
+                    </div>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-800 flex items-center justify-between text-xs">
