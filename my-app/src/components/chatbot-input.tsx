@@ -20,6 +20,7 @@ export function ChatbotInput() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [activeAiId, setActiveAiId] = useState<string | null>(null);
   const [activeStatus, setActiveStatus] = useState<string | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const prevBodyStylesRef = useRef<{ paddingRight: string; overflowX: string; transition: string } | null>(
     null
   );
@@ -382,26 +383,52 @@ export function ChatbotInput() {
     <>
       {!isOpen && (
         <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-2xl px-4">
-          <form onSubmit={handleLauncherSubmit} className="relative">
-            <div className="relative flex items-center bg-white/90 backdrop-blur-md rounded-lg border border-gray-300 shadow-lg hover:shadow-xl transition-shadow duration-200 overflow-hidden">
+          <form onSubmit={handleLauncherSubmit} className="relative flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 border shadow-lg ${isDarkMode
+                  ? 'bg-black/60 border-white/10 text-yellow-400 hover:bg-black/80 hover:border-yellow-400/50'
+                  : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-yellow-500'
+                }`}
+              aria-label="Toggle dark mode"
+            >
+              {isDarkMode ? (
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path stroke="none" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4.22 4.22a1 1 0 011.415 0l.708.708a1 1 0 01-1.414 1.414l-.708-.708a1 1 0 010-1.414zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM15.636 15.636a1 1 0 010 1.414l-.708.708a1 1 0 01-1.414-1.414l.708-.708a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4.22-4.22a1 1 0 01-1.414 0l-.708-.708a1 1 0 011.414-1.414l.708.708a1 1 0 010 1.414zM4 10a1 1 0 01-1 1H2a1 1 0 110-2h1a1 1 0 011 1zM5.78 4.364a1 1 0 010 1.414L5.07 6.485A1 1 0 013.657 5.07l.708-.708a1 1 0 011.414 0zM10 6a4 4 0 100 8 4 4 0 000-8z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                </svg>
+              )}
+            </button>
+            <div className={`relative flex-1 flex items-center backdrop-blur-md rounded-full border shadow-lg hover:shadow-xl transition-shadow duration-200 overflow-hidden ${isDarkMode
+                ? 'bg-black/60 border-white/10'
+                : 'bg-white/90 border-gray-300'
+              }`}>
               <input
                 type="text"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 placeholder="Ask For Gnosis"
-                className="flex-1 bg-transparent px-6 py-4 text-gray-900 placeholder-gray-500 focus:outline-none text-base font-light"
+                className={`flex-1 bg-transparent px-6 py-4 focus:outline-none text-base font-light ${isDarkMode
+                    ? 'text-white placeholder-gray-400'
+                    : 'text-gray-900 placeholder-gray-500'
+                  }`}
               />
 
               <button
                 type="submit"
                 disabled={!draft.trim()}
-                className="flex-shrink-0 mr-2 w-10 h-10 flex items-center justify-center rounded-lg hover:shadow-lg hover:shadow-yellow-500/50 disabled:opacity-50 transition-all duration-200 cursor-pointer disabled:cursor-not-allowed"
+                className={`flex-shrink-0 mr-2 w-10 h-10 flex items-center justify-center rounded-full hover:shadow-lg hover:shadow-[#c9a84c]/50 disabled:opacity-50 transition-all duration-200 cursor-pointer disabled:cursor-not-allowed ${draft.trim() ? (isDarkMode ? 'bg-[#c9a84c] text-black' : 'bg-[#c9a84c] text-black') : (isDarkMode ? 'bg-white/10 text-white/50' : 'bg-gray-100 text-gray-400')
+                  }`}
                 style={{
                   background: draft.trim() ? 'linear-gradient(to right, #FFE860, #FEFDD6)' : undefined,
                 }}
                 aria-label="Submit question"
               >
-                <svg className="w-5 h-5 text-gray-900" viewBox="0 0 24 24" fill="none">
+                <svg className={`w-5 h-5 ${draft.trim() ? 'text-black' : (isDarkMode ? 'text-white/50' : 'text-gray-400')}`} viewBox="0 0 24 24" fill="none">
                   <path
                     d="M12 4L12 20M12 4L6 10M12 4L18 10"
                     stroke="currentColor"
@@ -427,6 +454,8 @@ export function ChatbotInput() {
         isStreaming={isStreaming}
         streamingAiId={activeAiId}
         streamingStatus={activeStatus}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
       />
     </>
   );
