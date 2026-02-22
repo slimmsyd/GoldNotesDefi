@@ -53,14 +53,14 @@ export function ArchitectureExplainer() {
       {/* Toggle Button */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-5 py-3.5 flex items-center justify-between text-left hover:bg-gray-800/30 transition-colors focus:outline-none"
+        className="w-full p-6 flex items-center justify-between text-left hover:bg-gray-800/30 transition-colors focus:outline-none"
       >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-transparent flex items-center justify-center">
-            <img src="/AppAssets/PNG Renders/calculator_black.png" alt="How W3B Works" className="w-5 h-5 object-contain drop-shadow-md" />
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-transparent flex items-center justify-center">
+            <img src="/AppAssets/PNG Renders/calculator_black.png" alt="How W3B Works" className="w-6 h-6 object-contain drop-shadow-md" />
           </div>
-          <span className="text-sm font-medium text-gray-300">How W3B Works</span>
-          <span className="text-xs text-gray-500 bg-gray-800/50 px-2 py-0.5">Trust Model</span>
+          <span className="text-lg font-bold text-white tracking-tight">How W3B Works</span>
+          <span className="text-xs text-gray-400 bg-gray-800/50 px-2.5 py-1 rounded-[4.5px] font-medium border border-gray-700/50 hidden sm:inline-block">Trust Model</span>
         </div>
         <motion.svg
           animate={{ rotate: isExpanded ? 180 : 0 }}
@@ -84,41 +84,33 @@ export function ArchitectureExplainer() {
             transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="overflow-hidden"
           >
-            <div className="px-5 pb-5 pt-2 border-t border-gray-800/50">
-              {/* Layer Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            <div className="px-6 pb-6 pt-2 border-t border-gray-800/50">
+              {/* Layer Cards (Vertical Layout for narrow column) */}
+              <div className="flex flex-col gap-3 mb-5 relative">
+                {/* Vertical connecting line */}
+                <div className="absolute left-[2.1rem] top-8 bottom-8 w-px bg-gray-800/80 hidden sm:block z-0"></div>
+
                 {layers.map((layer, index) => (
                   <motion.div
                     key={layer.number}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 + 0.1 }}
-                    className="bg-gray-800/30 p-4 border border-gray-800/50 rounded-[4.5px] group hover:border-gray-700 transition-colors"
+                    className="relative bg-gray-800/30 p-4 border border-gray-800/50 rounded-[4.5px] group hover:border-gray-700 transition-colors z-10"
                   >
-                    <div className="flex items-center gap-2.5 mb-2">
-                      <div className="w-6 h-6 bg-transparent flex items-center justify-center text-[#c9a84c]">
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-full bg-gray-900 border border-gray-700/80 flex items-center justify-center flex-shrink-0 text-[#c9a84c] shadow-sm">
                         {layer.icon}
                       </div>
-                      <div>
-                        <span className="text-xs text-gray-500 font-medium">Layer {layer.number}</span>
-                        <h4 className="text-sm font-semibold text-white leading-none">{layer.title}</h4>
+                      <div className="pt-1">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest bg-gray-800/80 px-1.5 py-0.5 rounded-sm">Layer {layer.number}</span>
+                          <h4 className="text-sm font-semibold text-white leading-none">{layer.title}</h4>
+                        </div>
+                        <p className="text-xs text-gray-400 leading-relaxed">{layer.description}</p>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-400 leading-relaxed">{layer.description}</p>
                   </motion.div>
-                ))}
-              </div>
-
-              {/* Flow Arrows (Desktop only) */}
-              <div className="hidden sm:flex justify-center items-center gap-4 mb-4">
-                {[1, 2].map((i) => (
-                  <div key={i} className="flex items-center gap-2 text-gray-600">
-                    <div className="w-8 h-px bg-gray-700" />
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                    <div className="w-8 h-px bg-gray-700" />
-                  </div>
                 ))}
               </div>
 

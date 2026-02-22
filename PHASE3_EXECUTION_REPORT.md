@@ -222,3 +222,13 @@ Then re-check health:
 ```bash
 curl http://localhost:3000/api/health/pricing
 ```
+
+## 12) Daily Cron + Verify-Sync Alignment Note
+
+Operational pricing behavior is now:
+
+1. Daily cron remains baseline (`/api/cron/update-rate`).
+2. `POST /api/admin/auto-verify` attempts non-blocking authoritative price sync after successful reserve verification.
+3. Swap execution is anchored on on-chain price checks; DB age is warning/observability context.
+
+This keeps Phase 3 safety guarantees while removing stale-timestamp confusion during local and demo operations.

@@ -3,32 +3,60 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoldbackSerialRecord } from '@/lib/protocol-constants';
-import { fetchRecentSerials, fetchBatchStats, BatchStats } from '@/lib/supabase-protocol';
+import {
+  fetchBatchStats,
+  fetchPendingSerialsCount,
+  fetchRecentPendingSerials,
+  BatchStats,
+} from '@/lib/supabase-protocol';
 
 interface MempoolVisualizerProps {
   className?: string;
 }
 
 export function MempoolVisualizer({ className }: MempoolVisualizerProps) {
-  const [serials, setSerials] = useState<GoldbackSerialRecord[]>([]);
+  const [pendingSerials, setPendingSerials] = useState<GoldbackSerialRecord[]>([]);
+  const [pendingTotal, setPendingTotal] = useState(0);
   const [batches, setBatches] = useState<BatchStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch data
   useEffect(() => {
     async function loadData() {
-      try {
-        const [recentSerials, batchStats] = await Promise.all([
-          fetchRecentSerials(50),
+      const [pendingSerialsResult, pendingCountResult, batchStatsResult] = await Promise.allSettled([
+          fetchRecentPendingSerials(50),
+          fetchPendingSerialsCount(),
           fetchBatchStats(),
-        ]);
-        setSerials(recentSerials);
-        setBatches(batchStats);
-      } catch (error) {
-        console.error('Failed to load visualizer data', error);
-      } finally {
-        setIsLoading(false);
+      ]);
+
+      let resolvedPendingSerials: GoldbackSerialRecord[] = [];
+
+      if (pendingSerialsResult.status === 'fulfilled') {
+        resolvedPendingSerials = pendingSerialsResult.value;
+        setPendingSerials(resolvedPendingSerials);
+      } else {
+        console.error('Failed to load pending serial stream', pendingSerialsResult.reason);
       }
+
+      if (pendingCountResult.status === 'fulfilled') {
+        setPendingTotal(pendingCountResult.value);
+      } else {
+        console.warn('Falling back pending count to stream length', pendingCountResult.reason);
+        setPendingTotal(
+          resolvedPendingSerials.length > 0
+            ? resolvedPendingSerials.length
+            : pendingSerials.length
+        );
+      }
+
+      if (batchStatsResult.status === 'fulfilled') {
+        setBatches(batchStatsResult.value.filter((batch) => batch.isAnchored));
+      } else {
+        console.error('Failed to load batch stats', batchStatsResult.reason);
+        setBatches([]);
+      }
+
+      setIsLoading(false);
     }
 
     loadData();
@@ -36,13 +64,13 @@ export function MempoolVisualizer({ className }: MempoolVisualizerProps) {
     return () => clearInterval(interval);
   }, []);
 
-  const { pendingSerials, confirmedBatches } = useMemo(() => {
-    const displayStream = serials.slice(0, 15);
+  const { displayPendingSerials, confirmedBatches } = useMemo(() => {
+    const displayStream = pendingSerials.slice(0, 15);
     return {
-      pendingSerials: displayStream,
-      confirmedBatches: batches,
+      displayPendingSerials: displayStream,
+      confirmedBatches: batches.filter((batch) => batch.isAnchored),
     };
-  }, [serials, batches]);
+  }, [pendingSerials, batches]);
 
   return (
     <div className={`w-full bg-gray-900/50 border border-gray-800 rounded-[4.5px] overflow-hidden backdrop-blur-sm ${className}`}>
@@ -73,13 +101,18 @@ export function MempoolVisualizer({ className }: MempoolVisualizerProps) {
           <div className="flex items-center justify-between mb-6">
             <h4 className="text-gray-400 text-sm font-medium">Incoming Serials</h4>
             <span className="text-[#c9a84c] bg-[#c9a84c]/10 px-2 py-0.5 text-xs font-mono">
-              {pendingSerials.length} PENDING
+              {pendingTotal} PENDING
             </span>
           </div>
+          {pendingTotal > displayPendingSerials.length && (
+            <div className="text-[10px] text-gray-500 mb-3">
+              Showing latest {displayPendingSerials.length} of {pendingTotal}
+            </div>
+          )}
 
           <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar mask-linear-fade">
             <AnimatePresence mode="popLayout">
-              {pendingSerials.map((serial, index) => (
+              {displayPendingSerials.map((serial, index) => (
                 <motion.div
                   key={serial.id}
                   initial={{ opacity: 0, x: -20, scale: 0.9 }}
@@ -92,7 +125,7 @@ export function MempoolVisualizer({ className }: MempoolVisualizerProps) {
                 </motion.div>
               ))}
             </AnimatePresence>
-            {pendingSerials.length === 0 && !isLoading && (
+            {displayPendingSerials.length === 0 && !isLoading && (
               <div className="w-full h-24 flex items-center justify-center text-gray-600 text-sm italic border border-dashed border-gray-800">
                 Waiting for serials...
               </div>

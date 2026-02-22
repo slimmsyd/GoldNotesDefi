@@ -17,10 +17,9 @@
 import { motion } from 'framer-motion';
 import { useProtocolData } from '@/hooks/useProtocolData';
 import { MempoolBlocks } from '@/components/app/dashboard/mempool-blocks';
-import { SolvencyHero } from '@/components/app/dashboard/solvency-hero';
 import { StatsGrid } from '@/components/app/dashboard/stats-grid';
-import { AuditTrail } from '@/components/app/dashboard/audit-trail';
-import { ArchitectureExplainer } from '@/components/app/dashboard/architecture-explainer';
+import { PortfolioHero } from '@/components/app/dashboard/portfolio-hero';
+import { QuickActions } from '@/components/app/dashboard/quick-actions';
 import { VerifyNowButton } from '@/components/app/dashboard/verify-now-button';
 
 // Animation variants - standardized timing (Phase 3)
@@ -102,29 +101,22 @@ export default function AppDashboard() {
         </motion.div>
       )}
 
-      {/* 1. SOLVENCY STATUS - Primary focal point */}
+      {/* 1. PORTFOLIO HERO - Primary focal point */}
       <motion.div variants={fadeInUp}>
-        <SolvencyHero data={data} isLoading={isLoading} />
+        <PortfolioHero data={data} isLoading={isLoading} />
       </motion.div>
 
-      {/* 1.5 ARCHITECTURE EXPLAINER - How the trust model works */}
+      {/* 2. QUICK ACTIONS */}
       <motion.div variants={fadeInUp}>
-        <ArchitectureExplainer />
+        <QuickActions />
       </motion.div>
 
-      {/* 2. KEY METRICS - Supporting data */}
+      {/* 3. ASSET STATS - Supporting data */}
       <motion.div variants={fadeInUp}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-gray-400 text-sm font-medium uppercase tracking-wider">Asset Information</h3>
+        </div>
         <StatsGrid data={data} isLoading={isLoading} />
-      </motion.div>
-
-      {/* 3. MEMPOOL BLOCKS - Live activity */}
-      <motion.div variants={fadeInUp}>
-        <MempoolBlocks goldbackPrice={data?.goldbackPrice ?? null} />
-      </motion.div>
-
-      {/* 4. AUDIT TRAIL - Historical data */}
-      <motion.div variants={fadeInUp}>
-        <AuditTrail />
       </motion.div>
 
       {/* Footer Meta */}

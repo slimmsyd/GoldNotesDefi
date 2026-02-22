@@ -61,7 +61,7 @@ export function ReserveGrowthChart() {
 
     const margin = { top: 40, right: 40, bottom: 60, left: 70 };
     const width = container.clientWidth - margin.left - margin.right;
-    const height = 400 - margin.top - margin.bottom;
+    const height = 450 - margin.top - margin.bottom; // Increased height
 
     const g = svg
       .attr('width', width + margin.left + margin.right)
@@ -94,14 +94,14 @@ export function ReserveGrowthChart() {
     gradient
       .append('stop')
       .attr('offset', '0%')
-      .attr('stop-color', '#f59e0b')
-      .attr('stop-opacity', 0.4);
+      .attr('stop-color', '#c9a84c') // Changed to standard gold
+      .attr('stop-opacity', 0.5); // Increased top opacity
 
     gradient
       .append('stop')
       .attr('offset', '100%')
-      .attr('stop-color', '#f59e0b')
-      .attr('stop-opacity', 0.05);
+      .attr('stop-color', '#c9a84c')
+      .attr('stop-opacity', 0.01); // Fade to almost clear
 
     // Grid lines
     g.append('g')
@@ -165,8 +165,8 @@ export function ReserveGrowthChart() {
     g.append('path')
       .datum(data)
       .attr('fill', 'none')
-      .attr('stroke', '#f59e0b')
-      .attr('stroke-width', 3)
+      .attr('stroke', '#e8d48b') // Bright gold
+      .attr('stroke-width', 4) // Slightly thicker
       .attr('d', line)
       .attr('stroke-dasharray', function () {
         return this.getTotalLength();
@@ -189,8 +189,8 @@ export function ReserveGrowthChart() {
       .attr('cx', (d) => xScale(d.date))
       .attr('cy', (d) => yScale(d.totalSerials))
       .attr('r', 0)
-      .attr('fill', '#f59e0b')
-      .attr('stroke', '#1f2937')
+      .attr('fill', '#000000') // Black center
+      .attr('stroke', '#e8d48b') // Gold ring
       .attr('stroke-width', 3)
       .style('cursor', 'pointer');
 
@@ -206,8 +206,9 @@ export function ReserveGrowthChart() {
         d3.select(this)
           .transition()
           .duration(150)
-          .attr('r', 12)
-          .attr('fill', '#fbbf24');
+          .attr('r', 10)
+          .attr('stroke-width', 4)
+          .attr('fill', '#c9a84c');
         setHoveredPoint(d);
       })
       .on('mouseleave', function () {
@@ -215,7 +216,8 @@ export function ReserveGrowthChart() {
           .transition()
           .duration(150)
           .attr('r', 8)
-          .attr('fill', '#f59e0b');
+          .attr('stroke-width', 3)
+          .attr('fill', '#000000');
         setHoveredPoint(null);
       });
 

@@ -6,51 +6,53 @@ import { ReserveGrowthChart } from '@/components/app/vault/reserve-growth-chart'
 import { GoldbackBubbles } from '@/components/app/vault/goldback-bubbles';
 import { SolvencyBadge } from '@/components/app/vault/solvency-badge';
 import { ProofHistoryTable } from '@/components/app/vault/proof-history-table';
-import { TreasuryBalance } from '@/components/app/vault/treasury-balance';
+import { TransparencyHeader } from '@/components/app/vault/transparency-header';
+import { ArchitectureExplainer } from '@/components/app/dashboard/architecture-explainer';
+import { AuditTrail } from '@/components/app/dashboard/audit-trail';
 
 export default function VaultPage() {
   const { data, isLoading, refresh } = useProtocolData({ refreshInterval: 30000 });
 
   return (
-    <div className="space-y-8">
-      <div className="max-w-4xl">
-        <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">Vault Visualization</h1>
-        <p className="text-xl text-gray-400 font-light leading-relaxed">
-          Real-time verification of physical Goldback serials entering the cryptographic reserve.
-        </p>
-      </div>
+    <div className="space-y-10">
+      <TransparencyHeader />
 
-      {/* 0. Status Overview: Solvency + Treasury Balance */}
-      <section className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* 1. The Guarantee: Top Level Solvency & Architecture */}
+      <section className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <SolvencyBadge />
         </div>
         <div className="lg:col-span-1">
-          <TreasuryBalance
-            treasuryBalance={data?.treasuryBalance ?? null}
-            isLoading={isLoading}
-            onRefresh={refresh}
-          />
+          <ArchitectureExplainer />
         </div>
       </section>
 
-      {/* 1. The Pulse: Live Inflow Stream */}
+      {/* 2. The Ledger: Live Flows */}
       <section className="w-full">
-        <MempoolVisualizer className="h-[320px]" />
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-white tracking-tight">Live Ledger</h2>
+        </div>
+        <div className="w-full">
+          <MempoolVisualizer className="h-full min-h-[320px]" />
+        </div>
       </section>
 
-      {/* 2. The Big Picture: Historical Growth */}
-      <section className="w-full">
-        <ReserveGrowthChart />
+      {/* 3. The Deep Dive: Historical Charts */}
+      <section className="w-full space-y-6">
+        <div className="w-full">
+          <ReserveGrowthChart />
+        </div>
+        <div className="w-full">
+          <GoldbackBubbles />
+        </div>
       </section>
 
-      {/* 3. The Deep Dive: Constellation */}
-      <section className="w-full">
-        <GoldbackBubbles />
-      </section>
-
-      {/* 4. The Audit Trail: Proof History */}
-      <section className="w-full">
+      {/* 4. The Audit Trail: Historical Data Tables */}
+      <section className="w-full space-y-6">
+        <div className="flex justify-between items-center border-b border-gray-800/50 pb-4">
+          <h2 className="text-xl font-bold text-white tracking-tight">Immutable Audit Trail</h2>
+        </div>
+        <AuditTrail />
         <ProofHistoryTable />
       </section>
     </div>

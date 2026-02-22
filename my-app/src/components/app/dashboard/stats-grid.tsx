@@ -28,19 +28,21 @@ interface StatCardProps {
 }
 
 function StatCard({ title, value, subtitle, icon, color, delay = 0, href, trend }: StatCardProps) {
-  // Phase 1.5: Reduced to 2 accent colors only (amber + green)
+  // Config for the pill backgrounds and accents
   const colorConfig = {
     amber: {
       bg: 'bg-[#c9a84c]/20',
-      border: 'border-gray-800 hover:border-[#c9a84c]/40',
-      icon: 'text-[#c9a84c]',
-      glow: 'group-hover:shadow-[#c9a84c]/10',
+      border: 'border-white/10 hover:border-white/20',
+      pillBg: 'bg-[#c9a84c]',
+      pillText: 'text-black',
+      gradient: 'from-[#c9a84c]/10 to-transparent',
     },
     green: {
       bg: 'bg-green-500/20',
-      border: 'border-gray-800 hover:border-green-500/40',
-      icon: 'text-green-500',
-      glow: 'group-hover:shadow-green-500/10',
+      border: 'border-white/10 hover:border-white/20',
+      pillBg: 'bg-green-600',
+      pillText: 'text-white',
+      gradient: 'from-green-500/10 to-transparent',
     },
   };
 
@@ -51,60 +53,62 @@ function StatCard({ title, value, subtitle, icon, color, delay = 0, href, trend 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={`group bg-gray-900/50 border ${config.border} p-5 relative overflow-hidden transition-all duration-200 hover:translate-y-[-2px] ${config.glow} rounded-[4.5px] group-hover:shadow-lg h-full`}
+      className={`group bg-black/40 backdrop-blur-xl border ${config.border} p-6 relative overflow-hidden transition-all duration-300 hover:translate-y-[-2px] rounded-[32px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] h-[180px] flex flex-col justify-between`}
     >
-      {/* Background Gradient */}
-      <div className={`absolute inset-0 ${config.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+      {/* Abstract Background Element (Mimics the reference image wave) */}
+      <div className={`absolute -top-12 -right-12 w-48 h-48 bg-gradient-radial ${config.gradient} rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-500`} />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
-      <div className="relative z-10">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className={`w-10 h-10 bg-transparent flex items-center justify-center`}>
-            <div className={config.icon}>{icon}</div>
-          </div>
-          {
-            href && (
-              <svg className="w-4 h-4 text-gray-600 group-hover:text-gray-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+      <div className="relative z-10 flex flex-col h-full">
+        {/* Top Row: Title + Status Pill */}
+        <div className="flex items-start justify-between mb-2 gap-2">
+          <h4 className="text-white font-medium text-lg leading-tight">{title}</h4>
+
+          {trend ? (
+            <span
+              className={`flex-shrink-0 flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${trend.isPositive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                }`}
+            >
+              <svg className={`w-2.5 h-2.5 ${trend.isPositive ? '' : 'rotate-180'}`} fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
               </svg>
-            )
-          }
-        </div >
+              {trend.value}%
+            </span>
+          ) : (
+            <span className="flex-shrink-0 bg-white/10 text-gray-300 text-[10px] uppercase font-bold px-2.5 py-1 rounded-full whitespace-nowrap">
+              {color === 'green' ? 'Verified' : 'Live'}
+            </span>
+          )}
+        </div>
 
-        {/* Label */}
-        < p className="text-gray-500 text-xs font-medium uppercase tracking-wider mb-1" > {title}</p >
+        {/* Middle Row: Subtitle */}
+        {subtitle && (
+          <p className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-auto leading-relaxed">
+            {subtitle}
+          </p>
+        )}
 
-        {/* Value */}
-        < div className="flex items-end gap-2" >
-          <p className="text-2xl font-bold text-white tracking-tight">{value}</p>
-          {
-            trend && (
-              <span
-                className={`flex items-center gap-0.5 text-xs font-medium mb-1 ${trend.isPositive ? 'text-green-400' : 'text-red-400'
-                  }`}
-              >
-                <svg
-                  className={`w-3 h-3 ${trend.isPositive ? '' : 'rotate-180'}`}
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
-                {trend.value}%
-              </span>
-            )
-          }
-        </div >
+        {/* Bottom Row: Core Value Pill + Optional Arrow */}
+        <div className="flex items-center gap-3 mt-4">
+          <div className={`${config.pillBg} ${config.pillText} px-4 py-2 rounded-full font-bold text-sm tracking-wide shadow-lg flex-shrink-0 flex items-center gap-2`}>
+            {color === 'amber' ? 'BALANCE:' : 'TOTAL:'} {value}
+          </div>
 
-        {/* Subtitle */}
-        {subtitle && <p className="text-gray-500 text-xs mt-1">{subtitle}</p>}
-      </div >
-    </motion.div >
+          {href && (
+            <div className="bg-white/5 border border-white/10 w-9 h-9 rounded-full flex items-center justify-center group-hover:bg-white/10 transition-colors ml-auto flex-shrink-0">
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
   );
 
   if (href) {
     return (
-      <Link href={href} className="block h-full focus:outline-none">
+      <Link href={href} className="block h-full focus:outline-none focus:ring-2 focus:ring-[#c9a84c] rounded-[32px]">
         {content}
       </Link>
     );
@@ -131,9 +135,9 @@ export function StatsGrid({ data, isLoading }: StatsGridProps) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <StatCard
-        title="Treasury"
-        value={data.treasuryBalance?.toLocaleString() ?? '—'}
-        subtitle="Available supply"
+        title="Asset Backing"
+        value={data.provenReserves.toLocaleString()}
+        subtitle="100% physically backed"
         color="green"
         delay={0.1}
         icon={
@@ -144,7 +148,7 @@ export function StatsGrid({ data, isLoading }: StatsGridProps) {
       <StatCard
         title="Reserves"
         value={data.provenReserves.toLocaleString()}
-        subtitle={`${data.totalSupply.toLocaleString()} minted`}
+        subtitle="PHYSICALLY SECURED"
         color="green"
         delay={0.15}
         icon={
@@ -153,9 +157,9 @@ export function StatsGrid({ data, isLoading }: StatsGridProps) {
       />
 
       <StatCard
-        title="Batches"
-        value={data.totalBatches.toLocaleString()}
-        subtitle="ZK proven"
+        title="Circulating Supply"
+        value={`${data.totalSupply.toLocaleString()} W3B`}
+        subtitle="MINTED SUPPLY"
         color="amber"
         delay={0.2}
         icon={
@@ -166,7 +170,7 @@ export function StatsGrid({ data, isLoading }: StatsGridProps) {
       <StatCard
         title="W3B Price"
         value={data.goldbackPrice !== null ? `$${data.goldbackPrice.toFixed(2)}` : '—'}
-        subtitle={data.isGoldbackPriceStale ? 'Price may be outdated' : '1:1 Goldback peg'}
+        subtitle={data.isGoldbackPriceStale ? 'PRICE MAY BE OUTDATED' : '1:1 GOLDBACK PEG'}
         color="amber"
         delay={0.25}
         href="/app/swap"

@@ -131,12 +131,19 @@ export function SwapInterface() {
       const effectiveHealthy = Boolean(payload?.effectiveHealthy ?? payload?.healthy);
       const bypassed = Boolean(payload?.bypassed ?? payload?.data?.bypassed);
       const bypassReason = payload?.bypassReason ?? payload?.data?.bypassReason ?? null;
-      setIsPricingHealthy(effectiveHealthy);
+      const reasons = payload?.data?.reasons ?? [];
+      const staleOnlyUnhealthy =
+        !effectiveHealthy &&
+        reasons.length > 0 &&
+        reasons.every((reason) => reason === 'last_sync_stale_or_unknown');
+      const healthyForSwap = effectiveHealthy || staleOnlyUnhealthy;
+
+      setIsPricingHealthy(healthyForSwap);
       setIsPricingBypassed(bypassed);
       setPricingBypassReason(bypassReason);
 
       let message: string | null = null;
-      if (!effectiveHealthy) {
+      if (!healthyForSwap) {
         const reason = payload?.data?.reasons?.[0];
         message =
           reason
@@ -147,7 +154,7 @@ export function SwapInterface() {
         setPricingHealthMessage(null);
       }
 
-      return { healthy: effectiveHealthy, message };
+      return { healthy: healthyForSwap, message };
     } catch {
       setIsPricingHealthy(false);
       setIsPricingBypassed(false);
@@ -168,7 +175,7 @@ export function SwapInterface() {
     return () => clearInterval(interval);
   }, []);
 
-  // Verify price before swap - fetches fresh data and checks staleness
+  // Verify price before swap - fetches fresh data and validates availability
   const verifyPriceBeforeSwap = async (): Promise<{ verified: boolean; rate: number | null; error: string | null }> => {
     setIsPriceVerifying(true);
     try {
@@ -181,17 +188,6 @@ export function SwapInterface() {
 
       const isFallback = data.source === 'fallback';
       setIsPriceFallback(isFallback);
-
-      // If using a real DB price, enforce staleness check
-      if (!isFallback && data.minutesSinceUpdate !== null) {
-        if (data.minutesSinceUpdate > 60) {
-          return {
-            verified: false,
-            rate: data.rate,
-            error: `Price data is ${data.minutesSinceUpdate} minutes old. Swap blocked for safety. Please try again later.`
-          };
-        }
-      }
 
       // Update state with verified price (fallback or fresh DB price)
       setW3bPriceUsd(data.rate);
@@ -564,7 +560,7 @@ export function SwapInterface() {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="bg-[#111111] border border-gray-800/50 p-6 shadow-2xl relative overflow-hidden max-w-[480px] w-full mx-auto rounded-[4.5px]">
+      <div className="bg-black/40 backdrop-blur-xl border border-white/10 p-6 shadow-[0_0_40px_rgba(0,0,0,0.5)] relative overflow-hidden max-w-[480px] w-full mx-auto rounded-[32px]">
         {/* Header */}
         <div className="flex flex-col mb-8">
           <div className="flex justify-between items-center mb-4">
@@ -612,104 +608,89 @@ export function SwapInterface() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              className="space-y-4"
+              className="flex flex-col relative mb-4"
             >
               {/* Pay Input */}
-              {/* Pay Input */}
-              <div className="space-y-2">
-                <div className="text-gray-500 text-sm mb-1 ml-1">You send</div>
-                <div className="bg-[#1A1A1A] p-4 border border-transparent hover:border-gray-700/50 transition-all group rounded-[4.5px]">
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Token Selector - Left Side */}
-                    <div className="flex-shrink-0">
-                      <TokenSelector
-                        selectedToken={selectedPayToken}
-                        onSelectToken={(token) => {
-                          clearExecutionState();
-                          setError(null);
-                          setSelectedPayToken(token);
-                        }}
-                        excludeToken={WGB_TOKEN.address}
-                      />
-                      <div className="text-gray-500 text-xs mt-1 ml-1">
-                        {isSameAddress(selectedPayToken.address, SOL_MINT_ADDRESS) ? 'Solana' : selectedPayToken.name}
-                      </div>
-                    </div>
-
-                    {/* Amount Input - Right Side */}
-                    <div className="text-right flex-grow">
-                      <input
-                        type="number"
-                        placeholder="0"
-                        value={payAmount}
-                        onChange={(e) => handlePayChange(e.target.value)}
-                        className="bg-transparent text-4xl font-medium text-white w-full text-right outline-none placeholder-gray-700 font-sans"
-                      />
-                      {selectedPayToken.balance !== undefined && (
-                        <div className="text-gray-600 text-xs mt-1 font-medium">
-                          Balance: {selectedPayToken.balance.toLocaleString(undefined, { maximumFractionDigits: 4 })}
-                        </div>
-                      )}
-                    </div>
+              <div className="bg-black/60 p-5 rounded-t-[24px] rounded-b-[8px] flex flex-col justify-between min-h-[140px] mb-1 border border-transparent hover:border-white/5 transition-colors">
+                <div className="flex items-center justify-between gap-4 mb-2">
+                  <div className="flex-shrink-0">
+                    <TokenSelector
+                      selectedToken={selectedPayToken}
+                      onSelectToken={(token) => {
+                        clearExecutionState();
+                        setError(null);
+                        setSelectedPayToken(token);
+                      }}
+                      excludeToken={WGB_TOKEN.address}
+                    />
+                  </div>
+                  <div className="text-right flex-grow">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={payAmount}
+                      onChange={(e) => handlePayChange(e.target.value)}
+                      className="bg-transparent text-4xl font-medium text-white w-full text-right outline-none placeholder-gray-700 font-sans"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between items-end text-sm font-medium text-gray-500 mt-auto px-2">
+                  <div>
+                    {selectedPayToken.balance !== undefined ? `Balance: ${selectedPayToken.balance.toLocaleString(undefined, { maximumFractionDigits: 4 })}` : 'Balance: 0.00'}
+                  </div>
+                  <div className="text-gray-400">
+                    Value: ${payAmount && !isNaN(parseFloat(payAmount)) ? getUsdValue(parseFloat(payAmount)).toFixed(2) : '0.00'}
                   </div>
                 </div>
               </div>
 
-              {/* Arrow */}
-              <div className="flex justify-center -my-2 relative z-10">
-                <div className="bg-gray-800 p-2 border-4 border-[#111111] rounded-[4.5px]">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              {/* Overlapping Swap Button */}
+              <div className="absolute left-1/2 top-[141px] -translate-x-1/2 -translate-y-1/2 z-10 flex justify-center">
+                <button className="bg-[#c9a84c] hover:bg-[#e8d48b] transition-all p-2.5 border-[6px] border-[#0A0A0A] rounded-full text-black shadow-lg cursor-pointer hover:scale-105 active:scale-95">
+                  <svg className="w-5 h-5 mx-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                   </svg>
-                </div>
+                </button>
               </div>
 
               {/* Receive Input */}
-              {/* Receive Input */}
-              <div className="space-y-2">
-                <div className="flex justify-between ml-1">
-                  <div className="text-gray-500 text-sm mb-1">You receive</div>
-                  <div className="text-gray-600 text-xs mt-1">estimated</div>
-                </div>
-
-                <div className="bg-[#1A1A1A] p-4 border border-transparent hover:border-gray-700/50 transition-all rounded-[4.5px]">
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Fixed WGB Token Display */}
-                    <div className="flex-shrink-0">
-                      <div className="bg-[#2A2A2A] hover:bg-[#333] pl-2 pr-4 py-1.5 flex items-center gap-3 transition-colors cursor-default border border-gray-800 rounded-[4.5px]">
-                        <img
-                          src="/AppAssets/BlackW3BCoin.jpg"
-                          alt="WGB Token"
-                          className="w-8 h-8 shadow-lg shadow-[#c9a84c]/20 rounded-[4.5px]"
-                        />
-                        <div className="text-left">
-                          <span className="text-white font-bold block leading-none">WGB</span>
-                        </div>
-                      </div>
-                      <div className="text-gray-500 text-xs mt-1 ml-1">
-                        GoldBack
-                      </div>
-                    </div>
-
-                    <div className="text-right flex-grow">
-                      <input
-                        type="number"
-                        placeholder="0.00"
-                        value={receiveAmount}
-                        onChange={(e) => handleReceiveChange(e.target.value)}
-                        className="bg-transparent text-4xl font-medium text-white w-full text-right outline-none placeholder-gray-700 font-sans"
+              <div className="bg-black/60 p-5 rounded-t-[8px] rounded-b-[24px] flex flex-col justify-between min-h-[140px] mt-1 mb-6 border border-transparent hover:border-white/5 transition-colors">
+                <div className="flex items-center justify-between gap-4 mb-2">
+                  <div className="flex-shrink-0">
+                    <div className="bg-white/5 hover:bg-white/10 pl-2 pr-5 py-2 flex items-center gap-3 transition-colors cursor-default border border-white/5 group rounded-full">
+                      <img
+                        src="/AppAssets/BlackW3BCoin.jpg"
+                        alt="WGB Token"
+                        className="w-8 h-8 shadow-lg shadow-[#c9a84c]/20 rounded-full"
                       />
-                      <div className="text-gray-600 text-xs mt-1 font-medium">
-                        1 WGB ≈ ${w3bPriceUsd.toFixed(2)}
+                      <div className="text-left">
+                        <span className="text-white font-bold block leading-none text-lg">WGB</span>
                       </div>
                     </div>
+                  </div>
+                  <div className="text-right flex-grow">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={receiveAmount}
+                      onChange={(e) => handleReceiveChange(e.target.value)}
+                      className="bg-transparent text-4xl font-medium text-white w-full text-right outline-none placeholder-gray-700 font-sans"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between items-end text-sm font-medium text-gray-500 mt-auto px-2">
+                  <div>
+                    Balance: 0.00
+                  </div>
+                  <div className="text-gray-400">
+                    Value: ${receiveAmount && !isNaN(parseFloat(receiveAmount)) ? (parseFloat(receiveAmount) * w3bPriceUsd).toFixed(2) : '0.00'}
                   </div>
                 </div>
               </div>
 
               {/* Rate Info */}
-              <div className="bg-gray-950/50 p-3 text-xs space-y-2 rounded-[4.5px]">
-                <div className="flex justify-between text-gray-400">
+              <div className="bg-black/60 p-4 text-sm space-y-2 rounded-[16px] mb-4 border border-transparent hover:border-white/5 transition-colors">
+                <div className="flex justify-between text-gray-400 font-medium">
                   <span>Rate</span>
                   <span className="text-white">
                     {isSameAddress(selectedPayToken.address, SOL_MINT_ADDRESS) && solPrice
@@ -718,7 +699,7 @@ export function SwapInterface() {
                     }
                   </span>
                 </div>
-                <div className="flex justify-between text-gray-400">
+                <div className="flex justify-between text-gray-400 font-medium">
                   <span>Network</span>
                   <span className={PROTOCOL_CONFIG.isMainnet ? 'text-green-400' : 'text-[#e8d48b]'}>
                     Solana {PROTOCOL_CONFIG.networkDisplay}
@@ -760,7 +741,7 @@ export function SwapInterface() {
                     !isPricingHealthy
                   }
                   onClick={handleReviewStep}
-                  className="w-full bg-linear-to-r from-[#c9a84c] to-[#a48a3a] cursor-pointer text-black font-bold py-4 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-[0_4px_16px_rgba(201,168,76,0.35)] rounded-[4.5px]"
+                  className="w-full bg-linear-to-r from-[#c9a84c] to-[#a48a3a] cursor-pointer text-black font-bold py-4 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-[0_4px_16px_rgba(201,168,76,0.35)] rounded-full text-lg mt-2"
                 >
                   Review Swap
                 </button>
@@ -786,7 +767,7 @@ export function SwapInterface() {
                 </div>
               </div>
 
-              <div className="bg-gray-950 p-4 space-y-3 text-sm rounded-[4.5px]">
+              <div className="bg-black/60 p-4 space-y-3 text-sm rounded-[16px] mb-4 border border-transparent hover:border-white/5 transition-colors">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Rate</span>
                   <span className="text-white">1 WGB = {w3bPriceUsd} USD</span>
@@ -832,7 +813,7 @@ export function SwapInterface() {
               {!isPriceFallback && priceMinutesSinceUpdate !== null && priceMinutesSinceUpdate > 30 && (
                 <div className="bg-yellow-900/30 border border-yellow-800 p-3 text-yellow-400 text-sm flex items-center gap-2 rounded-[4.5px]">
                   <img src="/AppAssets/PNG Renders/calendar_black.png" alt="Staleness Warning" className="w-6 h-6 flex-shrink-0 object-contain drop-shadow-md" />
-                  <span>Price data is {priceMinutesSinceUpdate} minutes old. Fresh verification will occur before swap.</span>
+                  <span>Price data is {priceMinutesSinceUpdate} minutes old. Execution uses on-chain price.</span>
                 </div>
               )}
 

@@ -229,7 +229,7 @@ export function RedeemInterface() {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="bg-[#111111] border border-gray-800/50 p-6 shadow-2xl relative overflow-hidden max-w-[480px] w-full mx-auto rounded-[4.5px]">
+      <div className="bg-black/40 backdrop-blur-xl border border-white/10 p-6 shadow-[0_0_40px_rgba(0,0,0,0.5)] relative overflow-hidden max-w-[480px] w-full mx-auto rounded-[32px]">
         {/* Header */}
         <div className="flex flex-col mb-8">
           <div className="flex justify-between items-center mb-4">
@@ -255,7 +255,7 @@ export function RedeemInterface() {
             {PROGRESS_STEPS.map((s, i) => (
               <div
                 key={s.key}
-                className={`h-1 w-full transition-all duration-500 ease-out rounded-[4.5px] ${i < currentStepIndex
+                className={`h-1 w-full transition-all duration-500 ease-out rounded-full ${i < currentStepIndex
                   ? 'bg-red-500'
                   : i === currentStepIndex
                     ? step === 'processing' ? 'bg-red-500 animate-pulse' : 'bg-red-500'
@@ -276,7 +276,7 @@ export function RedeemInterface() {
 
         {/* Redemption History Panel */}
         {showHistory && (
-          <div className="mb-6 bg-gray-950/50 border border-gray-800/50 p-4 max-h-60 overflow-y-auto rounded-[4.5px]">
+          <div className="mb-6 bg-black/60 border border-white/5 p-4 max-h-60 overflow-y-auto rounded-[16px]">
             <h3 className="text-sm font-medium text-gray-400 mb-3">Redemption History</h3>
             {redemptions.length === 0 ? (
               <p className="text-gray-600 text-xs">No redemptions yet</p>
@@ -321,12 +321,12 @@ export function RedeemInterface() {
                     Balance: {w3bBalance.toString()} WGB
                   </div>
                 </div>
-                <div className="bg-[#1A1A1A] p-4 border border-transparent hover:border-gray-700/50 transition-all rounded-[4.5px]">
-                  <div className="flex items-center justify-between gap-4">
+                <div className="bg-black/60 p-5 rounded-[24px] flex flex-col justify-between min-h-[140px] mb-1 border border-transparent hover:border-white/5 transition-colors">
+                  <div className="flex items-center justify-between gap-4 mb-2">
                     <div className="flex-shrink-0">
-                      <div className="bg-[#2A2A2A] pl-2 pr-4 py-1.5 flex items-center gap-3 border border-gray-800 rounded-[4.5px]">
-                        <img src="/AppAssets/BlackW3BCoin.jpg" alt="WGB" className="w-8 h-8 rounded-[4.5px]" />
-                        <span className="text-white font-bold">WGB</span>
+                      <div className="bg-white/5 hover:bg-white/10 pl-2 pr-5 py-2 flex items-center gap-3 transition-colors cursor-default border border-white/5 group rounded-full">
+                        <img src="/AppAssets/BlackW3BCoin.jpg" alt="WGB" className="w-8 h-8 rounded-full shadow-lg shadow-[#c9a84c]/20" />
+                        <span className="text-white font-bold leading-none text-lg">WGB</span>
                       </div>
                     </div>
                     <div className="text-right flex-grow">
@@ -339,9 +339,14 @@ export function RedeemInterface() {
                         onChange={(e) => setRedeemAmount(e.target.value)}
                         className="bg-transparent text-4xl font-medium text-white w-full text-right outline-none placeholder-gray-700 font-sans"
                       />
-                      <div className="text-gray-600 text-xs mt-1">
-                        ≈ ${usdValue.toFixed(2)} USD
-                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-end text-sm font-medium text-gray-500 mt-auto px-2">
+                    <div>
+                      {/* Empty left anchor */}
+                    </div>
+                    <div className="text-gray-400">
+                      Value: ${usdValue.toFixed(2)} USD
                     </div>
                   </div>
                 </div>
@@ -383,7 +388,7 @@ export function RedeemInterface() {
                     setError(null);
                     setStep('shipping');
                   }}
-                  className="w-full bg-red-600 hover:bg-red-500 cursor-pointer text-white font-bold py-4 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 rounded-[4.5px]"
+                  className="w-full bg-red-600 hover:bg-red-500 cursor-pointer text-white font-bold py-4 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 rounded-full text-lg mt-2 shadow-[0_4px_16px_rgba(220,38,38,0.35)]"
                 >
                   Continue to Shipping
                 </button>
@@ -406,14 +411,14 @@ export function RedeemInterface() {
                   placeholder="Full Name"
                   value={shipping.name}
                   onChange={(e) => handleShippingChange('name', e.target.value)}
-                  className="w-full bg-[#1A1A1A] border border-gray-800 p-3 text-white placeholder-gray-600 text-sm outline-none focus:border-gray-600 transition-colors rounded-[4.5px]"
+                  className="w-full bg-black/60 border border-transparent hover:border-white/5 p-4 text-white placeholder-gray-500 text-sm outline-none focus:border-[#1E293B] transition-colors rounded-[16px]"
                 />
                 <input
                   type="text"
                   placeholder="Street Address"
                   value={shipping.address}
                   onChange={(e) => handleShippingChange('address', e.target.value)}
-                  className="w-full bg-[#1A1A1A] border border-gray-800 p-3 text-white placeholder-gray-600 text-sm outline-none focus:border-gray-600 transition-colors rounded-[4.5px]"
+                  className="w-full bg-black/60 border border-transparent hover:border-white/5 p-4 text-white placeholder-gray-500 text-sm outline-none focus:border-[#1E293B] transition-colors rounded-[16px]"
                 />
                 <div className="flex gap-3">
                   <input
@@ -421,14 +426,14 @@ export function RedeemInterface() {
                     placeholder="City"
                     value={shipping.city}
                     onChange={(e) => handleShippingChange('city', e.target.value)}
-                    className="flex-1 bg-[#1A1A1A] border border-gray-800 p-3 text-white placeholder-gray-600 text-sm outline-none focus:border-gray-600 transition-colors rounded-[4.5px]"
+                    className="flex-1 bg-black/60 border border-transparent hover:border-white/5 p-4 text-white placeholder-gray-500 text-sm outline-none focus:border-[#1E293B] transition-colors rounded-[16px]"
                   />
                   <input
                     type="text"
                     placeholder="State"
                     value={shipping.state}
                     onChange={(e) => handleShippingChange('state', e.target.value)}
-                    className="w-20 bg-[#1A1A1A] border border-gray-800 p-3 text-white placeholder-gray-600 text-sm outline-none focus:border-gray-600 transition-colors rounded-[4.5px]"
+                    className="w-24 bg-black/60 border border-transparent hover:border-white/5 p-4 text-white placeholder-gray-500 text-sm outline-none focus:border-[#1E293B] transition-colors rounded-[16px]"
                   />
                 </div>
                 <div className="flex gap-3">
@@ -437,14 +442,14 @@ export function RedeemInterface() {
                     placeholder="ZIP Code"
                     value={shipping.zip}
                     onChange={(e) => handleShippingChange('zip', e.target.value)}
-                    className="flex-1 bg-[#1A1A1A] border border-gray-800 p-3 text-white placeholder-gray-600 text-sm outline-none focus:border-gray-600 transition-colors rounded-[4.5px]"
+                    className="flex-1 bg-black/60 border border-transparent hover:border-white/5 p-4 text-white placeholder-gray-500 text-sm outline-none focus:border-[#1E293B] transition-colors rounded-[16px]"
                   />
                   <input
                     type="text"
                     placeholder="Country"
                     value={shipping.country}
                     onChange={(e) => handleShippingChange('country', e.target.value)}
-                    className="w-24 bg-[#1A1A1A] border border-gray-800 p-3 text-white placeholder-gray-600 text-sm outline-none focus:border-gray-600 transition-colors rounded-[4.5px]"
+                    className="w-28 bg-black/60 border border-transparent hover:border-white/5 p-4 text-white placeholder-gray-500 text-sm outline-none focus:border-[#1E293B] transition-colors rounded-[16px]"
                   />
                 </div>
               </div>
@@ -452,14 +457,14 @@ export function RedeemInterface() {
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => setStep('input')}
-                  className="flex-1 bg-gray-800 text-white font-medium py-3 hover:bg-gray-700 transition-colors rounded-[4.5px]"
+                  className="flex-1 bg-white/5 text-white font-medium py-4 hover:bg-white/10 transition-colors rounded-full"
                 >
                   Back
                 </button>
                 <button
                   disabled={!isShippingValid}
                   onClick={() => setStep('confirm')}
-                  className="flex-[2] bg-red-600 hover:bg-red-500 cursor-pointer text-white font-bold py-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 rounded-[4.5px]"
+                  className="flex-[2] bg-red-600 hover:bg-red-500 cursor-pointer text-white font-bold py-4 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 rounded-full shadow-[0_4px_16px_rgba(220,38,38,0.35)]"
                 >
                   Review Redemption
                 </button>
@@ -486,7 +491,7 @@ export function RedeemInterface() {
                 </div>
               </div>
 
-              <div className="bg-gray-950 p-4 space-y-3 text-sm rounded-[4.5px]">
+              <div className="bg-black/60 p-5 space-y-4 text-sm rounded-[24px] mb-2 border border-transparent hover:border-white/5 transition-colors">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Tokens Burned</span>
                   <span className="text-white">{redeemAmount} WGB</span>
@@ -510,7 +515,7 @@ export function RedeemInterface() {
               </div>
 
               {/* Warning */}
-              <div className="bg-red-950/40 border border-red-800 p-4 text-sm rounded-[4.5px]">
+              <div className="bg-red-950/40 border border-red-900/50 p-5 text-sm rounded-[24px]">
                 <div className="flex items-start gap-3">
                   <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -534,14 +539,14 @@ export function RedeemInterface() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setStep('shipping')}
-                  className="flex-1 bg-gray-800 text-white font-medium py-3 hover:bg-gray-700 transition-colors rounded-[4.5px]"
+                  className="flex-1 bg-white/5 text-white font-medium py-4 hover:bg-white/10 transition-colors rounded-full"
                 >
                   Back
                 </button>
                 <button
                   onClick={handleRedeem}
                   disabled={isLoading}
-                  className="flex-[2] bg-red-600 hover:bg-red-500 cursor-pointer text-white font-bold py-3 disabled:opacity-80 transition-all active:scale-95 relative rounded-[4.5px]"
+                  className="flex-[2] bg-red-600 hover:bg-red-500 cursor-pointer text-white font-bold py-4 disabled:opacity-80 transition-all active:scale-95 relative rounded-full shadow-[0_4px_16px_rgba(220,38,38,0.35)]"
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -583,7 +588,7 @@ export function RedeemInterface() {
                   Creating your redemption request on Solana
                 </p>
               </div>
-              <div className="bg-gray-950/50 p-4 text-sm space-y-2 mx-4 rounded-[4.5px]">
+              <div className="bg-black/60 border border-white/5 p-5 text-sm space-y-3 mx-4 rounded-[16px]">
                 <div className="flex justify-between text-gray-400">
                   <span>Burning</span>
                   <span className="text-white">{redeemAmount} WGB</span>
@@ -605,9 +610,9 @@ export function RedeemInterface() {
               animate={{ opacity: 1, scale: 1 }}
               className="text-center py-8"
             >
-              <div className="w-20 h-20 bg-green-500/20 flex items-center justify-center mx-auto mb-6 rounded-[4.5px]">
-                <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              <div className="w-24 h-24 bg-green-500/10 border border-green-500/20 flex items-center justify-center mx-auto mb-6 rounded-full shadow-[0_0_30px_rgba(34,197,94,0.15)]">
+                <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">Redemption Created!</h3>
@@ -629,7 +634,7 @@ export function RedeemInterface() {
                 </a>
               )}
 
-              <div className="bg-gray-950/50 p-4 text-sm space-y-2 mt-4 mb-6 text-left rounded-[4.5px]">
+              <div className="bg-black/60 border border-white/5 p-5 text-sm space-y-3 mt-4 mb-8 text-left rounded-[24px]">
                 <div className="flex justify-between text-gray-400">
                   <span>Status</span>
                   <span className="text-yellow-400">Pending Fulfillment</span>
@@ -648,7 +653,7 @@ export function RedeemInterface() {
 
               <button
                 onClick={reset}
-                className="w-full bg-gray-800 text-white font-medium py-3 hover:bg-gray-700 transition-colors rounded-[4.5px]"
+                className="w-full bg-white/5 text-white font-medium py-4 hover:bg-white/10 transition-colors rounded-full"
               >
                 Done
               </button>

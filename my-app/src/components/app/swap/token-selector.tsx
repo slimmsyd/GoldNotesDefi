@@ -147,19 +147,19 @@ export function TokenSelector({
             <button
                 onClick={() => setIsOpen(true)}
                 aria-label={label}
-                className="bg-[#2A2A2A] hover:bg-[#333] pl-2 pr-4 py-1.5 flex items-center gap-3 transition-colors cursor-pointer border border-gray-800 group rounded-[4.5px]"
+                className="bg-white/5 hover:bg-white/10 pl-2 pr-4 py-2 flex items-center gap-3 transition-colors cursor-pointer border border-white/10 group rounded-full"
             >
                 {selectedToken.logoURI ? (
                     <img
                         src={selectedToken.logoURI}
                         alt={selectedToken.symbol}
-                        className="w-8 h-8 shadow-lg"
+                        className="w-8 h-8 rounded-full shadow-lg"
                         onError={(e) => {
                             (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"><circle cx="12" cy="12" r="10"/></svg>';
                         }}
                     />
                 ) : (
-                    <div className="w-8 h-8 bg-gray-600 flex items-center justify-center text-[10px] text-white font-bold rounded-[4.5px]">
+                    <div className="w-8 h-8 bg-gray-600 flex items-center justify-center text-[10px] text-white font-bold rounded-full">
                         {selectedToken.symbol[0]}
                     </div>
                 )}
@@ -197,14 +197,14 @@ export function TokenSelector({
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             transition={{ duration: 0.2 }}
-                            className="w-full max-w-md bg-[#0B0B0B] border border-gray-800 shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[80vh] rounded-[4.5px]"
+                            className="w-full max-w-md bg-[#0B1426] border border-[#1E293B] shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[80vh] rounded-[24px]"
                         >
                             {/* Header */}
                             <div className="flex items-center justify-between p-6 pb-2">
-                                <h3 className="text-white text-lg font-semibold">Select currency</h3>
+                                <h3 className="text-white text-lg font-semibold tracking-tight">Select a token</h3>
                                 <button
                                     onClick={() => setIsOpen(false)}
-                                    className="p-1 hover:bg-white/10 transition-colors text-gray-400"
+                                    className="p-1 hover:bg-white/10 rounded-full transition-colors text-gray-400"
                                 >
                                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -225,10 +225,10 @@ export function TokenSelector({
                                     </svg>
                                     <input
                                         type="text"
-                                        placeholder="Search by name, ticker, or network..."
+                                        placeholder="Search by name or ticker..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full bg-[#1A1A1A] text-white text-base pl-12 pr-4 py-3.5 outline-none border border-transparent focus:border-gray-700 placeholder-gray-600 transition-all font-sans rounded-[4.5px]"
+                                        className="w-full bg-[#060B14] text-white text-base pl-12 pr-4 py-3.5 outline-none border border-transparent focus:border-[#1E293B] placeholder-gray-500 transition-all font-sans rounded-[16px]"
                                         autoFocus
                                     />
                                 </div>
@@ -257,7 +257,7 @@ export function TokenSelector({
                                                 <button
                                                     key={token.address}
                                                     onClick={() => handleSelect(token)}
-                                                    className={`w-full p-3 flex items-center gap-4 hover:bg-[#1A1A1A] transition-all group cursor-pointer ${selectedToken.address === token.address ? 'bg-[#1A1A1A] ring-1 ring-gray-800' : ''}`}
+                                                    className={`w-full p-3 rounded-[16px] flex items-center gap-4 hover:bg-[#060B14] transition-all group cursor-pointer ${selectedToken.address === token.address ? 'bg-[#060B14] ring-1 ring-[#1E293B]' : ''}`}
                                                 >
                                                     {/* Token Icon */}
                                                     <div className="relative">
@@ -265,13 +265,13 @@ export function TokenSelector({
                                                             <img
                                                                 src={token.logoURI}
                                                                 alt={token.symbol}
-                                                                className="w-10 h-10"
+                                                                className="w-10 h-10 rounded-full"
                                                                 onError={(e) => {
                                                                     (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23888"><circle cx="12" cy="12" r="10"/></svg>';
                                                                 }}
                                                             />
                                                         ) : (
-                                                            <div className="w-10 h-10 bg-gray-800 flex items-center justify-center text-white font-bold rounded-[4.5px]">
+                                                            <div className="w-10 h-10 bg-[#1E293B] flex items-center justify-center text-white font-bold rounded-full">
                                                                 {token.symbol[0]}
                                                             </div>
                                                         )}
