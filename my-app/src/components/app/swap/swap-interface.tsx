@@ -53,6 +53,19 @@ type CompletedRail = 'SOL_DIRECT' | 'USDC_BRIDGED';
 const isSameAddress = (left: string, right: string): boolean =>
   left.trim().toLowerCase() === right.trim().toLowerCase();
 
+interface PricingHealthResponse {
+  success: boolean;
+  healthy?: boolean;
+  effectiveHealthy?: boolean;
+  bypassed?: boolean;
+  bypassReason?: string | null;
+  data?: {
+    reasons?: string[];
+    bypassed?: boolean;
+    bypassReason?: string | null;
+  };
+}
+
 export function SwapInterface() {
   const { connection } = useConnection();
   const { publicKey, sendTransaction, connected } = useWallet();
@@ -79,6 +92,11 @@ export function SwapInterface() {
   const [isPriceVerifying, setIsPriceVerifying] = useState(false);
   const [priceMinutesSinceUpdate, setPriceMinutesSinceUpdate] = useState<number | null>(null);
   const [isPriceFallback, setIsPriceFallback] = useState(false);
+  const [isPricingHealthy, setIsPricingHealthy] = useState(false);
+  const [pricingHealthLoading, setPricingHealthLoading] = useState(true);
+  const [pricingHealthMessage, setPricingHealthMessage] = useState<string | null>(null);
+  const [isPricingBypassed, setIsPricingBypassed] = useState(false);
+  const [pricingBypassReason, setPricingBypassReason] = useState<string | null>(null);
 
   // Fetch W3B/Goldback price from database
   useEffect(() => {
@@ -97,6 +115,57 @@ export function SwapInterface() {
       }
     };
     fetchGoldbackRate();
+  }, []);
+
+  const checkPricingHealth = async (): Promise<{ healthy: boolean; message: string | null }> => {
+    setPricingHealthLoading(true);
+    try {
+      const res = await fetch('/api/health/pricing', { cache: 'no-store' });
+      let payload: PricingHealthResponse | null = null;
+      try {
+        payload = await res.json();
+      } catch {
+        payload = null;
+      }
+
+      const effectiveHealthy = Boolean(payload?.effectiveHealthy ?? payload?.healthy);
+      const bypassed = Boolean(payload?.bypassed ?? payload?.data?.bypassed);
+      const bypassReason = payload?.bypassReason ?? payload?.data?.bypassReason ?? null;
+      setIsPricingHealthy(effectiveHealthy);
+      setIsPricingBypassed(bypassed);
+      setPricingBypassReason(bypassReason);
+
+      let message: string | null = null;
+      if (!effectiveHealthy) {
+        const reason = payload?.data?.reasons?.[0];
+        message =
+          reason
+            ? `Pricing unavailable (${reason}). Retry soon.`
+            : 'Pricing unavailable, retry soon.';
+        setPricingHealthMessage(message);
+      } else {
+        setPricingHealthMessage(null);
+      }
+
+      return { healthy: effectiveHealthy, message };
+    } catch {
+      setIsPricingHealthy(false);
+      setIsPricingBypassed(false);
+      setPricingBypassReason(null);
+      const message = 'Pricing unavailable, retry soon.';
+      setPricingHealthMessage(message);
+      return { healthy: false, message };
+    } finally {
+      setPricingHealthLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void checkPricingHealth();
+    const interval = setInterval(() => {
+      void checkPricingHealth();
+    }, 30_000);
+    return () => clearInterval(interval);
   }, []);
 
   // Verify price before swap - fetches fresh data and checks staleness
@@ -172,6 +241,16 @@ export function SwapInterface() {
       return 'USDC_BRIDGED';
     }
     return null;
+  };
+
+  const handleReviewStep = async () => {
+    setError(null);
+    const health = await checkPricingHealth();
+    if (!health.healthy) {
+      setError(health.message ?? 'Pricing unavailable, retry soon.');
+      return;
+    }
+    setStep('review');
   };
 
   // Get USD value based on selected token
@@ -271,6 +350,12 @@ export function SwapInterface() {
     const w3bAmountInt = Math.floor(w3bAmount);
     if (w3bAmountInt <= 0) {
       setError('Amount must be at least 1 WGB');
+      return;
+    }
+
+    const health = await checkPricingHealth();
+    if (!health.healthy) {
+      setError(health.message ?? 'Pricing unavailable, retry soon.');
       return;
     }
 
@@ -654,6 +739,13 @@ export function SwapInterface() {
                 </div>
               )}
 
+              {isPricingBypassed && (
+                <div className="bg-amber-900/30 border border-amber-700 p-3 text-amber-300 text-xs rounded-[4.5px]">
+                  Local pricing bypass active. Do not use in production.
+                  {pricingBypassReason ? ` (${pricingBypassReason})` : ''}
+                </div>
+              )}
+
               {/* Connect Wallet or Review Button */}
               {!connected ? (
                 <div className="flex justify-center">
@@ -661,8 +753,13 @@ export function SwapInterface() {
                 </div>
               ) : (
                 <button
-                  disabled={!payAmount || parseFloat(payAmount) <= 0}
-                  onClick={() => setStep('review')}
+                  disabled={
+                    !payAmount ||
+                    parseFloat(payAmount) <= 0 ||
+                    pricingHealthLoading ||
+                    !isPricingHealthy
+                  }
+                  onClick={handleReviewStep}
                   className="w-full bg-linear-to-r from-[#c9a84c] to-[#a48a3a] cursor-pointer text-black font-bold py-4 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-[0_4px_16px_rgba(201,168,76,0.35)] rounded-[4.5px]"
                 >
                   Review Swap
@@ -745,6 +842,19 @@ export function SwapInterface() {
                 </div>
               )}
 
+              {!pricingHealthLoading && !isPricingHealthy && pricingHealthMessage && (
+                <div className="bg-red-900/30 border border-red-800 p-3 text-red-400 text-sm rounded-[4.5px]">
+                  {pricingHealthMessage}
+                </div>
+              )}
+
+              {isPricingBypassed && (
+                <div className="bg-amber-900/30 border border-amber-700 p-3 text-amber-300 text-xs rounded-[4.5px]">
+                  Local pricing bypass active. Do not use in production.
+                  {pricingBypassReason ? ` (${pricingBypassReason})` : ''}
+                </div>
+              )}
+
               {isSameAddress(selectedPayToken.address, PROTOCOL_CONFIG.usdcMint) && (
                 <div className="bg-blue-900/20 border border-blue-800/60 p-3 text-blue-300 text-xs rounded-[4.5px]">
                   {usdcRouteReady
@@ -773,7 +883,7 @@ export function SwapInterface() {
                 </button>
                 <button
                   onClick={handleSwap}
-                  disabled={isLoading || isPriceVerifying}
+                  disabled={isLoading || isPriceVerifying || pricingHealthLoading || !isPricingHealthy}
                   className="flex-[2] cursor-pointer bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black font-bold py-3 hover:brightness-110 disabled:opacity-80 transition-all active:scale-95 shadow-[0_4px_16px_rgba(201,168,76,0.35)] relative rounded-[4.5px]"
                 >
                   {isLoading || isPriceVerifying ? (

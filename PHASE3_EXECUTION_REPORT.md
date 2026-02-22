@@ -199,3 +199,26 @@ npx ts-node scripts/devnet_seed_reserves_and_mint.ts --target-reserves 5000 --mi
 npx ts-node scripts/devnet_verify_buy_burn_points.ts --amount 1 --fund-sol 0.2
 ```
 
+## 11) Pricing Cohesion Recovery Runbook (Phase 4 Dependency)
+
+If swap is blocked because pricing health is red (`on_chain_price_unset`, stale sync, or drift unknown), run:
+
+```bash
+# Primary recovery path (authoritative sync endpoint)
+curl -X POST http://localhost:3000/api/admin/price/sync \
+  -H "x-webhook-secret: $ADMIN_WEBHOOK_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+Fallback if endpoint fails:
+
+```bash
+npx ts-node /Users/sydneysanders/Desktop/Code_Projects/GoldBackProject/my-app/scripts/sync_price_cli.ts --network devnet --admin-override
+```
+
+Then re-check health:
+
+```bash
+curl http://localhost:3000/api/health/pricing
+```

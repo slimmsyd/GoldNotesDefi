@@ -1,178 +1,303 @@
-/**
- * On-Chain Price Sync
- * 
- * Calls `set_w3b_price` on the Solana program to update the on-chain
- * lamports price, keeping it in sync with the scraped Goldback USD rate.
- * 
- * Uses the same authority keypair that auto-verify uses.
- */
+import 'server-only';
 
+import fs from 'node:fs';
+import path from 'node:path';
 import { Connection, Keypair, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { Program, AnchorProvider, BN, setProvider } from '@coral-xyz/anchor';
 import { PROTOCOL_CONFIG } from './protocol-constants';
 
-// Reuse the NodeWallet from auto-verify
 class NodeWallet {
   constructor(readonly payer: Keypair) {}
-  get publicKey(): PublicKey { return this.payer.publicKey; }
+  get publicKey(): PublicKey {
+    return this.payer.publicKey;
+  }
   async signTransaction<T extends Transaction | VersionedTransaction>(tx: T): Promise<T> {
     if (tx instanceof Transaction) tx.partialSign(this.payer);
     return tx;
   }
   async signAllTransactions<T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> {
-    return txs.map(tx => { if (tx instanceof Transaction) tx.partialSign(this.payer); return tx; });
+    return txs.map((tx) => {
+      if (tx instanceof Transaction) tx.partialSign(this.payer);
+      return tx;
+    });
   }
 }
 
-// Minimal IDL — V2 layout with operator-based set_w3b_price
-const PRICE_IDL = {
+const PRICE_IDL_FALLBACK = {
+  address: PROTOCOL_CONFIG.programId,
   version: '0.1.0',
   name: 'w3b_protocol',
   instructions: [
     {
-      name: 'setW3bPrice',
+      name: 'set_w3b_price',
       accounts: [
-        { name: 'protocolState', isMut: true, isSigner: false },
+        { name: 'protocol_state', isMut: true, isSigner: false },
         { name: 'operator', isMut: false, isSigner: true },
       ],
-      args: [{ name: 'priceLamports', type: 'u64' }],
+      args: [{ name: 'price_lamports', type: 'u64' }],
     },
-  ],
-  accounts: [
     {
-      name: 'ProtocolState',
-      type: {
-        kind: 'struct' as const,
-        fields: [
-          { name: 'authority', type: 'publicKey' },
-          { name: 'operator', type: 'publicKey' },
-          { name: 'w3bMint', type: 'publicKey' },
-          { name: 'treasury', type: 'publicKey' },
-          { name: 'totalSupply', type: 'u64' },
-          { name: 'totalBurned', type: 'u64' },
-          { name: 'currentMerkleRoot', type: { array: ['u8', 32] } },
-          { name: 'provenReserves', type: 'u64' },
-          { name: 'lastRootUpdate', type: 'i64' },
-          { name: 'lastProofTimestamp', type: 'i64' },
-          { name: 'w3bPriceLamports', type: 'u64' },
-          { name: 'solReceiver', type: 'publicKey' },
-          { name: 'yieldApyBps', type: 'u16' },
-          { name: 'totalYieldDistributed', type: 'u64' },
-          { name: 'lastYieldDistribution', type: 'i64' },
-          { name: 'isPaused', type: 'bool' },
-          { name: 'bump', type: 'u8' },
-          { name: '_reserved', type: { array: ['u8', 64] } },
-        ],
-      },
+      name: 'set_w3b_price_admin',
+      accounts: [
+        { name: 'protocol_state', isMut: true, isSigner: false },
+        { name: 'authority', isMut: false, isSigner: true },
+      ],
+      args: [{ name: 'price', type: 'u64' }],
     },
   ],
-  metadata: { address: PROTOCOL_CONFIG.programId },
+  metadata: {
+    name: 'w3b_protocol',
+    version: '0.1.0',
+    address: PROTOCOL_CONFIG.programId,
+  },
 };
 
-/**
- * Sync the on-chain W3B price to match the current Goldback rate.
- * 
- * @param newLamportsPrice - The calculated lamports price to set
- * @returns Object with tx hash and details, or null if skipped/failed
- */
-export async function syncOnChainPrice(
-  newLamportsPrice: number
-): Promise<{ tx: string; oldPrice: number; newPrice: number } | null> {
-  // 1. Load authority keypair
+export interface SyncOnChainPriceOptions {
+  allowAdminOverride?: boolean;
+}
+
+export interface SyncOnChainPriceResult {
+  tx: string | null;
+  oldPrice: number;
+  newPrice: number;
+  mode: 'noop' | 'operator' | 'admin_override';
+}
+
+export type PriceSyncErrorCode =
+  | 'PROGRAM_INIT_FAILED'
+  | 'STATE_READ_FAILED'
+  | 'SET_PRICE_FAILED'
+  | 'ADMIN_OVERRIDE_FAILED';
+
+export class PriceSyncError extends Error {
+  readonly code: PriceSyncErrorCode;
+  readonly stage: PriceSyncErrorCode;
+
+  constructor(code: PriceSyncErrorCode, message: string) {
+    super(message);
+    this.name = 'PriceSyncError';
+    this.code = code;
+    this.stage = code;
+  }
+}
+
+export function getPriceSyncErrorContext(error: unknown): {
+  code: PriceSyncErrorCode | 'UNKNOWN';
+  stage: PriceSyncErrorCode | 'UNKNOWN';
+  message: string;
+} {
+  if (error instanceof PriceSyncError) {
+    return {
+      code: error.code,
+      stage: error.stage,
+      message: error.message,
+    };
+  }
+
+  if (error instanceof Error) {
+    return {
+      code: 'UNKNOWN',
+      stage: 'UNKNOWN',
+      message: error.message,
+    };
+  }
+
+  return {
+    code: 'UNKNOWN',
+    stage: 'UNKNOWN',
+    message: String(error),
+  };
+}
+
+function loadAuthorityKeypair(): Keypair {
   const keypairEnv = process.env.PROTOCOL_AUTHORITY_KEYPAIR;
   if (!keypairEnv) {
-    console.warn('[price-sync] PROTOCOL_AUTHORITY_KEYPAIR not set, skipping on-chain sync');
-    return null;
+    throw new Error('PROTOCOL_AUTHORITY_KEYPAIR not set');
   }
 
-  let authority: Keypair;
   try {
-    authority = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(keypairEnv)));
+    return Keypair.fromSecretKey(Uint8Array.from(JSON.parse(keypairEnv)));
   } catch {
-    console.error('[price-sync] Invalid PROTOCOL_AUTHORITY_KEYPAIR format');
-    return null;
+    throw new Error('Invalid PROTOCOL_AUTHORITY_KEYPAIR format');
+  }
+}
+
+function normalizeIdlAddress(idl: any, address: string): any {
+  return {
+    ...idl,
+    address,
+    metadata: {
+      ...(idl?.metadata ?? {}),
+      address,
+    },
+  };
+}
+
+function loadProtocolIdl(programId: PublicKey): any {
+  const idlAddress = programId.toBase58();
+  const cwd = process.cwd();
+  const candidates = [
+    path.resolve(cwd, '../w3b-token/programs/w3b_protocol/target/idl/w3b_protocol.json'),
+    path.resolve(cwd, 'w3b-token/programs/w3b_protocol/target/idl/w3b_protocol.json'),
+    path.resolve(cwd, '../../w3b-token/programs/w3b_protocol/target/idl/w3b_protocol.json'),
+  ];
+
+  for (const candidate of candidates) {
+    if (!fs.existsSync(candidate)) continue;
+
+    try {
+      const parsed = JSON.parse(fs.readFileSync(candidate, 'utf8'));
+      return normalizeIdlAddress(parsed, idlAddress);
+    } catch (error) {
+      console.warn(`[price-sync] Failed to parse IDL at ${candidate}:`, error);
+    }
   }
 
-  // 2. Connect to Solana
-  const rpcEndpoint = process.env.NEXT_PUBLIC_RPC_ENDPOINT || PROTOCOL_CONFIG.rpcEndpoint;
-  const connection = new Connection(rpcEndpoint, 'confirmed');
-  const programId = new PublicKey(PROTOCOL_CONFIG.programId);
+  return normalizeIdlAddress(PRICE_IDL_FALLBACK, idlAddress);
+}
 
-  // 3. Setup Anchor
+function getProgram(connection: Connection, authority: Keypair): Program {
   const wallet = new NodeWallet(authority);
   const provider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' });
   setProvider(provider);
 
-  const program = new Program(PRICE_IDL as any, provider);
+  const programId = new PublicKey(PROTOCOL_CONFIG.programId);
+  const idl = loadProtocolIdl(programId);
+  return new Program(idl as any, provider);
+}
 
-  // 4. Find PDA
-  const [protocolStatePda] = PublicKey.findProgramAddressSync(
-    [Buffer.from('protocol_state')],
-    programId
-  );
+function isPriceGuardError(message: string): boolean {
+  return message.includes('PriceChangeExceedsLimit');
+}
 
-  // 5. Read current on-chain price to compare
+export async function syncOnChainPrice(
+  newLamportsPrice: number,
+  options: SyncOnChainPriceOptions = {}
+): Promise<SyncOnChainPriceResult> {
+  if (!Number.isFinite(newLamportsPrice) || newLamportsPrice <= 0) {
+    throw new PriceSyncError(
+      'SET_PRICE_FAILED',
+      'SET_PRICE_FAILED: newLamportsPrice must be a positive number'
+    );
+  }
+
+  const authority = loadAuthorityKeypair();
+  const rpcEndpoint = process.env.NEXT_PUBLIC_RPC_ENDPOINT || PROTOCOL_CONFIG.rpcEndpoint;
+  const connection = new Connection(rpcEndpoint, 'confirmed');
+  let program: Program;
+  try {
+    program = getProgram(connection, authority);
+  } catch (error) {
+    const message = getPriceSyncErrorContext(error).message;
+    throw new PriceSyncError('PROGRAM_INIT_FAILED', `PROGRAM_INIT_FAILED: ${message}`);
+  }
+
+  const methods = program.methods as any;
+  const programId = new PublicKey(PROTOCOL_CONFIG.programId);
+  const [protocolStatePda] = PublicKey.findProgramAddressSync([Buffer.from('protocol_state')], programId);
+
   let currentPriceLamports = 0;
   try {
     const state = await (program.account as any).protocolState.fetch(protocolStatePda);
-    currentPriceLamports = (state as any).w3bPriceLamports.toNumber();
+    currentPriceLamports = Number((state as any).w3bPriceLamports?.toString?.() ?? 0);
   } catch (err) {
-    console.warn('[price-sync] Could not read current on-chain price:', err);
+    const message = getPriceSyncErrorContext(err).message;
+    throw new PriceSyncError('STATE_READ_FAILED', `STATE_READ_FAILED: ${message}`);
   }
 
-  // 6. Skip if price hasn't changed meaningfully (within 1%)
   if (currentPriceLamports > 0) {
     const driftPercent = Math.abs(newLamportsPrice - currentPriceLamports) / currentPriceLamports * 100;
     if (driftPercent < 1) {
-      console.log(`[price-sync] Price drift is only ${driftPercent.toFixed(2)}%, skipping update`);
-      return null;
+      return {
+        tx: null,
+        oldPrice: currentPriceLamports,
+        newPrice: newLamportsPrice,
+        mode: 'noop',
+      };
     }
-    console.log(`[price-sync] Price drift: ${driftPercent.toFixed(2)}% (${currentPriceLamports} → ${newLamportsPrice} lamports)`);
   }
 
-  // 7. Call set_w3b_price
+  const setOperatorBuilder =
+    methods.setW3bPrice?.(new BN(newLamportsPrice)) ??
+    methods.setW3BPrice?.(new BN(newLamportsPrice)) ??
+    methods.set_w3b_price?.(new BN(newLamportsPrice));
+
+  if (!setOperatorBuilder) {
+    throw new PriceSyncError(
+      'SET_PRICE_FAILED',
+      'SET_PRICE_FAILED: set_w3b_price method not found in program IDL'
+    );
+  }
+
   try {
-    const tx = await (program.methods as any)
-      .setW3bPrice(new BN(newLamportsPrice))
+    const tx = await setOperatorBuilder
       .accountsPartial({
         protocolState: protocolStatePda,
         operator: authority.publicKey,
       })
       .rpc();
 
-    console.log(`[price-sync] ✅ On-chain price updated: ${currentPriceLamports} → ${newLamportsPrice} lamports (tx: ${tx})`);
-
     return {
       tx,
       oldPrice: currentPriceLamports,
       newPrice: newLamportsPrice,
+      mode: 'operator',
     };
   } catch (err) {
-    console.error('[price-sync] Failed to update on-chain price:', err);
-    return null;
+    const message = err instanceof Error ? err.message : String(err);
+    if (!options.allowAdminOverride || !isPriceGuardError(message)) {
+      throw new PriceSyncError('SET_PRICE_FAILED', `SET_PRICE_FAILED: ${message}`);
+    }
+
+    const setAdminBuilder =
+      methods.setW3bPriceAdmin?.(new BN(newLamportsPrice)) ??
+      methods.setW3BPriceAdmin?.(new BN(newLamportsPrice)) ??
+      methods.set_w3b_price_admin?.(new BN(newLamportsPrice));
+
+    if (!setAdminBuilder) {
+      throw new PriceSyncError(
+        'ADMIN_OVERRIDE_FAILED',
+        'ADMIN_OVERRIDE_FAILED: Price guard exceeded and set_w3b_price_admin method not found'
+      );
+    }
+
+    let adminTx: string;
+    try {
+      adminTx = await setAdminBuilder
+        .accountsPartial({
+          protocolState: protocolStatePda,
+          authority: authority.publicKey,
+        })
+        .rpc();
+    } catch (adminErr) {
+      const adminMessage = getPriceSyncErrorContext(adminErr).message;
+      throw new PriceSyncError(
+        'ADMIN_OVERRIDE_FAILED',
+        `ADMIN_OVERRIDE_FAILED: ${adminMessage}`
+      );
+    }
+
+    return {
+      tx: adminTx,
+      oldPrice: currentPriceLamports,
+      newPrice: newLamportsPrice,
+      mode: 'admin_override',
+    };
   }
 }
 
 /**
- * Read the current on-chain W3B price in lamports (read-only, no keypair needed).
+ * Read current on-chain W3B price in lamports (offset 208 in V2 ProtocolState).
  */
 export async function getOnChainPriceLamports(): Promise<number | null> {
   try {
     const rpcEndpoint = process.env.NEXT_PUBLIC_RPC_ENDPOINT || PROTOCOL_CONFIG.rpcEndpoint;
     const connection = new Connection(rpcEndpoint, 'confirmed');
     const programId = new PublicKey(PROTOCOL_CONFIG.programId);
-
-    const [protocolStatePda] = PublicKey.findProgramAddressSync(
-      [Buffer.from('protocol_state')],
-      programId
-    );
-
-    const accountInfo = await connection.getAccountInfo(protocolStatePda);
-    if (!accountInfo) return null;
-
-    // Read w3b_price_lamports at V2 offset 208
-    const priceLamports = accountInfo.data.readBigUInt64LE(208);
-    return Number(priceLamports);
+    const [protocolStatePda] = PublicKey.findProgramAddressSync([Buffer.from('protocol_state')], programId);
+    const accountInfo = await connection.getAccountInfo(protocolStatePda, 'confirmed');
+    if (!accountInfo || accountInfo.data.length < 216) return null;
+    return Number(accountInfo.data.readBigUInt64LE(208));
   } catch {
     return null;
   }
