@@ -218,79 +218,81 @@ export function GoldbackBubbles() {
 
   if (isLoading) {
     return (
-      <div className="bg-gray-900/50 border border-raidus border-gray-800 p-6 h-[400px] animate-pulse flex items-center justify-center">
-        <div className="text-gray-500">Loading batch data...</div>
+      <div className="bg-black/40 backdrop-blur-xl border border-white/10 p-8 h-[400px] animate-pulse flex items-center justify-center rounded-[32px]">
+        <div className="text-gray-500 font-bold tracking-widest uppercase">Loading batch data...</div>
       </div>
     );
   }
 
   if (batches.length === 0) {
     return (
-      <div className="bg-gray-900/50 rounded-[4.5px]  border border-gray-800 p-6 h-[400px] flex flex-col items-center justify-center rounded-[4.5px]">
-        <div className="mb-4 bg-transparent flex items-center justify-center">
-          <img src="/AppAssets/PNG Renders/safe_black.png" alt="Empty Vault" className="w-16 h-16 object-contain drop-shadow-md" />
+      <div className="bg-black/40 backdrop-blur-xl border border-white/10 p-8 h-[400px] flex flex-col items-center justify-center rounded-[32px]">
+        <div className="mb-4 bg-white/5 p-4 rounded-xl border border-white/10 flex items-center justify-center">
+          <img src="/AppAssets/PNG Renders/safe_black.png" alt="Empty Vault" className="w-16 h-16 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] brightness-200" />
         </div>
-        <p className="text-gray-500">Vault is empty</p>
-        <p className="text-gray-600 text-sm mt-1">Verified batches will appear as bubbles</p>
+        <p className="text-gray-400 font-bold tracking-widest uppercase">Vault is empty</p>
+        <p className="text-gray-500 text-[10px] mt-2 font-mono">Verified batches will appear as bubbles</p>
       </div >
     );
   }
 
   const totalSerials = batches.reduce((sum, b) => sum + b.serialCount, 0);
 
-  // return (
-  //   <div className="bg-gray-900/50 border border-gray-800 rounded-[4.5px] overflow-hidden">
-  //     {/* Header */}
-  //     <div className="p-6 border-b border-gray-800 flex justify-between items-start">
-  //       <div>
-  //         <h3 className="text-white font-semibold text-lg flex items-center gap-2">
-  //           <span className="text-2xl">✨</span>
-  //           Goldback Constellation
-  //         </h3>
-  //         <p className="text-gray-500 text-sm mt-1">
-  //           Each bubble represents a verified batch orbiting the vault
-  //         </p>
-  //       </div>
+  return (
+    <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] overflow-hidden relative">
+      {/* Header */}
+      <div className="p-8 border-b border-white/5 flex justify-between items-start">
+        <div>
+          <h3 className="text-white font-medium text-lg flex items-center gap-3">
+            <div className="p-2 bg-white/5 rounded-[12px] border border-white/10">
+              <span className="text-xl leading-none">✨</span>
+            </div>
+            Goldback Constellation
+          </h3>
+          <p className="text-gray-500 text-sm mt-2 font-medium">
+            Each bubble represents a verified batch orbiting the vault
+          </p>
+        </div>
 
-  //       <div className="text-right">
-  //         <div className="text-3xl font-bold text-amber-500">{batches.length}</div>
-  //         <div className="text-gray-500 text-xs uppercase tracking-wider">Batches</div>
-  //       </div>
-  //     </div>
+        <div className="text-right flex flex-col items-end">
+          <div className="text-[40px] font-bold text-[#c9a84c] tracking-tighter leading-none mb-1 drop-shadow-lg">{batches.length}</div>
+          <div className="bg-[#c9a84c]/10 border border-[#c9a84c]/30 text-[#c9a84c] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg">Batches</div>
+        </div>
+      </div>
 
-  //     {/* Selected Batch Info */}
-  //     {selectedBatch && (
-  //       <div className="absolute top-32 left-1/2 -translate-x-1/2 z-20 bg-gray-800/95 backdrop-blur border border-gray-700 rounded-[4.5px] p-4 shadow-2xl min-w-[200px]">
-  //         <div className="text-amber-500 font-bold text-lg">{selectedBatch.serialCount} Goldbacks</div>
-  //         <div className="text-gray-400 text-xs mt-1">Batch ID: {selectedBatch.id.split('-').pop()}</div>
-  //         <div className="text-gray-500 text-[10px] mt-1">
-  //           {new Date(selectedBatch.latestReceived).toLocaleString()}
-  //         </div>
-  //       </div>
-  //     )}
+      {/* Selected Batch Info */}
+      {selectedBatch && (
+        <div className="absolute top-32 left-1/2 -translate-x-1/2 z-20 bg-white/10 backdrop-blur-2xl border border-white/20 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)] pointer-events-none rounded-[24px] min-w-[200px] text-center">
+          <div className="text-[#c9a84c] font-bold text-lg tracking-tight mb-1">{selectedBatch.serialCount.toLocaleString()} Physical Assets</div>
+          <div className="text-gray-300 text-[10px] font-bold tracking-widest uppercase mb-2">Batch ID: {selectedBatch.id.split('-').pop()}</div>
+          <div className="text-gray-500 text-[10px] font-mono mt-1 bg-black/40 px-2 py-1 rounded-md border border-white/5">
+            {new Date(selectedBatch.latestReceived).toLocaleString()}
+          </div>
+        </div>
+      )}
 
-  //     {/* Visualization */}
-  //     <div ref={containerRef} className="relative">
-  //       <svg ref={svgRef} className="w-full" />
-  //     </div>
+      {/* Visualization */}
+      <div ref={containerRef} className="relative">
+        <svg ref={svgRef} className="w-full" />
+      </div>
 
-  //     {/* Footer Stats */}
-  //     <div className="p-4 border-t border-gray-800 flex justify-around text-center">
-  //       <div>
-  //         <div className="text-xl font-bold text-white">{totalSerials.toLocaleString()}</div>
-  //         <div className="text-gray-500 text-xs">Total Goldbacks</div>
-  //       </div>
-  //       <div>
-  //         <div className="text-xl font-bold text-white">{batches.length}</div>
-  //         <div className="text-gray-500 text-xs">Verified Batches</div>
-  //       </div>
-  //       <div>
-  //         <div className="text-xl font-bold text-white">
-  //           ${(totalSerials * 9.18).toLocaleString()}
-  //         </div>
-  //         <div className="text-gray-500 text-xs">Est. Value (USD)</div>
-  //       </div>
-  //     </div>
-  //   </div>
-  // );
+      {/* Footer Stats */}
+      <div className="p-6 border-t border-white/5 flex justify-around text-center bg-white/[0.02]">
+        <div>
+          <div className="text-2xl font-bold text-white tracking-tighter">{totalSerials.toLocaleString()}</div>
+          <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">Total Goldbacks</div>
+        </div>
+        <div>
+          <div className="text-2xl font-bold text-white tracking-tighter">{batches.length}</div>
+          <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">Verified Batches</div>
+        </div>
+        <div>
+          <div className="text-2xl font-bold text-emerald-400 tracking-tighter drop-shadow-[0_0_10px_rgba(52,211,153,0.3)]">
+            ${(totalSerials * 9.18).toLocaleString()}
+          </div>
+          <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">Est. Value (USD)</div>
+        </div>
+      </div>
+    </div>
+  );
 }

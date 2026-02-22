@@ -29,9 +29,9 @@ export default function VaultPage() {
 
       {/* 2. The Ledger: Live Flows */}
       <section className="w-full">
-        <div className="flex justify-between items-center mb-4">
+        {/* <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-white tracking-tight">Live Ledger</h2>
-        </div>
+        </div> */}
         <div className="w-full">
           <MempoolVisualizer className="h-full min-h-[320px]" />
         </div>
@@ -42,9 +42,9 @@ export default function VaultPage() {
         <div className="w-full">
           <ReserveGrowthChart />
         </div>
-        <div className="w-full">
+        {/* <div className="w-full">
           <GoldbackBubbles />
-        </div>
+        </div> */}
       </section>
 
       {/* 4. The Audit Trail: Historical Data Tables */}

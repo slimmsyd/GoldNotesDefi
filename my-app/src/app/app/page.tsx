@@ -53,8 +53,8 @@ export default function AppDashboard() {
       {/* Page Header - Single Live indicator (removed duplicate) */}
       <motion.div variants={fadeInUp} className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-white tracking-tight">Dashboard</h1>
-          <p className="text-gray-400 mt-2">Real-time protocol overview</p>
+          {/* <h1 className="text-4xl font-bold text-white tracking-tight">Dashboard</h1>
+          <p className="text-gray-400 mt-2">Real-time protocol overview</p> */}
         </div>
         <div className="flex items-center gap-3">
           {/* Verify Now (Admin Only) */}
