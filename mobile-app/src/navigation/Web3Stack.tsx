@@ -32,7 +32,7 @@ function WalletButton({ onPress }: { onPress: () => void }) {
 export function Web3Stack({ onOpenWallet }: Web3StackProps) {
   return (
     <Stack.Navigator
-      initialRouteName="Dashboard"
+      initialRouteName="Swap"
       screenOptions={{
         headerShadowVisible: false,
         headerStyle: { backgroundColor: tokens.colors.bgBase },
@@ -42,7 +42,6 @@ export function Web3Stack({ onOpenWallet }: Web3StackProps) {
         headerRight: () => <WalletButton onPress={onOpenWallet} />,
       }}
     >
-      <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Web3 Dashboard' }} />
       <Stack.Screen name="Swap" component={SwapScreen} options={{ title: 'Swap' }} />
       <Stack.Screen name="Redeem" component={RedeemScreen} options={{ title: 'Redeem' }} />
       <Stack.Screen name="Vault" component={VaultScreen} options={{ title: 'Vault' }} />

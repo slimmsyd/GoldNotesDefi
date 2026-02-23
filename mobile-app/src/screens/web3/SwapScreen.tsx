@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Connection, PublicKey, Transaction } from '@solana/web3.js';
 import { loadWalletSession } from '../../state/wallet';
 import { apiClient } from '../../lib/api/client';
@@ -34,7 +34,7 @@ function toExplorerUrl(signature: string): string {
 
 export function SwapScreen() {
   const [payAmountSol, setPayAmountSol] = useState('0.10');
-  const [goldbackRateUsd, setGoldbackRateUsd] = useState(9.02);
+  const [goldbackRateUsd, setGoldbackRateUsd] = useState(10.14);
   const [solPriceUsd, setSolPriceUsd] = useState(0);
   const [status, setStatus] = useState('Load rates then execute a SOL -> W3B swap.');
   const [quote, setQuote] = useState<SwapQuoteView | null>(null);
@@ -46,6 +46,17 @@ export function SwapScreen() {
     if (!Number.isFinite(sol) || sol <= 0 || !solPriceUsd || !goldbackRateUsd) return 0;
     return Math.floor((sol * solPriceUsd) / goldbackRateUsd);
   }, [payAmountSol, solPriceUsd, goldbackRateUsd]);
+
+  const solValueUsd = useMemo(() => {
+    const sol = Number.parseFloat(payAmountSol);
+    if (!Number.isFinite(sol) || sol <= 0 || !solPriceUsd) return '0.00';
+    return (sol * solPriceUsd).toFixed(2);
+  }, [payAmountSol, solPriceUsd]);
+
+  const w3bValueUsd = useMemo(() => {
+    if (!estimatedW3b || !goldbackRateUsd) return '0.00';
+    return (estimatedW3b * goldbackRateUsd).toFixed(2);
+  }, [estimatedW3b, goldbackRateUsd]);
 
   const loadRates = useCallback(async () => {
     setBusy(true);
@@ -143,56 +154,129 @@ export function SwapScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} contentInsetAdjustmentBehavior="automatic">
-      <Text style={styles.title}>Swap SOL → W3B</Text>
-      <Text style={styles.subtitle}>SOL-only mobile swap path with pre-send simulation.</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>SOL Amount</Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="decimal-pad"
-          autoCapitalize="none"
-          value={payAmountSol}
-          onChangeText={setPayAmountSol}
-        />
-        <Text style={styles.meta}>Estimated W3B output: {estimatedW3b}</Text>
+      {/* Top action row */}
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 20 }}>
+        <Pressable style={styles.ghostButton} onPress={() => void loadRates()} disabled={busy}>
+          <Text style={styles.ghostButtonText}>{busy ? 'Working...' : 'Refresh Rates'}</Text>
+        </Pressable>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.meta}>SOL Price: ${solPriceUsd.toFixed(2)}</Text>
-        <Text style={styles.meta}>GoldBack Rate: ${goldbackRateUsd.toFixed(2)}</Text>
-        <Text style={styles.meta}>Network: {env.solanaNetwork}</Text>
-      </View>
-
-      <Pressable style={styles.secondaryButton} onPress={() => void loadRates()} disabled={busy}>
-        <Text style={styles.secondaryButtonText}>{busy ? 'Working...' : 'Refresh Quote'}</Text>
-      </Pressable>
-
-      <Pressable style={styles.primaryButton} onPress={() => void executeSwap()} disabled={busy}>
-        <Text style={styles.primaryButtonText}>{busy ? 'Processing...' : 'Execute Swap'}</Text>
-      </Pressable>
-
-      {quote ? (
-        <View style={styles.card}>
-          <Text style={styles.label}>Quote</Text>
-          <Text style={styles.meta}>Pay: {quote.payAmountSol.toFixed(4)} SOL</Text>
-          <Text style={styles.meta}>Receive: {quote.estimatedW3b} W3B</Text>
-          <Text style={styles.meta}>Verified: {new Date(quote.verifiedAt).toLocaleTimeString()}</Text>
+      <View style={styles.mainWrapper}>
+        {/* Header Region */}
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Swap</Text>
+          <Text style={styles.stepIndicator}>1/4</Text>
         </View>
-      ) : null}
 
+        {/* Progress Bar */}
+        <View style={styles.progressContainer}>
+          <View style={[styles.progressSegment, styles.progressActive]} />
+          <View style={styles.progressSegment} />
+          <View style={styles.progressSegment} />
+          <View style={styles.progressSegment} />
+        </View>
+
+        <Text style={styles.description}>Select a token and enter the amount to swap</Text>
+
+        {/* Tokens Container */}
+        <View style={styles.tokensContainer}>
+
+          {/* Top Token (Pay) */}
+          <View style={styles.tokenBox}>
+            <View style={styles.tokenTopRow}>
+              <View style={styles.tokenSelectorPill}>
+                <View style={[styles.currencyIcon, { backgroundColor: '#3b82f6' }]}>
+                  <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>S</Text>
+                </View>
+                <Text style={styles.tokenSymbol}>SOL</Text>
+                <Text style={styles.selectorCaret}>⌄</Text>
+              </View>
+              <TextInput
+                style={styles.amountInput}
+                keyboardType="decimal-pad"
+                autoCapitalize="none"
+                value={payAmountSol}
+                onChangeText={setPayAmountSol}
+                placeholder="0"
+                placeholderTextColor="rgba(255,255,255,0.2)"
+              />
+            </View>
+            <View style={styles.tokenBottomRow}>
+              <Text style={styles.balanceText}>Balance: 0.00</Text>
+              <Text style={styles.balanceText}>Value: ${solValueUsd}</Text>
+            </View>
+          </View>
+
+          {/* Floating Swap Arrow */}
+          <View style={styles.swapArrowWrapper}>
+            <View style={styles.swapArrowCircle}>
+              <Text style={styles.swapArrowIcon}>↑↓</Text>
+            </View>
+          </View>
+
+          {/* Bottom Token (Receive) */}
+          <View style={styles.tokenBox}>
+            <View style={styles.tokenTopRow}>
+              <View style={styles.tokenSelectorPill}>
+                <View style={[styles.currencyIcon, { backgroundColor: '#c9a84c' }]}>
+                  <Text style={{ color: 'black', fontWeight: 'bold', fontSize: 13 }}>W</Text>
+                </View>
+                <Text style={styles.tokenSymbol}>W3B</Text>
+              </View>
+              <Text style={styles.amountOutput}>{estimatedW3b || '0'}</Text>
+            </View>
+            <View style={styles.tokenBottomRow}>
+              <Text style={styles.balanceText}>Balance: 0.00</Text>
+              <Text style={styles.balanceText}>Value: ${w3bValueUsd}</Text>
+            </View>
+          </View>
+
+        </View>
+
+        {/* Rate & Network Info */}
+        <View style={styles.infoBlock}>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Rate</Text>
+            <Text style={styles.infoValue}>1 W3B ≈ {(goldbackRateUsd / Math.max(0.0001, solPriceUsd)).toFixed(4)} SOL</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Network</Text>
+            <Text style={styles.infoValueGold}>{env.solanaNetwork}</Text>
+          </View>
+        </View>
+
+        {/* Info Box */}
+        <View style={styles.messageBox}>
+          <Text style={styles.messageText}>
+            SOL rail executes natively on network. Route: SOL wallet transfer → Mint W3B directly on-chain.
+          </Text>
+        </View>
+
+        {/* Execute Button */}
+        <Pressable
+          style={[styles.executeButton, busy && styles.executeButtonDisabled]}
+          onPress={() => void executeSwap()}
+          disabled={busy}
+        >
+          <Text style={styles.executeButtonText}>{busy ? 'Processing...' : 'Review Swap'}</Text>
+        </Pressable>
+
+      </View>
+
+      {/* Result Card (Preserved functionality) */}
       {result ? (
-        <View style={styles.card}>
-          <Text style={styles.label}>Last Swap</Text>
-          <Text style={styles.meta}>Purchased: {result.purchasedW3b} W3B</Text>
-          <Text style={styles.meta}>Tx: {result.txSignature.slice(0, 14)}...</Text>
-          <Pressable onPress={() => void Linking.openURL(result.explorerUrl)}>
-            <Text style={styles.link}>Open on Solscan</Text>
+        <View style={[styles.mainWrapper, { marginTop: 24 }]}>
+          <Text style={[styles.title, { marginBottom: 16 }]}>Swap Confirmed</Text>
+          <Text style={[styles.balanceText, { color: 'white', marginBottom: 8 }]}>Purchased: {result.purchasedW3b} W3B</Text>
+          <Text style={styles.balanceText}>Tx: {result.txSignature.slice(0, 14)}...</Text>
+          <Pressable onPress={() => void Linking.openURL(result.explorerUrl)} style={{ marginTop: 16 }}>
+            <Text style={{ color: '#c9a84c', fontWeight: '700' }}>Open on Solscan</Text>
           </Pressable>
         </View>
       ) : null}
 
-      <Text style={styles.status}>{status}</Text>
+      <Text style={[styles.status, { marginTop: 20, textAlign: 'center' }]}>{status}</Text>
     </ScrollView>
   );
 }
@@ -200,78 +284,213 @@ export function SwapScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: tokens.spacing.lg,
-    gap: tokens.spacing.md,
-    backgroundColor: tokens.colors.bgBase,
+    paddingTop: 40,
+    backgroundColor: '#0a0a0a',
+    minHeight: '100%',
+  },
+  mainWrapper: {
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderRadius: 32,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    padding: 24,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: tokens.colors.textPrimary,
-  },
-  subtitle: {
-    color: tokens.colors.textSecondary,
-    fontSize: 13,
-    marginTop: -4,
-  },
-  card: {
-    backgroundColor: tokens.colors.bgElevated,
-    borderColor: tokens.colors.hairline,
-    borderWidth: 1,
-    borderRadius: 0,
-    padding: tokens.spacing.md,
-    gap: 6,
-  },
-  label: {
-    color: tokens.colors.textPrimary,
-    fontSize: 13,
+    fontSize: 24,
     fontWeight: '700',
+    color: '#ffffff',
   },
-  input: {
+  stepIndicator: {
+    fontSize: 14,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 24,
+  },
+  progressSegment: {
+    flex: 1,
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 2,
+  },
+  progressActive: {
+    backgroundColor: '#c9a84c',
+  },
+  description: {
+    color: '#9ca3af',
+    fontSize: 14,
+    marginBottom: 24,
+  },
+  tokensContainer: {
+    position: 'relative',
+    gap: 8,
+    marginBottom: 24,
+  },
+  tokenBox: {
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: 24,
+    padding: 20,
     borderWidth: 1,
-    borderColor: tokens.colors.hairline,
-    borderRadius: 0,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: tokens.colors.textPrimary,
-    backgroundColor: tokens.colors.bgElevated,
+    borderColor: 'rgba(255,255,255,0.04)',
+    minHeight: 120,
   },
-  meta: {
-    color: tokens.colors.textSecondary,
-    fontSize: 12,
-  },
-  primaryButton: {
-    backgroundColor: tokens.colors.accentGold,
-    borderRadius: 0,
-    paddingVertical: 12,
+  tokenTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 16,
   },
-  primaryButtonText: {
-    color: '#0a0a0a',
+  tokenSelectorPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  currencyIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  tokenSymbol: {
+    color: '#ffffff',
+    fontSize: 16,
     fontWeight: '700',
+    marginRight: 6,
+  },
+  selectorCaret: {
+    color: '#9ca3af',
     fontSize: 14,
   },
-  secondaryButton: {
-    backgroundColor: tokens.colors.bgElevated,
-    borderColor: tokens.colors.hairline,
-    borderWidth: 1,
-    borderRadius: 0,
-    paddingVertical: 12,
+  amountInput: {
+    flex: 1,
+    textAlign: 'right',
+    fontSize: 42,
+    fontWeight: '600',
+    color: '#ffffff',
+    padding: 0,
+    height: 50,
+  },
+  amountOutput: {
+    flex: 1,
+    textAlign: 'right',
+    fontSize: 42,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  tokenBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  balanceText: {
+    color: '#6b7280',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  swapArrowWrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: '50%',
+    marginTop: -20,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  swapArrowCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#c9a84c',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: '#111111', // Matches the bgElevated color closely to visually 'cut' the black boxes
+  },
+  swapArrowIcon: {
+    color: '#0a0a0a',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  infoBlock: {
+    gap: 12,
+    marginBottom: 24,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  secondaryButtonText: {
-    color: tokens.colors.textPrimary,
-    fontWeight: '700',
+  infoLabel: {
+    color: '#9ca3af',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  infoValue: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  infoValueGold: {
+    color: '#c9a84c',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  messageBox: {
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.3)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+  },
+  messageText: {
+    color: '#93c5fd',
     fontSize: 13,
+    lineHeight: 20,
+  },
+  executeButton: {
+    backgroundColor: '#c9a84c',
+    borderRadius: 999,
+    paddingVertical: 18,
+    alignItems: 'center',
+  },
+  executeButtonDisabled: {
+    opacity: 0.6,
+  },
+  executeButtonText: {
+    color: '#0a0a0a',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  ghostButton: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  ghostButtonText: {
+    color: '#9ca3af',
+    fontSize: 12,
+    fontWeight: '600',
   },
   status: {
-    color: tokens.colors.textSecondary,
+    color: '#6b7280',
     fontSize: 12,
-  },
-  link: {
-    color: tokens.colors.accentGold,
-    fontWeight: '700',
-    fontSize: 12,
-    marginTop: 4,
   },
 });
