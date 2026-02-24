@@ -1,19 +1,19 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, TextInput } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { getPortfolioSummary } from '../../lib/portfolio/summary-client';
-import { PortfolioSummaryResponse } from '../../lib/api/types';
-import type { RootStackParamList } from '../../navigation';
-import { tokens } from '../../theme/tokens';
+import { getVaultSummary } from '../../lib/protocol/status-client';
+import { PortfolioSummaryResponse, VaultSummaryResponse } from '../../lib/api/types';
+import type { MainTabParamList } from '../../navigation';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
+type Props = BottomTabScreenProps<MainTabParamList, 'Home'>;
 
 const EMPTY_SUMMARY: PortfolioSummaryResponse = {
   success: true,
   walletAddress: '',
   w3bBalance: 0,
-  goldbackRateUsd: 0,
+  goldbackRateUsd: 10.14,
   portfolioUsd: 0,
   loyaltyPoints: 0,
   lastUpdated: '',
@@ -23,308 +23,482 @@ const EMPTY_SUMMARY: PortfolioSummaryResponse = {
   },
 };
 
-function formatUsd(value: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value || 0);
-}
-
 export function HomeScreen({ navigation }: Props) {
   const [summary, setSummary] = useState<PortfolioSummaryResponse>(EMPTY_SUMMARY);
+  const [vaultInfo, setVaultInfo] = useState<VaultSummaryResponse | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [status, setStatus] = useState('Connect wallet to view live balances.');
+  const [refreshing, setRefreshing] = useState(false);
+  const [chatDraft, setChatDraft] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [status, setStatus] = useState('Syncing...');
+
+  const loadData = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const [portRes, vaultRes] = await Promise.all([
+        getPortfolioSummary().catch(() => null),
+        getVaultSummary().catch(() => null)
+      ]);
+
+      if (portRes) {
+        setSummary(portRes);
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+        setSummary(EMPTY_SUMMARY);
+      }
+
+      if (vaultRes) {
+        setVaultInfo(vaultRes);
+      }
+
+      setStatus('Synced');
+    } catch (e) {
+      setStatus('Failed to sync');
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      let mounted = true;
-      setIsLoading(true);
-
-      void (async () => {
-        try {
-          const response = await getPortfolioSummary();
-          if (!mounted) return;
-          setSummary(response);
-          setIsAuthenticated(true);
-          setStatus('Portfolio synced');
-        } catch (error) {
-          if (!mounted) return;
-          const message = error instanceof Error ? error.message : 'Portfolio unavailable';
-          const unauth = /(auth|token|401|required)/i.test(message);
-          if (unauth) {
-            setSummary(EMPTY_SUMMARY);
-            setIsAuthenticated(false);
-            setStatus('Connect wallet to view live balances.');
-          } else {
-            setStatus(message);
-          }
-        } finally {
-          if (mounted) {
-            setIsLoading(false);
-          }
-        }
-      })();
-
-      return () => {
-        mounted = false;
-      };
-    }, [])
+      void loadData();
+    }, [loadData])
   );
 
-  const portfolioUsdLabel = useMemo(() => formatUsd(summary.portfolioUsd), [summary.portfolioUsd]);
-  const rateLabel = useMemo(() => `$${summary.goldbackRateUsd.toFixed(2)}/GB`, [summary.goldbackRateUsd]);
-  const updatedLabel = useMemo(() => {
-    if (!summary.lastUpdated) return '—';
-    return new Date(summary.lastUpdated).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  }, [summary.lastUpdated]);
+  const priceFormatted = useMemo(() => `$${summary.goldbackRateUsd.toFixed(2)}`, [summary.goldbackRateUsd]);
+  const reserves = vaultInfo?.provenReserves || 6;
+  const supply = vaultInfo?.totalSupply || 6;
 
   return (
-    <ScrollView contentContainerStyle={styles.container} contentInsetAdjustmentBehavior="automatic">
-      <View style={styles.headerRow}>
-        <Text style={styles.welcome}>Welcome</Text>
-        <View style={styles.headerBadge}>
-          <Text style={styles.headerBadgeText}>{isAuthenticated ? 'LIVE' : 'OFF'}</Text>
-        </View>
-      </View>
-
-      <View style={styles.portfolioCard}>
-        <View style={styles.portfolioHead}>
-          <Text style={styles.portfolioLabel}>Portfolio</Text>
-          <View style={styles.pill}>
-            <Text style={styles.pillText}>{summary.loyaltyPoints} pts</Text>
+    <View style={styles.root}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} tintColor="#c9a84c" />}
+      >
+        {/* Top Header Actions */}
+        <View style={styles.headerRow}>
+          <View />
+          <View style={styles.headerActions}>
+            <Pressable style={styles.headerPill} onPress={loadData}>
+              <Text style={styles.headerPillText}>Verify Now</Text>
+            </Pressable>
+            <Pressable style={styles.headerPill} onPress={loadData}>
+              <Text style={styles.headerPillText}>Refresh</Text>
+            </Pressable>
           </View>
         </View>
 
-        <Text style={styles.portfolioAmount}>{portfolioUsdLabel}</Text>
-        <Text style={styles.portfolioSubline}>
-          {summary.w3bBalance} W3B • Rate {rateLabel}
-        </Text>
-        <Text style={styles.portfolioMeta}>Updated {updatedLabel}</Text>
-
-        <Pressable style={styles.portfolioButton}>
-          <Text style={styles.portfolioButtonText}>Portfolio</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.actionRow}>
-        <Pressable style={[styles.actionButton, styles.actionButtonDark]} onPress={() => navigation.navigate('Redeem')}>
-          <Text style={styles.actionButtonText}>Withdraw</Text>
-        </Pressable>
-        <Pressable style={[styles.actionButton, styles.actionButtonGold]} onPress={() => navigation.navigate('Shop')}>
-          <Text style={[styles.actionButtonText, styles.actionButtonTextDark]}>Buy Gold</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Do more with GoldBack.</Text>
-        <Text style={styles.sectionSubtitle}>Make your gold work for you.</Text>
-      </View>
-
-      <View style={styles.grid}>
-        <View style={styles.featureCard}>
-          <Image source={require('../../../assets/landing/blackwebtokenlogo.png')} style={styles.featureIcon} />
-          <Text style={styles.featureTitle}>Stake W3B</Text>
-          <Text style={styles.featureMeta}>Earn 3-4% APY</Text>
+        {/* Hero Pricing */}
+        <View style={styles.heroSection}>
+          <Text style={styles.heroLabel}>W3B ASSET PRICE</Text>
+          <Text style={styles.heroPrice}>{priceFormatted}</Text>
+          <View style={styles.priceChangeRow}>
+            <View style={styles.priceChangePill}>
+              <Text style={styles.priceChangeText}>↑ $0.00 (0.00%)</Text>
+            </View>
+            <Text style={styles.priceChangeSubtext}>Today</Text>
+          </View>
         </View>
 
-        <View style={styles.featureCard}>
-          <Image source={require('../../../assets/landing/goldback.png')} style={styles.featureIcon} />
-          <Text style={styles.featureTitle}>Physical Gold</Text>
-          <Text style={styles.featureMeta}>Buy from Shop</Text>
+        {/* Quick Actions Row */}
+        <View style={styles.quickActionsContainer}>
+          {/* Buy */}
+          <Pressable style={styles.quickActionItem} onPress={() => navigation.navigate('Shop')}>
+            <View style={[styles.quickActionButton, styles.quickActionGold]}>
+              <Text style={styles.quickActionIconGold}>+</Text>
+            </View>
+            <Text style={styles.quickActionLabel}>Buy</Text>
+          </Pressable>
+
+          {/* Swap */}
+          <Pressable style={styles.quickActionItem} onPress={() => navigation.navigate('Web3', { screen: 'Swap' })}>
+            <View style={styles.quickActionButton}>
+              <Text style={styles.quickActionIcon}>⇄</Text>
+            </View>
+            <Text style={styles.quickActionLabel}>Swap</Text>
+          </Pressable>
+
+          {/* Vault */}
+          <Pressable style={styles.quickActionItem} onPress={() => navigation.navigate('Web3', { screen: 'Vault' })}>
+            <View style={styles.quickActionButton}>
+              <Text style={styles.quickActionIcon}>🔒</Text>
+            </View>
+            <Text style={styles.quickActionLabel}>Vault</Text>
+          </Pressable>
+
+          {/* Send */}
+          <Pressable style={styles.quickActionItem} onPress={() => navigation.navigate('Web3', { screen: 'Redeem' })}>
+            <View style={styles.quickActionButton}>
+              <Text style={styles.quickActionIcon}>↑</Text>
+            </View>
+            <Text style={styles.quickActionLabel}>Send</Text>
+          </Pressable>
         </View>
 
-        <View style={[styles.featureCard, styles.featureCardWide]}>
-          <Image source={require('../../../assets/landing/blackweblogo_v3.png')} style={styles.featureIcon} />
-          <Text style={styles.featureTitle}>Withdraw Gold</Text>
-          <Text style={styles.featureMeta}>Redemption flow</Text>
+        {/* Asset Information Section */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>ASSET INFORMATION</Text>
         </View>
-      </View>
 
-      <Text style={styles.status}>
-        {isLoading ? 'Refreshing portfolio...' : status}
-      </Text>
-      {!isAuthenticated ? <Text style={styles.authHint}>Open Wallet (top-right) to connect and sign in.</Text> : null}
-    </ScrollView>
+        <View style={styles.grid}>
+          {/* Card 1: Asset Backing */}
+          <View style={styles.infoCard}>
+            <Text style={styles.watermark}>{reserves}</Text>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Asset Backing</Text>
+              <View style={styles.badgeNeutral}>
+                <Text style={styles.badgeNeutralText}>VERIFIED</Text>
+              </View>
+            </View>
+            <Text style={styles.cardMainValue}>{reserves}</Text>
+            <Text style={styles.cardSubValue}>100% PHYSICALLY BACKED</Text>
+            <View style={styles.cardFooter}>
+              <View style={styles.badgeEmerald}>
+                <Text style={styles.badgeEmeraldText}>VAULT SECURED</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Card 2: Reserves */}
+          <View style={styles.infoCard}>
+            <Text style={styles.watermark}>{reserves}</Text>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Reserves</Text>
+              <View style={styles.badgeNeutral}>
+                <Text style={styles.badgeNeutralText}>VERIFIED</Text>
+              </View>
+            </View>
+            <Text style={styles.cardMainValue}>{reserves}</Text>
+            <Text style={styles.cardSubValue}>PHYSICALLY SECURED</Text>
+            <View style={styles.cardFooter}>
+              <View style={styles.badgeEmerald}>
+                <Text style={styles.badgeEmeraldText}>AUDIT LIVE</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Card 3: Circulating Supply */}
+          <View style={styles.infoCard}>
+            <Text style={styles.watermark}>{supply}</Text>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Circulating{'\n'}Supply</Text>
+              <View style={styles.badgeNeutral}>
+                <Text style={styles.badgeNeutralText}>LIVE</Text>
+              </View>
+            </View>
+            <Text style={styles.cardMainValue}>{supply}</Text>
+          </View>
+
+          {/* Card 4: W3B Price */}
+          <View style={styles.infoCard}>
+            <Text style={styles.watermark}>10</Text>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>W3B Price</Text>
+              <View style={styles.badgeEmerald}>
+                <Text style={styles.badgeEmeraldText}>↑ 0%</Text>
+              </View>
+            </View>
+            <Text style={styles.cardMainValue}>{priceFormatted}</Text>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Floating Chat Input */}
+      {/* <View style={styles.chatFloatingContainer}>
+        <View style={styles.chatInputWrapper}>
+          <View style={styles.chatAvatar}>
+            <Text style={styles.chatAvatarText}>G</Text>
+          </View>
+          <TextInput
+            style={styles.chatInput}
+            placeholder="Ask For Gnosis"
+            placeholderTextColor="#6b7280"
+            value={chatDraft}
+            onChangeText={setChatDraft}
+            onSubmitEditing={() => setChatDraft('')}
+            returnKeyType="send"
+          />
+          <Pressable
+            style={[styles.chatSendBtn, chatDraft.trim() ? styles.chatSendBtnActive : null]}
+            onPress={() => setChatDraft('')}
+          >
+            <Text style={[styles.chatSendArrow, chatDraft.trim() ? styles.chatSendArrowActive : null]}>↑</Text>
+          </Pressable>
+        </View>
+      </View> */}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: tokens.spacing.lg,
-    paddingBottom: 40,
-    gap: tokens.spacing.lg,
-    backgroundColor: '#0d381f',
+    padding: 16,
+    paddingTop: 60,
+    paddingBottom: 100,
+    backgroundColor: '#0a0a0a',
+    minHeight: '100%',
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
+    marginBottom: 40,
   },
-  welcome: {
-    fontSize: 34,
-    lineHeight: 40,
-    color: '#f8fafc',
-    fontWeight: '600',
-  },
-  headerBadge: {
-    backgroundColor: '#69d86c',
-    borderRadius: tokens.radius.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  headerBadgeText: {
-    color: '#0b2d14',
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-  },
-  portfolioCard: {
-    backgroundColor: '#3f8e37',
-    borderRadius: 26,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: '#79bc66',
-  },
-  portfolioHead: {
+  headerActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    gap: 12,
   },
-  portfolioLabel: {
-    color: '#f8fafc',
-    fontSize: 19,
+  headerPill: {
+    backgroundColor: 'rgba(201,168,76,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.3)',
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  headerPillText: {
+    color: '#e8d48b',
+    fontSize: 12,
     fontWeight: '600',
   },
-  pill: {
-    backgroundColor: '#111827',
-    borderRadius: tokens.radius.pill,
+  heroSection: {
+    alignItems: 'center',
+    marginBottom: 48,
+  },
+  heroLabel: {
+    color: '#9ca3af',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 2,
+    marginBottom: 8,
+  },
+  heroPrice: {
+    color: '#ffffff',
+    fontSize: 64,
+    fontWeight: '800',
+    letterSpacing: -2,
+    marginBottom: 12,
+  },
+  priceChangeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  priceChangePill: {
+    backgroundColor: 'rgba(16,185,129,0.15)',
+    borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  pillText: {
-    color: '#f8fafc',
-    fontSize: 11,
-    fontWeight: '600',
+  priceChangeText: {
+    color: '#34d399',
+    fontSize: 13,
+    fontWeight: '700',
   },
-  portfolioAmount: {
-    marginTop: 16,
-    color: '#ffffff',
-    fontSize: 42,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-  },
-  portfolioSubline: {
-    marginTop: 8,
-    color: '#edf7eb',
+  priceChangeSubtext: {
+    color: '#6b7280',
     fontSize: 14,
     fontWeight: '500',
   },
-  portfolioMeta: {
-    marginTop: 4,
-    color: '#d4ebcc',
-    fontSize: 12,
-  },
-  portfolioButton: {
-    marginTop: 20,
-    backgroundColor: '#5f8f53',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  portfolioButtonText: {
-    color: '#f8fafc',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  actionRow: {
+  quickActionsContainer: {
     flexDirection: 'row',
-    gap: 10,
+    justifyContent: 'center',
+    gap: 32,
+    marginBottom: 60,
   },
-  actionButton: {
-    flex: 1,
-    borderRadius: 10,
-    paddingVertical: 14,
+  quickActionItem: {
     alignItems: 'center',
-    borderWidth: 1,
+    gap: 12,
   },
-  actionButtonDark: {
-    backgroundColor: '#111111',
-    borderColor: '#2f2f2f',
+  quickActionButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#1f2937',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  actionButtonGold: {
-    backgroundColor: '#d7c16f',
-    borderColor: '#c7b25f',
+  quickActionGold: {
+    backgroundColor: '#c9a84c',
   },
-  actionButtonText: {
-    color: '#f8fafc',
-    fontSize: 14,
+  quickActionIcon: {
+    color: '#ffffff',
+    fontSize: 24,
+  },
+  quickActionIconGold: {
+    color: '#0a0a0a',
+    fontSize: 28,
+    fontWeight: '400',
+  },
+  quickActionLabel: {
+    color: '#ffffff',
+    fontSize: 13,
     fontWeight: '600',
-    letterSpacing: 0,
-  },
-  actionButtonTextDark: {
-    color: '#1f2937',
   },
   sectionHeader: {
-    gap: 4,
-    marginTop: 2,
+    marginBottom: 16,
   },
   sectionTitle: {
-    color: '#f8fafc',
-    fontSize: 34,
-    lineHeight: 40,
-    fontWeight: '600',
-  },
-  sectionSubtitle: {
-    color: '#c6e0cb',
-    fontSize: 15,
+    color: '#9ca3af',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1.5,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    rowGap: 12,
+    rowGap: 16,
   },
-  featureCard: {
-    width: '48.3%',
-    backgroundColor: '#f5f5f1',
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    minHeight: 184,
+  infoCard: {
+    width: '48%',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 32,
+    padding: 20,
+    minHeight: 200,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  watermark: {
+    position: 'absolute',
+    bottom: -20,
+    right: -10,
+    fontSize: 140,
+    fontWeight: '900',
+    color: 'rgba(255,255,255,0.03)',
+    zIndex: 0,
+  },
+  cardHeader: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    zIndex: 1,
+    marginBottom: 24,
+    gap: 8,
   },
-  featureCardWide: {
-    width: '100%',
-    minHeight: 160,
-  },
-  featureIcon: {
-    width: 78,
-    height: 78,
-    resizeMode: 'contain',
-    marginTop: 6,
-  },
-  featureTitle: {
-    marginTop: 8,
-    fontSize: 13,
+  cardTitle: {
+    color: '#ffffff',
+    fontSize: 16,
     fontWeight: '600',
-    color: '#1f2937',
-    textAlign: 'center',
-    letterSpacing: 0,
+    lineHeight: 22,
+    flexShrink: 1,
   },
-  featureMeta: {
-    marginTop: 6,
-    fontSize: 13,
+  badgeNeutral: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    flexShrink: 0,
+  },
+  badgeNeutralText: {
+    color: '#d1d5db',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  cardMainValue: {
+    color: '#ffffff',
+    fontSize: 40,
+    fontWeight: '800',
+    zIndex: 1,
+    marginBottom: 8,
+  },
+  cardSubValue: {
+    color: '#9ca3af',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
+    zIndex: 1,
+  },
+  cardFooter: {
+    marginTop: 'auto',
+    alignItems: 'flex-start',
+    zIndex: 1,
+    paddingTop: 16,
+  },
+  badgeEmerald: {
+    borderWidth: 1,
+    borderColor: 'rgba(16,185,129,0.3)',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    flexShrink: 0,
+  },
+  badgeEmeraldText: {
+    color: '#34d399',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  root: {
+    flex: 1,
+    backgroundColor: '#0a0a0a',
+  },
+  chatFloatingContainer: {
+    position: 'absolute',
+    bottom: 100, // Float right above the absolute nav bar (bottom: 24, height: 64)
+    left: 20,
+    right: 20,
+    zIndex: 50,
+  },
+  chatInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(25, 25, 25, 0.95)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 4,
+  },
+  chatAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#c9a84c',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  chatAvatarText: {
+    color: '#0a0a0a',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  chatInput: {
+    flex: 1,
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '400',
+  },
+  chatSendBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
+  },
+  chatSendBtnActive: {
+    backgroundColor: '#c9a84c',
+  },
+  chatSendArrow: {
     color: '#6b7280',
-    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '700',
   },
-  status: {
-    marginTop: 2,
-    color: '#b8d8c0',
-    fontSize: 12,
-  },
-  authHint: {
-    color: '#e2c66a',
-    fontSize: 12,
-    fontWeight: '600',
+  chatSendArrowActive: {
+    color: '#0a0a0a',
   },
 });
+

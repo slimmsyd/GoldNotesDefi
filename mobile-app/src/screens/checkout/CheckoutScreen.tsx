@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import {
   clearPendingDirectCheckout,
   loadPendingDirectCheckout,
@@ -32,10 +32,10 @@ import { createDirectCheckout, confirmDirectCheckout } from '../../lib/checkout/
 import { buildSolDirectCheckoutTransaction } from '../../lib/solana/transactions';
 import { ShippingOption } from '../../lib/api/types';
 import { env } from '../../config/env';
-import type { RootStackParamList } from '../../navigation';
+import type { MainTabParamList } from '../../navigation';
 import { tokens } from '../../theme/tokens';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Checkout'>;
+type Props = BottomTabScreenProps<MainTabParamList, 'Checkout'>;
 type Step = 'cart' | 'details' | 'payment';
 
 function parseAddress(input: string): {
@@ -116,22 +116,26 @@ export function CheckoutScreen({ navigation }: Props) {
     setCartItems(items);
   }
 
+  async function syncCartFromRemote(): Promise<void> {
+    const token = await getAuthToken();
+    setHasAuthToken(Boolean(token));
+    if (!token) return;
+
+    const remote = await getRemoteCart();
+    if (remote.cart && Array.isArray(remote.cart)) {
+      await saveCart(remote.cart);
+      setCartItems(remote.cart as CartItem[]);
+    }
+  }
+
   useFocusEffect(
     useCallback(() => {
       void (async () => {
         const localCart = await loadCart();
         setCartItems(localCart);
 
-        const token = await getAuthToken();
-        setHasAuthToken(Boolean(token));
-        if (!token) return;
-
         try {
-          const remote = await getRemoteCart();
-          if (remote.cart && Array.isArray(remote.cart)) {
-            await saveCart(remote.cart);
-            setCartItems(remote.cart as CartItem[]);
-          }
+          await syncCartFromRemote();
         } catch {
           // Keep local cart if remote load fails.
         }
@@ -213,10 +217,10 @@ export function CheckoutScreen({ navigation }: Props) {
 
   async function clearPostCheckoutState(): Promise<void> {
     const token = await getAuthToken();
-    await Promise.all([clearPendingDirectCheckout(), clearCart()]);
     if (token) {
-      await clearRemoteCart().catch(() => undefined);
+      await clearRemoteCart();
     }
+    await Promise.all([clearPendingDirectCheckout(), clearCart()]);
     setCartItems([]);
   }
 
@@ -354,6 +358,11 @@ export function CheckoutScreen({ navigation }: Props) {
       setStatus('Transaction sent. Confirming order...');
       await finalizePendingOrder(pending);
     } catch (error) {
+      try {
+        await syncCartFromRemote();
+      } catch {
+        // Preserve current local cart state when sync fails.
+      }
       setStatus(error instanceof Error ? error.message : 'Checkout failed');
     } finally {
       setIsSubmitting(false);
@@ -449,7 +458,7 @@ export function CheckoutScreen({ navigation }: Props) {
               disabled={directItems.length === 0}
               onPress={() => setStep('details')}
             >
-              <Text style={styles.primaryButtonText}>Continue to Details</Text>
+              <Text style={styles.primaryButtonText}>Continue</Text>
             </Pressable>
           </View>
         ) : null}
@@ -557,7 +566,7 @@ export function CheckoutScreen({ navigation }: Props) {
                 disabled={isSavingProfile}
                 onPress={() => void handleProceedToPayment()}
               >
-                <Text style={styles.primaryButtonText}>{isSavingProfile ? 'Saving...' : 'Continue to Payment'}</Text>
+                <Text style={styles.primaryButtonText}>{isSavingProfile ? 'Saving...' : 'Continue'}</Text>
               </Pressable>
             </View>
           </View>
@@ -604,366 +613,380 @@ export function CheckoutScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   page: {
     flex: 1,
-    backgroundColor: tokens.colors.bgBase,
+    backgroundColor: '#0a0a0a',
   },
   scroll: {
     flex: 1,
   },
   container: {
-    paddingHorizontal: tokens.spacing.xl,
-    paddingTop: tokens.spacing.md,
+    paddingHorizontal: tokens.spacing.lg,
+    paddingTop: 40,
     paddingBottom: 44,
     gap: tokens.spacing.lg,
   },
   title: {
     textAlign: 'center',
-    fontSize: 44,
-    letterSpacing: 4,
-    fontWeight: '300',
-    color: tokens.colors.textPrimary,
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#ffffff',
+    letterSpacing: 0.5,
+    marginBottom: tokens.spacing.sm,
   },
   stepRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 2,
+    gap: 12,
+    marginBottom: tokens.spacing.md,
   },
   stepLabel: {
     fontSize: 12,
     fontWeight: '700',
-    letterSpacing: 1.2,
-    color: '#9ca3af',
+    letterSpacing: 1.5,
+    color: '#6b7280',
+    textTransform: 'uppercase',
   },
   stepLabelActive: {
-    color: '#111827',
+    color: '#c9a84c',
   },
   stepLabelDisabled: {
-    color: '#d1d5db',
+    color: '#374151',
   },
   stepSlash: {
-    color: '#d1d5db',
+    color: '#374151',
     fontSize: 14,
     fontWeight: '600',
   },
   successCard: {
-    backgroundColor: '#ecfdf3',
-    borderColor: '#86efac',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderColor: 'rgba(16, 185, 129, 0.3)',
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 14,
-    gap: 5,
+    borderRadius: 24,
+    padding: 20,
+    gap: 8,
   },
-  successTitle: { fontSize: 14, fontWeight: '700', color: '#14532d' },
-  successText: { fontSize: 12, color: '#166534' },
+  successTitle: { fontSize: 16, fontWeight: '800', color: '#10b981' },
+  successText: { fontSize: 13, color: 'rgba(16, 185, 129, 0.8)' },
   noticeCard: {
-    borderColor: '#fcd34d',
+    borderColor: 'rgba(201, 168, 76, 0.3)',
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 12,
-    backgroundColor: '#fffbeb',
+    borderRadius: 24,
+    padding: 16,
+    backgroundColor: 'rgba(201, 168, 76, 0.1)',
   },
   noticeText: {
-    color: '#92400e',
-    fontSize: 12,
+    color: '#c9a84c',
+    fontSize: 13,
+    lineHeight: 20,
   },
   sectionCard: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.02)',
     borderWidth: 1,
-    borderColor: '#eceff4',
-    borderRadius: 16,
-    padding: 14,
-    gap: 10,
+    borderColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 32,
+    padding: 24,
+    gap: 16,
   },
   itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 10,
-    borderBottomColor: '#eef2f7',
-    borderBottomWidth: 1,
-    paddingBottom: 10,
-    marginBottom: 2,
+    gap: 12,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 8,
   },
   itemTextWrap: { flex: 1 },
   itemName: {
-    fontSize: 13,
-    color: '#111827',
-    fontWeight: '700',
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
+    fontSize: 14,
+    color: '#ffffff',
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
   itemMeta: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 3,
+    fontSize: 13,
+    color: '#9ca3af',
+    marginTop: 4,
+    fontWeight: '600',
   },
   removeButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#fca5a5',
-    backgroundColor: '#fef2f2',
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
   },
   removeButtonText: {
-    color: '#991b1b',
+    color: '#ef4444',
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
   emptyState: {
-    gap: 10,
+    paddingVertical: 32,
+    alignItems: 'center',
+    gap: 16,
   },
   emptyTitle: {
-    color: '#6b7280',
-    fontSize: 14,
+    color: '#9ca3af',
+    fontSize: 15,
   },
   returnButton: {
-    alignSelf: 'flex-start',
     borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 999,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   returnButtonText: {
-    color: '#111827',
-    fontSize: 12,
-    fontWeight: '600',
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
   },
   totalsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 8,
   },
   totalLabel: {
-    color: '#6b7280',
-    fontSize: 13,
+    color: '#9ca3af',
+    fontSize: 14,
+    fontWeight: '600',
   },
   totalValue: {
-    color: '#111827',
-    fontSize: 15,
-    fontWeight: '700',
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '800',
   },
   detailsSection: {
-    gap: 18,
-    paddingTop: 2,
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 32,
+    padding: 24,
+    gap: 20,
   },
   prefillNote: {
-    fontSize: 12,
-    color: '#166534',
-    fontWeight: '600',
+    fontSize: 13,
+    color: '#10b981',
+    fontWeight: '700',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 16,
+    textAlign: 'center',
   },
   fieldGroup: {
     gap: 8,
   },
   fieldLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 3,
-    color: '#9ca3af',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 2,
+    color: '#6b7280',
+    paddingLeft: 4,
   },
   fieldInput: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    paddingBottom: 10,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     fontSize: 15,
-    color: '#111827',
+    color: '#ffffff',
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   addressInput: {
-    minHeight: 74,
+    minHeight: 100,
     textAlignVertical: 'top',
+    paddingTop: 16,
   },
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginTop: 4,
+    paddingVertical: 8,
   },
   checkbox: {
-    width: 28,
-    height: 28,
-    borderRadius: 7,
-    borderWidth: 1.5,
-    borderColor: '#9ca3af',
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#4b5563',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   checkboxChecked: {
-    borderColor: '#2563eb',
+    borderColor: '#c9a84c',
+    backgroundColor: 'rgba(201, 168, 76, 0.1)',
   },
   checkboxDot: {
-    width: 14,
-    height: 14,
+    width: 12,
+    height: 12,
     borderRadius: 4,
-    backgroundColor: '#2563eb',
+    backgroundColor: '#c9a84c',
   },
   checkboxText: {
-    color: '#374151',
-    fontSize: 16,
+    color: '#e5e7eb',
+    fontSize: 14,
+    fontWeight: '600',
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
-    paddingTop: 12,
+    gap: 12,
+    paddingVertical: 8,
   },
   infoRowStatic: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
-    paddingTop: 12,
+    gap: 12,
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    padding: 16,
+    borderRadius: 20,
   },
   infoIcon: {
+    color: '#3b82f6',
+    fontWeight: '800',
     width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#9ca3af',
     textAlign: 'center',
-    lineHeight: 18,
-    color: '#6b7280',
-    fontSize: 12,
-    fontWeight: '700',
   },
   infoText: {
-    color: '#6b7280',
-    fontSize: 14,
     flex: 1,
+    color: '#9ca3af',
+    fontSize: 13,
+    lineHeight: 20,
   },
   shippingPanel: {
-    marginTop: 4,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 16,
-    padding: 12,
-    gap: 12,
-    backgroundColor: '#fcfcfd',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 24,
+    padding: 20,
+    gap: 16,
   },
   shippingPanelTitle: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 3,
-    color: '#9ca3af',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 2,
+    color: '#6b7280',
   },
   shippingOptionRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 10,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 20,
+    padding: 16,
   },
   shippingOptionLeft: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
+    alignItems: 'center',
+    gap: 12,
     flex: 1,
   },
   radioOuter: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 1.5,
-    borderColor: '#9ca3af',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: '#4b5563',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
-    backgroundColor: '#fff',
   },
   radioOuterActive: {
-    borderColor: '#2563eb',
+    borderColor: '#c9a84c',
   },
   radioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#2563eb',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#c9a84c',
   },
   shippingCopy: {
     flex: 1,
-    gap: 3,
+    gap: 4,
   },
   shippingName: {
-    fontSize: 16,
+    color: '#ffffff',
+    fontSize: 14,
     fontWeight: '700',
-    color: '#111827',
   },
   shippingMeta: {
-    color: '#6b7280',
-    fontSize: 13,
+    color: '#9ca3af',
+    fontSize: 12,
   },
   shippingPrice: {
-    color: '#111827',
+    color: '#c9a84c',
     fontSize: 16,
-    fontWeight: '700',
-    marginTop: 2,
+    fontWeight: '800',
   },
   actionRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
+    marginTop: 8,
   },
   primaryButton: {
     flex: 1,
-    backgroundColor: '#111827',
-    paddingVertical: 13,
-    borderRadius: 12,
+    backgroundColor: '#c9a84c',
+    borderRadius: 999,
+    paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   primaryButtonText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.4,
+    color: '#0a0a0a',
+    fontSize: 15,
+    fontWeight: '800',
   },
   secondaryButton: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingVertical: 13,
-    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 999,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   secondaryButtonText: {
-    color: '#374151',
-    fontSize: 13,
+    color: '#ffffff',
+    fontSize: 14,
     fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  buttonDisabled: {
-    opacity: 0.55,
   },
   paymentTitle: {
     fontSize: 20,
-    fontWeight: '400',
-    letterSpacing: 2,
-    color: '#111827',
-    textTransform: 'uppercase',
-    marginBottom: 4,
+    fontWeight: '800',
+    color: '#ffffff',
+    marginBottom: 8,
   },
   paymentTotalLabel: {
-    color: '#111827',
-    fontSize: 15,
-    fontWeight: '700',
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '800',
   },
   paymentTotalValue: {
-    color: '#111827',
-    fontSize: 17,
+    color: '#c9a84c',
+    fontSize: 24,
     fontWeight: '800',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   meta: {
     fontSize: 12,
-    color: '#6b7280',
+    color: '#9ca3af',
   },
   status: {
-    marginTop: 4,
-    color: '#4b5563',
+    textAlign: 'center',
     fontSize: 12,
+    color: '#9ca3af',
+    marginTop: 16,
+    marginBottom: 40,
   },
 });

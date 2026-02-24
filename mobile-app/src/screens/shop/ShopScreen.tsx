@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { getRemoteCart, saveRemoteCart } from '../../lib/auth/auth-client';
 import { ShopCatalogItem } from '../../lib/api/types';
 import { getShopCatalog } from '../../lib/shop/catalog-client';
 import { CartItem, loadCart, saveCart } from '../../state/cart';
 import { getAuthToken } from '../../state/auth';
-import type { RootStackParamList } from '../../navigation';
+import type { MainTabParamList } from '../../navigation';
 import { shadows, tokens } from '../../theme/tokens';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Shop'>;
+type Props = BottomTabScreenProps<MainTabParamList, 'Shop'>;
 
 interface CatalogState {
   goldbackRate: number;
@@ -222,38 +222,37 @@ export function ShopScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: tokens.colors.bgBase },
+  page: { flex: 1, backgroundColor: '#0a0a0a' },
   scroll: { flex: 1 },
   container: {
     paddingHorizontal: tokens.spacing.lg,
     paddingTop: tokens.spacing.lg,
-    paddingBottom: 128,
+    paddingBottom: 160,
     gap: tokens.spacing.lg,
   },
   hero: {
-    backgroundColor: tokens.colors.bgElevated,
-    borderRadius: 26,
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderRadius: 32,
     borderWidth: 1,
-    borderColor: tokens.colors.hairline,
+    borderColor: 'rgba(255,255,255,0.08)',
     padding: tokens.spacing.xl,
     gap: tokens.spacing.sm,
-    ...shadows.soft,
   },
   heroKicker: {
-    color: tokens.colors.textTertiary,
+    color: '#9ca3af',
     fontSize: tokens.typography.caption,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1.4,
   },
   heroTitle: {
-    color: tokens.colors.textPrimary,
+    color: '#ffffff',
     fontSize: tokens.typography.title,
     fontWeight: '800',
     letterSpacing: 0.2,
   },
   heroBody: {
-    color: tokens.colors.textSecondary,
+    color: '#9ca3af',
     fontSize: tokens.typography.body,
     lineHeight: 21,
     marginTop: 2,
@@ -265,33 +264,32 @@ const styles = StyleSheet.create({
     gap: tokens.spacing.sm,
   },
   heroMetaValue: {
-    color: tokens.colors.accentGold,
+    color: '#c9a84c',
     fontWeight: '800',
     fontSize: 14,
   },
   heroMetaDivider: {
-    color: tokens.colors.textTertiary,
+    color: '#4b5563',
     fontSize: 12,
   },
   heroMetaLabel: {
-    color: tokens.colors.textTertiary,
+    color: '#6b7280',
     fontSize: 12,
   },
   card: {
-    backgroundColor: tokens.colors.bgElevated,
-    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderRadius: 32,
     padding: tokens.spacing.md,
     borderWidth: 1,
-    borderColor: tokens.colors.hairline,
+    borderColor: 'rgba(255,255,255,0.05)',
     gap: tokens.spacing.sm,
-    ...shadows.soft,
   },
   imageFrame: {
     width: '100%',
     height: 204,
-    borderRadius: 16,
+    borderRadius: 24,
     overflow: 'hidden',
-    backgroundColor: tokens.colors.bgMuted,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     marginBottom: 4,
   },
   cardImage: {
@@ -305,7 +303,7 @@ const styles = StyleSheet.create({
   },
   imagePlaceholderText: {
     fontSize: tokens.typography.caption,
-    color: tokens.colors.textTertiary,
+    color: '#6b7280',
     fontWeight: '600',
   },
   cardTopRow: {
@@ -318,63 +316,65 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: tokens.typography.subtitle,
     fontWeight: '800',
-    color: tokens.colors.textPrimary,
+    color: '#ffffff',
   },
   cardPrice: {
     fontSize: 24,
     fontWeight: '800',
-    color: tokens.colors.accentGold,
+    color: '#c9a84c',
     fontVariant: ['tabular-nums'],
   },
   cardStock: {
     fontSize: 12,
-    color: tokens.colors.textTertiary,
+    color: '#9ca3af',
     fontWeight: '600',
   },
   cardDescription: {
     fontSize: tokens.typography.body,
-    color: tokens.colors.textSecondary,
+    color: '#9ca3af',
     lineHeight: 22,
   },
   cardFeatures: {
     fontSize: 12,
-    color: tokens.colors.textTertiary,
+    color: '#6b7280',
     lineHeight: 18,
   },
   addButton: {
     marginTop: tokens.spacing.sm,
-    backgroundColor: tokens.colors.accentDark,
-    borderRadius: 10,
-    paddingVertical: 12,
+    backgroundColor: '#c9a84c',
+    borderRadius: 999,
+    paddingVertical: 14,
     alignItems: 'center',
   },
-  addButtonText: { color: '#fff', fontWeight: '700', fontSize: 14, letterSpacing: 0.2 },
+  addButtonText: { color: '#0a0a0a', fontWeight: '800', fontSize: 15, letterSpacing: 0.2 },
   emptyState: {
-    backgroundColor: tokens.colors.bgElevated,
+    backgroundColor: 'rgba(255,255,255,0.02)',
     borderWidth: 1,
-    borderColor: tokens.colors.hairline,
-    borderRadius: 16,
+    borderColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 32,
     padding: tokens.spacing.xl,
     alignItems: 'center',
     gap: tokens.spacing.sm,
   },
-  emptyTitle: { color: tokens.colors.textPrimary, fontWeight: '700', fontSize: 16 },
-  emptyBody: { color: tokens.colors.textTertiary, fontSize: 13, textAlign: 'center' },
+  emptyTitle: { color: '#ffffff', fontWeight: '700', fontSize: 16 },
+  emptyBody: { color: '#9ca3af', fontSize: 13, textAlign: 'center' },
   status: {
     marginTop: 2,
     fontSize: 12,
     color: tokens.colors.textSecondary,
+    textAlign: 'center',
   },
   cartSummary: {
     position: 'absolute',
-    left: tokens.spacing.md,
-    right: tokens.spacing.md,
-    bottom: tokens.spacing.md,
-    backgroundColor: '#fffffff0',
-    borderRadius: 16,
-    padding: tokens.spacing.md,
+    left: tokens.spacing.lg,
+    right: tokens.spacing.lg,
+    bottom: tokens.spacing.xl,
+    backgroundColor: 'rgba(10, 10, 10, 0.95)',
+    borderRadius: 32,
+    paddingHorizontal: tokens.spacing.lg,
+    paddingVertical: tokens.spacing.md,
     borderWidth: 1,
-    borderColor: tokens.colors.hairline,
+    borderColor: 'rgba(255,255,255,0.1)',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -384,14 +384,14 @@ const styles = StyleSheet.create({
     paddingRight: tokens.spacing.md,
     flex: 1,
   },
-  summaryLabel: { color: tokens.colors.textTertiary, fontSize: 12 },
-  summaryValue: { color: tokens.colors.textPrimary, fontWeight: '800', fontSize: 16, marginTop: 2 },
+  summaryLabel: { color: '#9ca3af', fontSize: 12, fontWeight: '600' },
+  summaryValue: { color: '#ffffff', fontWeight: '800', fontSize: 16, marginTop: 2 },
   checkoutButton: {
-    backgroundColor: tokens.colors.accentGold,
-    borderRadius: 10,
-    paddingVertical: 11,
-    paddingHorizontal: 16,
+    backgroundColor: '#c9a84c',
+    borderRadius: 999,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
   },
-  checkoutButtonText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  checkoutButtonText: { color: '#0a0a0a', fontSize: 14, fontWeight: '800' },
   disabled: { opacity: 0.55 },
 });

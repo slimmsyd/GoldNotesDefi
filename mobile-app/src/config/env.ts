@@ -37,6 +37,10 @@ export const env = {
   apiBaseUrl,
   solanaNetwork,
   rpcEndpoint,
+  w3bProgramId: readEnv('EXPO_PUBLIC_W3B_PROGRAM_ID', '9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6'),
+  w3bMint: readEnv('EXPO_PUBLIC_W3B_MINT', '5gw6McYxM3gCCiamCMCms9t6q2ytjPTD5P15ocjtVTVQ'),
+  w3bTreasury: readEnv('EXPO_PUBLIC_W3B_TREASURY_ACCOUNT', 'FfADSgooHXMW4jHjF4KpBUJdmbsx3Nnw3PAbcemt8Ark'),
+  w3bProtocolState: readEnv('EXPO_PUBLIC_W3B_PROTOCOL_STATE_PDA', 'CWYNiviNYPEApbGjjhDPZ8vmxRTMJiHsJto8JRZNPG8s'),
   devSignerSecret: process.env.EXPO_PUBLIC_DEV_SIGNER_SECRET || '',
   isProduction: appEnv === 'production',
 } as const;

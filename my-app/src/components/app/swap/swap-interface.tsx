@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import {
   LAMPORTS_PER_SOL,
-  PublicKey,
   Transaction
 } from '@solana/web3.js';
 import {
@@ -15,6 +14,7 @@ import {
 } from '@solana/spl-token';
 import { PROTOCOL_CONFIG } from '@/lib/protocol-constants';
 import { getExplorerUrl } from '@/lib/network-utils';
+import { buildUsdcToSolSwapTx, getUsdcToSolQuote } from '@/lib/jupiter-swap';
 import {
   W3B_MINT,
   createBuyW3bInstruction,
@@ -40,21 +40,50 @@ const WGB_TOKEN: TokenInfo = {
   symbol: 'WGB',
   name: 'GoldBack Token',
   decimals: 9,
-  logoURI: '/logos/BlackWebTokenLogo.png'
+  logoURI: '/AppAssets/shiny_gold_logo.PNG'
 };
+
+const SOL_MINT_ADDRESS = 'So11111111111111111111111111111111111111112';
+const SLIPPAGE_BPS = 100;
+const MAX_QUOTE_AGE_MS = 20_000;
+const SOL_FEE_RESERVE_LAMPORTS = BigInt(Math.floor(0.01 * LAMPORTS_PER_SOL));
+
+type CompletedRail = 'SOL_DIRECT' | 'USDC_BRIDGED';
+
+const isSameAddress = (left: string, right: string): boolean =>
+  left.trim().toLowerCase() === right.trim().toLowerCase();
+
+interface PricingHealthResponse {
+  success: boolean;
+  healthy?: boolean;
+  effectiveHealthy?: boolean;
+  bypassed?: boolean;
+  bypassReason?: string | null;
+  data?: {
+    reasons?: string[];
+    bypassed?: boolean;
+    bypassReason?: string | null;
+  };
+}
 
 export function SwapInterface() {
   const { connection } = useConnection();
   const { publicKey, sendTransaction, connected } = useWallet();
 
   // Token selection state
-  const [selectedPayToken, setSelectedPayToken] = useState<TokenInfo>(POPULAR_TOKENS[1]); // Default to USDC
+  const [selectedPayToken, setSelectedPayToken] = useState<TokenInfo>(
+    POPULAR_TOKENS.find((token) => token.symbol === 'USDC') ?? POPULAR_TOKENS[0]
+  );
   const [payAmount, setPayAmount] = useState<string>('');
   const [receiveAmount, setReceiveAmount] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'input' | 'review' | 'processing' | 'success'>('input');
   const [error, setError] = useState<string | null>(null);
-  const [txSignature, setTxSignature] = useState<string | null>(null);
+  const [swapSignature, setSwapSignature] = useState<string | null>(null);
+  const [buySignature, setBuySignature] = useState<string | null>(null);
+  const [completedRail, setCompletedRail] = useState<CompletedRail | null>(null);
+  const [processingPhase, setProcessingPhase] = useState<string | null>(null);
+  const [usdcRouteReady, setUsdcRouteReady] = useState(false);
   const [solPrice, setSolPrice] = useState<number | null>(null);
   const [w3bPriceUsd, setW3bPriceUsd] = useState<number>(DEFAULT_W3B_PRICE_USD);
 
@@ -63,6 +92,11 @@ export function SwapInterface() {
   const [isPriceVerifying, setIsPriceVerifying] = useState(false);
   const [priceMinutesSinceUpdate, setPriceMinutesSinceUpdate] = useState<number | null>(null);
   const [isPriceFallback, setIsPriceFallback] = useState(false);
+  const [isPricingHealthy, setIsPricingHealthy] = useState(false);
+  const [pricingHealthLoading, setPricingHealthLoading] = useState(true);
+  const [pricingHealthMessage, setPricingHealthMessage] = useState<string | null>(null);
+  const [isPricingBypassed, setIsPricingBypassed] = useState(false);
+  const [pricingBypassReason, setPricingBypassReason] = useState<string | null>(null);
 
   // Fetch W3B/Goldback price from database
   useEffect(() => {
@@ -83,7 +117,65 @@ export function SwapInterface() {
     fetchGoldbackRate();
   }, []);
 
-  // Verify price before swap - fetches fresh data and checks staleness
+  const checkPricingHealth = async (): Promise<{ healthy: boolean; message: string | null }> => {
+    setPricingHealthLoading(true);
+    try {
+      const res = await fetch('/api/health/pricing', { cache: 'no-store' });
+      let payload: PricingHealthResponse | null = null;
+      try {
+        payload = await res.json();
+      } catch {
+        payload = null;
+      }
+
+      const effectiveHealthy = Boolean(payload?.effectiveHealthy ?? payload?.healthy);
+      const bypassed = Boolean(payload?.bypassed ?? payload?.data?.bypassed);
+      const bypassReason = payload?.bypassReason ?? payload?.data?.bypassReason ?? null;
+      const reasons = payload?.data?.reasons ?? [];
+      const staleOnlyUnhealthy =
+        !effectiveHealthy &&
+        reasons.length > 0 &&
+        reasons.every((reason) => reason === 'last_sync_stale_or_unknown');
+      const healthyForSwap = effectiveHealthy || staleOnlyUnhealthy;
+
+      setIsPricingHealthy(healthyForSwap);
+      setIsPricingBypassed(bypassed);
+      setPricingBypassReason(bypassReason);
+
+      let message: string | null = null;
+      if (!healthyForSwap) {
+        const reason = payload?.data?.reasons?.[0];
+        message =
+          reason
+            ? `Pricing unavailable (${reason}). Retry soon.`
+            : 'Pricing unavailable, retry soon.';
+        setPricingHealthMessage(message);
+      } else {
+        setPricingHealthMessage(null);
+      }
+
+      return { healthy: healthyForSwap, message };
+    } catch {
+      setIsPricingHealthy(false);
+      setIsPricingBypassed(false);
+      setPricingBypassReason(null);
+      const message = 'Pricing unavailable, retry soon.';
+      setPricingHealthMessage(message);
+      return { healthy: false, message };
+    } finally {
+      setPricingHealthLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void checkPricingHealth();
+    const interval = setInterval(() => {
+      void checkPricingHealth();
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Verify price before swap - fetches fresh data and validates availability
   const verifyPriceBeforeSwap = async (): Promise<{ verified: boolean; rate: number | null; error: string | null }> => {
     setIsPriceVerifying(true);
     try {
@@ -96,17 +188,6 @@ export function SwapInterface() {
 
       const isFallback = data.source === 'fallback';
       setIsPriceFallback(isFallback);
-
-      // If using a real DB price, enforce staleness check
-      if (!isFallback && data.minutesSinceUpdate !== null) {
-        if (data.minutesSinceUpdate > 60) {
-          return {
-            verified: false,
-            rate: data.rate,
-            error: `Price data is ${data.minutesSinceUpdate} minutes old. Swap blocked for safety. Please try again later.`
-          };
-        }
-      }
 
       // Update state with verified price (fallback or fresh DB price)
       setW3bPriceUsd(data.rate);
@@ -125,7 +206,7 @@ export function SwapInterface() {
   // Fetch SOL price when needed
   useEffect(() => {
     const fetchSolPrice = async () => {
-      if (selectedPayToken.symbol === 'SOL' && !solPrice) {
+      if (isSameAddress(selectedPayToken.address, SOL_MINT_ADDRESS) && !solPrice) {
         try {
           const res = await fetch('/api/sol-price');
           const data = await res.json();
@@ -138,14 +219,42 @@ export function SwapInterface() {
       }
     };
     fetchSolPrice();
-  }, [selectedPayToken.symbol, solPrice]);
+  }, [selectedPayToken.address, solPrice]);
+
+  const clearExecutionState = () => {
+    setSwapSignature(null);
+    setBuySignature(null);
+    setCompletedRail(null);
+    setUsdcRouteReady(false);
+    setProcessingPhase(null);
+  };
+
+  const getSelectedRail = (): CompletedRail | null => {
+    if (isSameAddress(selectedPayToken.address, SOL_MINT_ADDRESS)) {
+      return 'SOL_DIRECT';
+    }
+    if (isSameAddress(selectedPayToken.address, PROTOCOL_CONFIG.usdcMint)) {
+      return 'USDC_BRIDGED';
+    }
+    return null;
+  };
+
+  const handleReviewStep = async () => {
+    setError(null);
+    const health = await checkPricingHealth();
+    if (!health.healthy) {
+      setError(health.message ?? 'Pricing unavailable, retry soon.');
+      return;
+    }
+    setStep('review');
+  };
 
   // Get USD value based on selected token
   const getUsdValue = (amount: number): number => {
-    if (selectedPayToken.symbol === 'SOL' && solPrice) {
+    if (isSameAddress(selectedPayToken.address, SOL_MINT_ADDRESS) && solPrice) {
       return amount * solPrice;
     }
-    if (['USDC', 'USDT'].includes(selectedPayToken.symbol)) {
+    if (isSameAddress(selectedPayToken.address, PROTOCOL_CONFIG.usdcMint)) {
       return amount;
     }
     return 0;
@@ -153,6 +262,9 @@ export function SwapInterface() {
 
   // Handle pay input changes
   const handlePayChange = (val: string) => {
+    if (usdcRouteReady || swapSignature || buySignature || completedRail) {
+      clearExecutionState();
+    }
     setPayAmount(val);
     if (!val) {
       setReceiveAmount('');
@@ -169,6 +281,9 @@ export function SwapInterface() {
 
   // Handle W3B output changes
   const handleReceiveChange = (val: string) => {
+    if (usdcRouteReady || swapSignature || buySignature || completedRail) {
+      clearExecutionState();
+    }
     setReceiveAmount(val);
     if (!val) {
       setPayAmount('');
@@ -177,7 +292,7 @@ export function SwapInterface() {
     const num = parseFloat(val);
     if (!isNaN(num)) {
       const usdNeeded = num * w3bPriceUsd;
-      if (selectedPayToken.symbol === 'SOL' && solPrice) {
+      if (isSameAddress(selectedPayToken.address, SOL_MINT_ADDRESS) && solPrice) {
         setPayAmount((usdNeeded / solPrice).toFixed(6));
       } else {
         setPayAmount(usdNeeded.toFixed(2));
@@ -196,7 +311,7 @@ export function SwapInterface() {
         }
       }
     }
-  }, [selectedPayToken, solPrice]);
+  }, [selectedPayToken, solPrice, payAmount, w3bPriceUsd]);
 
   const handleSwap = async () => {
     if (!publicKey) {
@@ -204,9 +319,20 @@ export function SwapInterface() {
       return;
     }
 
-    // Only SOL payments are supported for buy_w3b (uses on-chain price)
-    if (selectedPayToken.symbol !== 'SOL') {
-      setError('Only SOL payments are supported for now');
+    const selectedRail = getSelectedRail();
+    if (!selectedRail) {
+      setError('Selected payment token is not supported on this rail');
+      return;
+    }
+
+    const payAmountNum = parseFloat(payAmount);
+    if (isNaN(payAmountNum) || payAmountNum <= 0) {
+      setError('Invalid payment amount');
+      return;
+    }
+
+    if (selectedPayToken.balance !== undefined && payAmountNum > selectedPayToken.balance) {
+      setError(`Insufficient ${selectedPayToken.symbol} balance`);
       return;
     }
 
@@ -223,10 +349,23 @@ export function SwapInterface() {
       return;
     }
 
+    const health = await checkPricingHealth();
+    if (!health.healthy) {
+      setError(health.message ?? 'Pricing unavailable, retry soon.');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     setStep('processing');
+    setProcessingPhase(
+      selectedRail === 'USDC_BRIDGED' && !usdcRouteReady
+        ? 'Routing USDC -> SOL'
+        : 'Executing W3B purchase'
+    );
 
+    let didSwapThisAttempt = false;
+    let didBuyThisAttempt = false;
     try {
       // CRITICAL: Verify price freshness before swap
       const priceCheck = await verifyPriceBeforeSwap();
@@ -245,15 +384,75 @@ export function SwapInterface() {
       if (priceLamports === BigInt(0)) {
         setError('WGB price not set on protocol. Contact admin.');
         setIsLoading(false);
+        setStep('review');
         return;
       }
+
+      const requiredBuyLamports = BigInt(w3bAmountInt) * priceLamports;
+      const requiredLamportsWithReserve = requiredBuyLamports + SOL_FEE_RESERVE_LAMPORTS;
+
+      if (selectedRail === 'USDC_BRIDGED' && !usdcRouteReady) {
+        setProcessingPhase('Routing USDC -> SOL');
+
+        const usdcBaseUnits = BigInt(
+          Math.floor(payAmountNum * 10 ** selectedPayToken.decimals)
+        );
+        if (usdcBaseUnits <= BigInt(0)) {
+          throw new Error('USDC amount is too small');
+        }
+
+        const quoteResult = await getUsdcToSolQuote({
+          inputMint: PROTOCOL_CONFIG.usdcMint,
+          outputMint: SOL_MINT_ADDRESS,
+          inputAmountBaseUnits: usdcBaseUnits,
+          slippageBps: SLIPPAGE_BPS,
+        });
+
+        if (Date.now() - quoteResult.fetchedAtMs > MAX_QUOTE_AGE_MS) {
+          throw new Error('Quote expired. Please retry the swap.');
+        }
+
+        const quoteOutLamports = BigInt(quoteResult.quote.outAmount);
+        if (quoteOutLamports < requiredLamportsWithReserve) {
+          throw new Error(
+            'Insufficient USDC for this route after slippage/fees. Increase USDC input and retry.'
+          );
+        }
+
+        const swapTx = await buildUsdcToSolSwapTx({
+          quote: quoteResult.quote,
+          userPublicKey: publicKey.toBase58(),
+        });
+
+        const usdcSwapSig = await sendTransaction(swapTx, connection);
+        await connection.confirmTransaction(usdcSwapSig, 'confirmed');
+        setSwapSignature(usdcSwapSig);
+        setCompletedRail('USDC_BRIDGED');
+        setUsdcRouteReady(true);
+        didSwapThisAttempt = true;
+
+        const solBalanceAfterSwap = await connection.getBalance(publicKey);
+        if (BigInt(solBalanceAfterSwap) < requiredLamportsWithReserve) {
+          throw new Error(
+            'USDC swap completed but SOL is still below required buy amount + fee reserve.'
+          );
+        }
+      }
+
+      if (selectedRail === 'SOL_DIRECT' || usdcRouteReady) {
+        const currentSolBalance = await connection.getBalance(publicKey);
+        if (BigInt(currentSolBalance) < requiredLamportsWithReserve) {
+          throw new Error('Insufficient SOL for buy amount + network fee reserve.');
+        }
+      }
+
+      setProcessingPhase('Executing W3B purchase');
 
       const transaction = new Transaction();
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
 
-      // ============ W3B TOKEN ACCOUNT SETUP ============
       const userW3bAccount = await getUserW3bTokenAccount(publicKey);
       const userW3bAccountInfo = await connection.getAccountInfo(userW3bAccount);
 
@@ -269,15 +468,11 @@ export function SwapInterface() {
         );
       }
 
-      // Initialize user profile for first-time wallets (needed for points profile account constraints)
       const initProfileIx = await maybeCreateInitUserProfileInstruction(connection, publicKey);
       if (initProfileIx) {
         transaction.add(initProfileIx);
       }
 
-      // ============ BUY W3B INSTRUCTION ============
-      // This atomically: transfers SOL from buyer to sol_receiver,
-      // and transfers W3B from treasury to buyer
       const buyInstruction = createBuyW3bInstruction(
         publicKey,
         userW3bAccount,
@@ -286,7 +481,6 @@ export function SwapInterface() {
       );
       transaction.add(buyInstruction);
 
-      // Simulate transaction first to get better error messages
       try {
         const simulation = await connection.simulateTransaction(transaction);
         if (simulation.value.err) {
@@ -294,30 +488,42 @@ export function SwapInterface() {
           console.error('Logs:', simulation.value.logs);
           throw new Error(`Simulation failed: ${JSON.stringify(simulation.value.err)}`);
         }
-        console.log('Simulation succeeded:', simulation.value.logs);
       } catch (simErr: any) {
         console.error('Simulation error:', simErr);
         throw simErr;
       }
 
-      // Send the transaction
-      const signature = await sendTransaction(transaction, connection);
-
-      // Wait for confirmation
+      const w3bBuySig = await sendTransaction(transaction, connection);
       await connection.confirmTransaction({
         blockhash,
         lastValidBlockHeight,
-        signature
+        signature: w3bBuySig
       }, 'confirmed');
 
-      setTxSignature(signature);
+      setBuySignature(w3bBuySig);
+      didBuyThisAttempt = true;
+      setCompletedRail(selectedRail);
+      if (selectedRail === 'SOL_DIRECT') {
+        setSwapSignature(null);
+      }
+      setUsdcRouteReady(false);
+      setProcessingPhase(null);
       setStep('success');
 
     } catch (err: any) {
       console.error('Swap failed:', err);
       console.error('Error details:', err.logs || err.message);
-      // Parse common errors
-      if (err.message?.includes('InsufficientFunds')) {
+
+      if (didSwapThisAttempt && !didBuyThisAttempt) {
+        setUsdcRouteReady(true);
+        setError(
+          'USDC swap completed, but W3B purchase failed. Retry to execute purchase without rerouting USDC.'
+        );
+      } else if (err.message?.includes('Quote unavailable')) {
+        setError('Quote unavailable. Try again in a few seconds.');
+      } else if (err.message?.includes('route')) {
+        setError('No USDC -> SOL route is available on this network right now.');
+      } else if (err.message?.includes('InsufficientFunds')) {
         setError('Insufficient SOL balance');
       } else if (err.message?.includes('PriceNotSet')) {
         setError('WGB price not configured');
@@ -329,6 +535,7 @@ export function SwapInterface() {
       setStep('review');
     } finally {
       setIsLoading(false);
+      setProcessingPhase(null);
     }
   };
 
@@ -336,9 +543,9 @@ export function SwapInterface() {
     setPayAmount('');
     setReceiveAmount('');
     setStep('input');
-    setTxSignature(null);
     setError(null);
     setIsPriceFallback(false);
+    clearExecutionState();
   };
 
   // Progress bar configuration aligned to each swap step
@@ -350,19 +557,15 @@ export function SwapInterface() {
   ] as const;
 
   const currentStepIndex = PROGRESS_STEPS.findIndex(s => s.key === step);
-  const currentStepLabel = PROGRESS_STEPS[currentStepIndex]?.label ?? '';
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="bg-[#111111] border border-gray-800/50 p-6 shadow-2xl relative overflow-hidden max-w-[480px] w-full mx-auto">
+      <div className="bg-black/40 backdrop-blur-xl border border-white/10 p-6 shadow-[0_0_40px_rgba(0,0,0,0.5)] relative overflow-hidden max-w-[480px] w-full mx-auto rounded-[32px]">
         {/* Header */}
         <div className="flex flex-col mb-8">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-2">
               <h2 className="text-white font-semibold text-xl tracking-tight">Swap</h2>
-              <svg className="w-5 h-5 text-gray-500 hover:text-gray-400 cursor-pointer transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
             </div>
             <span className="text-gray-500 text-sm font-medium">{currentStepIndex + 1}/{PROGRESS_STEPS.length}</span>
           </div>
@@ -377,15 +580,14 @@ export function SwapInterface() {
               return (
                 <div
                   key={s.key}
-                  className={`h-1 w-full transition-all duration-500 ease-out ${
-                    isCompleted
-                      ? 'bg-[#c9a84c]'
-                      : isActive
-                        ? isProcessingPulse
-                          ? 'bg-[#c9a84c] animate-pulse'
-                          : 'bg-[#c9a84c]'
-                        : 'bg-gray-800'
-                  }`}
+                  className={`h-1 w-full transition-all duration-500 ease-out ${isCompleted
+                    ? 'bg-[#c9a84c]'
+                    : isActive
+                      ? isProcessingPulse
+                        ? 'bg-[#c9a84c] animate-pulse'
+                        : 'bg-[#c9a84c]'
+                      : 'bg-gray-800'
+                    }`}
                 />
               );
             })}
@@ -406,109 +608,98 @@ export function SwapInterface() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              className="space-y-4"
+              className="flex flex-col relative mb-4"
             >
               {/* Pay Input */}
-              {/* Pay Input */}
-              <div className="space-y-2">
-                <div className="text-gray-500 text-sm mb-1 ml-1">You send</div>
-                <div className="bg-[#1A1A1A] p-4 border border-transparent hover:border-gray-700/50 transition-all group">
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Token Selector - Left Side */}
-                    <div className="flex-shrink-0">
-                      <TokenSelector
-                        selectedToken={selectedPayToken}
-                        onSelectToken={setSelectedPayToken}
-                        excludeToken={WGB_TOKEN.address}
-                      />
-                      <div className="text-gray-500 text-xs mt-1 ml-1">
-                        {selectedPayToken.symbol === 'SOL' ? 'Solana' : selectedPayToken.name}
-                      </div>
-                    </div>
-
-                    {/* Amount Input - Right Side */}
-                    <div className="text-right flex-grow">
-                      <input
-                        type="number"
-                        placeholder="0"
-                        value={payAmount}
-                        onChange={(e) => handlePayChange(e.target.value)}
-                        className="bg-transparent text-4xl font-medium text-white w-full text-right outline-none placeholder-gray-700 font-sans"
-                      />
-                      {selectedPayToken.balance !== undefined && (
-                        <div className="text-gray-600 text-xs mt-1 font-medium">
-                          Balance: {selectedPayToken.balance.toLocaleString(undefined, { maximumFractionDigits: 4 })}
-                        </div>
-                      )}
-                    </div>
+              <div className="bg-black/60 p-5 rounded-t-[24px] rounded-b-[8px] flex flex-col justify-between min-h-[140px] mb-1 border border-transparent hover:border-white/5 transition-colors">
+                <div className="flex items-center justify-between gap-4 mb-2">
+                  <div className="flex-shrink-0">
+                    <TokenSelector
+                      selectedToken={selectedPayToken}
+                      onSelectToken={(token) => {
+                        clearExecutionState();
+                        setError(null);
+                        setSelectedPayToken(token);
+                      }}
+                      excludeToken={WGB_TOKEN.address}
+                    />
+                  </div>
+                  <div className="text-right flex-grow">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={payAmount}
+                      onChange={(e) => handlePayChange(e.target.value)}
+                      className="bg-transparent text-4xl font-medium text-white w-full text-right outline-none placeholder-gray-700 font-sans"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between items-end text-sm font-medium text-gray-500 mt-auto px-2">
+                  <div>
+                    {selectedPayToken.balance !== undefined ? `Balance: ${selectedPayToken.balance.toLocaleString(undefined, { maximumFractionDigits: 4 })}` : 'Balance: 0.00'}
+                  </div>
+                  <div className="text-gray-400">
+                    Value: ${payAmount && !isNaN(parseFloat(payAmount)) ? getUsdValue(parseFloat(payAmount)).toFixed(2) : '0.00'}
                   </div>
                 </div>
               </div>
 
-              {/* Arrow */}
-              <div className="flex justify-center -my-2 relative z-10">
-                <div className="bg-gray-800 p-2 border-4 border-gray-900">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              {/* Overlapping Swap Button */}
+              <div className="absolute left-1/2 top-[141px] -translate-x-1/2 -translate-y-1/2 z-10 flex justify-center">
+                <button className="bg-[#c9a84c] hover:bg-[#e8d48b] transition-all p-2.5 border-[6px] border-[#0A0A0A] rounded-full text-black shadow-lg cursor-pointer hover:scale-105 active:scale-95">
+                  <svg className="w-5 h-5 mx-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                   </svg>
-                </div>
+                </button>
               </div>
 
               {/* Receive Input */}
-              {/* Receive Input */}
-              <div className="space-y-2">
-                <div className="flex justify-between ml-1">
-                  <div className="text-gray-500 text-sm mb-1">You receive</div>
-                  <div className="text-gray-600 text-xs mt-1">estimated</div>
-                </div>
-
-                <div className="bg-[#1A1A1A] p-4 border border-transparent hover:border-gray-700/50 transition-all">
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Fixed WGB Token Display */}
-                    <div className="flex-shrink-0">
-                      <div className="bg-[#2A2A2A] hover:bg-[#333] pl-2 pr-4 py-1.5 flex items-center gap-3 transition-colors cursor-default border border-gray-800">
-                        <img
-                          src="/logos/BlackWebTokenLogo.png"
-                          alt="WGB Token"
-                          className="w-8 h-8 shadow-lg shadow-[#c9a84c]/20"
-                        />
-                        <div className="text-left">
-                          <span className="text-white font-bold block leading-none">WGB</span>
-                        </div>
-                      </div>
-                      <div className="text-gray-500 text-xs mt-1 ml-1">
-                        GoldBack
-                      </div>
-                    </div>
-
-                    <div className="text-right flex-grow">
-                      <input
-                        type="number"
-                        placeholder="0.00"
-                        value={receiveAmount}
-                        onChange={(e) => handleReceiveChange(e.target.value)}
-                        className="bg-transparent text-4xl font-medium text-white w-full text-right outline-none placeholder-gray-700 font-sans"
+              <div className="bg-black/60 p-5 rounded-t-[8px] rounded-b-[24px] flex flex-col justify-between min-h-[140px] mt-1 mb-6 border border-transparent hover:border-white/5 transition-colors">
+                <div className="flex items-center justify-between gap-4 mb-2">
+                  <div className="flex-shrink-0">
+                    <div className="bg-white/5 hover:bg-white/10 pl-2 pr-5 py-2 flex items-center gap-3 transition-colors cursor-default border border-white/5 group rounded-full">
+                      <img
+                        src="/AppAssets/shiny_gold_logo.PNG"
+                        alt="WGB Token"
+                        className="w-8 h-8 shadow-lg shadow-[#c9a84c]/20 rounded-full"
                       />
-                      <div className="text-gray-600 text-xs mt-1 font-medium">
-                        1 WGB ≈ ${w3bPriceUsd.toFixed(2)}
+                      <div className="text-left">
+                        <span className="text-white font-bold block leading-none text-lg">WGB</span>
                       </div>
                     </div>
+                  </div>
+                  <div className="text-right flex-grow">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={receiveAmount}
+                      onChange={(e) => handleReceiveChange(e.target.value)}
+                      className="bg-transparent text-4xl font-medium text-white w-full text-right outline-none placeholder-gray-700 font-sans"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between items-end text-sm font-medium text-gray-500 mt-auto px-2">
+                  <div>
+                    Balance: 0.00
+                  </div>
+                  <div className="text-gray-400">
+                    Value: ${receiveAmount && !isNaN(parseFloat(receiveAmount)) ? (parseFloat(receiveAmount) * w3bPriceUsd).toFixed(2) : '0.00'}
                   </div>
                 </div>
               </div>
 
               {/* Rate Info */}
-              <div className="bg-gray-950/50 p-3 text-xs space-y-2">
-                <div className="flex justify-between text-gray-400">
+              <div className="bg-black/60 p-4 text-sm space-y-2 rounded-[16px] mb-4 border border-transparent hover:border-white/5 transition-colors">
+                <div className="flex justify-between text-gray-400 font-medium">
                   <span>Rate</span>
                   <span className="text-white">
-                    {selectedPayToken.symbol === 'SOL' && solPrice
+                    {isSameAddress(selectedPayToken.address, SOL_MINT_ADDRESS) && solPrice
                       ? `1 WGB ≈ ${(w3bPriceUsd / solPrice).toFixed(6)} SOL`
                       : `1 WGB ≈ ${w3bPriceUsd} ${selectedPayToken.symbol}`
                     }
                   </span>
                 </div>
-                <div className="flex justify-between text-gray-400">
+                <div className="flex justify-between text-gray-400 font-medium">
                   <span>Network</span>
                   <span className={PROTOCOL_CONFIG.isMainnet ? 'text-green-400' : 'text-[#e8d48b]'}>
                     Solana {PROTOCOL_CONFIG.networkDisplay}
@@ -518,8 +709,21 @@ export function SwapInterface() {
 
               {/* Error Display */}
               {error && (
-                <div className="bg-red-900/30 border border-red-800 p-3 text-red-400 text-sm">
+                <div className="bg-red-900/30 border border-red-800 p-3 text-red-400 text-sm rounded-[4.5px]">
                   {error}
+                </div>
+              )}
+
+              {isSameAddress(selectedPayToken.address, PROTOCOL_CONFIG.usdcMint) && (
+                <div className="bg-blue-900/20 border border-blue-800/60 p-3 text-blue-300 text-xs rounded-[4.5px]">
+                  USDC rail executes in two steps: USDC -&gt; SOL routing, then on-chain W3B purchase.
+                </div>
+              )}
+
+              {isPricingBypassed && (
+                <div className="bg-amber-900/30 border border-amber-700 p-3 text-amber-300 text-xs rounded-[4.5px]">
+                  Local pricing bypass active. Do not use in production.
+                  {pricingBypassReason ? ` (${pricingBypassReason})` : ''}
                 </div>
               )}
 
@@ -530,9 +734,14 @@ export function SwapInterface() {
                 </div>
               ) : (
                 <button
-                  disabled={!payAmount || parseFloat(payAmount) <= 0}
-                  onClick={() => setStep('review')}
-                  className="w-full bg-linear-to-r from-[#c9a84c] to-[#a48a3a] cursor-pointer text-black font-bold py-4 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-[0_4px_16px_rgba(201,168,76,0.35)]"
+                  disabled={
+                    !payAmount ||
+                    parseFloat(payAmount) <= 0 ||
+                    pricingHealthLoading ||
+                    !isPricingHealthy
+                  }
+                  onClick={handleReviewStep}
+                  className="w-full bg-linear-to-r from-[#c9a84c] to-[#a48a3a] cursor-pointer text-black font-bold py-4 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-[0_4px_16px_rgba(201,168,76,0.35)] rounded-full text-lg mt-2"
                 >
                   Review Swap
                 </button>
@@ -558,20 +767,19 @@ export function SwapInterface() {
                 </div>
               </div>
 
-              <div className="bg-gray-950 p-4 space-y-3 text-sm">
+              <div className="bg-black/60 p-4 space-y-3 text-sm rounded-[16px] mb-4 border border-transparent hover:border-white/5 transition-colors">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Rate</span>
                   <span className="text-white">1 WGB = {w3bPriceUsd} USD</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Price Age</span>
-                  <span className={`${
-                    isPriceFallback
-                      ? 'text-amber-400'
-                      : priceMinutesSinceUpdate !== null && priceMinutesSinceUpdate > 30
-                        ? 'text-yellow-400'
-                        : 'text-green-400'
-                  }`}>
+                  <span className={`${isPriceFallback
+                    ? 'text-amber-400'
+                    : priceMinutesSinceUpdate !== null && priceMinutesSinceUpdate > 30
+                      ? 'text-yellow-400'
+                      : 'text-green-400'
+                    }`}>
                     {isPriceFallback
                       ? 'Default rate'
                       : priceMinutesSinceUpdate !== null
@@ -595,41 +803,69 @@ export function SwapInterface() {
 
               {/* Fallback pricing warning */}
               {isPriceFallback && (
-                <div className="bg-amber-900/30 border border-amber-700 p-3 text-amber-400 text-sm flex items-center gap-2">
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                <div className="bg-amber-900/30 border border-amber-700 p-3 text-amber-400 text-sm flex items-center gap-2 rounded-[4.5px]">
+                  <img src="/AppAssets/PNG Renders/discount_black.png" alt="Rate Warning" className="w-6 h-6 flex-shrink-0 object-contain drop-shadow-md" />
                   <span>Using default rate (${w3bPriceUsd.toFixed(2)}). Live pricing is currently unavailable.</span>
                 </div>
               )}
 
               {/* Price staleness warning */}
-              {!isPriceFallback && priceMinutesSinceUpdate !== null && priceMinutesSinceUpdate > 30 && (
-                <div className="bg-yellow-900/30 border border-yellow-800 p-3 text-yellow-400 text-sm flex items-center gap-2">
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <span>Price data is {priceMinutesSinceUpdate} minutes old. Fresh verification will occur before swap.</span>
+              {!isPriceFallback && priceMinutesSinceUpdate !== null && priceMinutesSinceUpdate > 1440 && (
+                <div className="bg-yellow-900/30 border border-yellow-800 p-3 text-yellow-400 text-sm flex items-center gap-2 rounded-[4.5px]">
+                  <img src="/AppAssets/PNG Renders/calendar_black.png" alt="Staleness Warning" className="w-6 h-6 flex-shrink-0 object-contain drop-shadow-md" />
+                  <span>Price data is {priceMinutesSinceUpdate} minutes old. Execution uses on-chain price.</span>
                 </div>
               )}
 
               {error && (
-                <div className="bg-red-900/30 border border-red-800 p-3 text-red-400 text-sm">
+                <div className="bg-red-900/30 border border-red-800 p-3 text-red-400 text-sm rounded-[4.5px]">
                   {error}
                 </div>
+              )}
+
+              {!pricingHealthLoading && !isPricingHealthy && pricingHealthMessage && (
+                <div className="bg-red-900/30 border border-red-800 p-3 text-red-400 text-sm rounded-[4.5px]">
+                  {pricingHealthMessage}
+                </div>
+              )}
+
+              {isPricingBypassed && (
+                <div className="bg-amber-900/30 border border-amber-700 p-3 text-amber-300 text-xs rounded-[4.5px]">
+                  Local pricing bypass active. Do not use in production.
+                  {pricingBypassReason ? ` (${pricingBypassReason})` : ''}
+                </div>
+              )}
+
+              {isSameAddress(selectedPayToken.address, PROTOCOL_CONFIG.usdcMint) && (
+                <div className="bg-blue-900/20 border border-blue-800/60 p-3 text-blue-300 text-xs rounded-[4.5px]">
+                  {usdcRouteReady
+                    ? 'USDC routing already completed. Confirm now to execute only the W3B buy step.'
+                    : 'Confirm will route USDC -> SOL first, then execute the W3B purchase.'}
+                </div>
+              )}
+
+              {swapSignature && step === 'review' && (
+                <a
+                  href={getExplorerUrl(swapSignature, 'tx')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-xs text-[#e8d48b] hover:text-[#c9a84c] underline"
+                >
+                  View completed USDC -&gt; SOL route transaction -&gt;
+                </a>
               )}
 
               <div className="flex gap-3">
                 <button
                   onClick={() => setStep('input')}
-                  className="flex-1 bg-gray-800 text-white font-medium py-3 hover:bg-gray-700 transition-colors"
+                  className="flex-1 bg-gray-800 text-white font-medium py-3 hover:bg-gray-700 transition-colors rounded-[4.5px]"
                 >
                   Back
                 </button>
                 <button
                   onClick={handleSwap}
-                  disabled={isLoading || isPriceVerifying}
-                  className="flex-[2] cursor-pointer bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black font-bold py-3 hover:brightness-110 disabled:opacity-80 transition-all active:scale-95 shadow-[0_4px_16px_rgba(201,168,76,0.35)] relative"
+                  disabled={isLoading || isPriceVerifying || pricingHealthLoading || !isPricingHealthy}
+                  className="flex-[2] cursor-pointer bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black font-bold py-3 hover:brightness-110 disabled:opacity-80 transition-all active:scale-95 shadow-[0_4px_16px_rgba(201,168,76,0.35)] relative rounded-[4.5px]"
                 >
                   {isLoading || isPriceVerifying ? (
                     <span className="flex items-center justify-center gap-2">
@@ -640,7 +876,11 @@ export function SwapInterface() {
                       {isPriceVerifying ? 'Verifying Price...' : 'Swapping...'}
                     </span>
                   ) : (
-                    'Confirm Swap'
+                    isSameAddress(selectedPayToken.address, PROTOCOL_CONFIG.usdcMint)
+                      ? usdcRouteReady
+                        ? 'Execute Buy'
+                        : 'Route + Buy'
+                      : 'Confirm Swap'
                   )}
                 </button>
               </div>
@@ -657,30 +897,32 @@ export function SwapInterface() {
             >
               {/* Animated spinner */}
               <div className="relative w-20 h-20 mx-auto">
-                <div className="absolute inset-0 border-4 border-gray-800 rounded-full" />
+                <div className="absolute inset-0 border-4 border-gray-800 rounded-[4.5px]" />
                 <div className="absolute inset-0 border-4 border-transparent border-t-[#c9a84c] rounded-full animate-spin" />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <img
-                    src="/logos/BlackWebTokenLogo.png"
+                    src="/AppAssets/shiny_gold_logo.PNG"
                     alt="WGB"
-                    className="w-8 h-8"
+                    className="w-10 h-10 rounded-full object-contain"
                   />
                 </div>
               </div>
 
               <div>
                 <h3 className="text-xl font-bold text-white mb-2">
-                  {isPriceVerifying ? 'Verifying Price...' : 'Processing Swap'}
+                  {isPriceVerifying ? 'Verifying Price...' : (processingPhase || 'Processing Swap')}
                 </h3>
                 <p className="text-gray-400 text-sm">
                   {isPriceVerifying
                     ? 'Checking the latest WGB price for your protection'
-                    : 'Confirming your transaction on Solana'}
+                    : processingPhase === 'Routing USDC -> SOL'
+                      ? 'Executing bridge route to SOL before the protocol buy'
+                      : 'Confirming your transaction on Solana'}
                 </p>
               </div>
 
               {/* Transaction details summary */}
-              <div className="bg-gray-950/50 p-4 text-sm space-y-2 mx-4">
+              <div className="bg-gray-950/50 p-4 text-sm space-y-2 mx-4 rounded-[4.5px]">
                 <div className="flex justify-between text-gray-400">
                   <span>Sending</span>
                   <span className="text-white">{payAmount} {selectedPayToken.symbol}</span>
@@ -704,28 +946,45 @@ export function SwapInterface() {
               animate={{ opacity: 1, scale: 1 }}
               className="text-center py-8"
             >
-              <div className="w-20 h-20 bg-green-500/20 flex items-center justify-center mx-auto mb-6">
-                <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
+              <div className="w-24 h-24 bg-[#c9a84c]/10 rounded-full flex items-center justify-center mx-auto mb-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[#c9a84c]/10 animate-pulse rounded-full" />
+                <img src="/AppAssets/shiny_gold_logo.PNG" alt="Success" className="w-16 h-16 object-contain relative z-10 drop-shadow-xl rounded-full" />
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">Swap Complete!</h3>
               <p className="text-gray-400 mb-4">
                 {Math.floor(parseFloat(receiveAmount))} WGB has been transferred to your wallet
               </p>
-              {txSignature && (
-                <a
-                  href={getExplorerUrl(txSignature, 'tx')}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#e8d48b] hover:text-[#c9a84c] text-sm underline mb-8 block"
-                >
-                  View Transaction on Solscan →
-                </a>
-              )}
+              <div className="space-y-2 mb-8">
+                {swapSignature && (
+                  <a
+                    href={getExplorerUrl(swapSignature, 'tx')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#e8d48b] hover:text-[#c9a84c] text-sm underline block"
+                  >
+                    View USDC -&gt; SOL Route Tx -&gt;
+                  </a>
+                )}
+                {buySignature && (
+                  <a
+                    href={getExplorerUrl(buySignature, 'tx')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#e8d48b] hover:text-[#c9a84c] text-sm underline block"
+                  >
+                    View W3B Purchase Tx →
+                  </a>
+                )}
+                {completedRail === 'SOL_DIRECT' && buySignature && !swapSignature && (
+                  <span className="text-xs text-gray-500 block">Rail: SOL direct</span>
+                )}
+                {completedRail === 'USDC_BRIDGED' && (
+                  <span className="text-xs text-gray-500 block">Rail: USDC bridged via SOL</span>
+                )}
+              </div>
               <button
                 onClick={reset}
-                  className="w-full bg-gray-800 text-white font-medium py-3 hover:bg-gray-700 transition-colors"
+                className="w-full bg-gray-800 text-white font-medium py-3 hover:bg-gray-700 transition-colors rounded-[4.5px]"
               >
                 Start New Swap
               </button>

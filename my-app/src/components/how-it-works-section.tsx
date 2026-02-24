@@ -15,10 +15,10 @@ export function HowItWorksSection() {
         {/* Three Steps Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
           {/* Step 1: The Anchor */}
-          <div className="bg-white rounded-2xl p-8 border border-gray-200">
+          <div className="bg-white rounded-[4.5px] p-8 border border-gray-200">
             <div className="mb-6">
               <div
-                className="w-16 h-16 rounded-xl flex items-center justify-center"
+                className="w-16 h-16 rounded-[4.5px] flex items-center justify-center"
                 style={{ background: 'linear-gradient(to bottom right, #FFE860, #FEFDD6)' }}
               >
                 <svg
@@ -49,10 +49,10 @@ export function HowItWorksSection() {
           </div>
 
           {/* Step 2: The Speed */}
-          <div className="bg-white rounded-2xl p-8 border border-gray-200">
+          <div className="bg-white rounded-[4.5px] p-8 border border-gray-200">
             <div className="mb-6">
               <div
-                className="w-16 h-16 rounded-xl flex items-center justify-center"
+                className="w-16 h-16 rounded-[4.5px] flex items-center justify-center"
                 style={{ background: 'linear-gradient(to bottom right, #FFE860, #FEFDD6)' }}
               >
                 <svg
@@ -83,10 +83,10 @@ export function HowItWorksSection() {
           </div>
 
           {/* Step 3: The Assurance */}
-          <div className="bg-white rounded-2xl p-8 border border-gray-200">
+          <div className="bg-white rounded-[4.5px] p-8 border border-gray-200">
             <div className="mb-6">
               <div
-                className="w-16 h-16 rounded-xl flex items-center justify-center"
+                className="w-16 h-16 rounded-[4.5px] flex items-center justify-center"
                 style={{ background: 'linear-gradient(to bottom right, #FFE860, #FEFDD6)' }}
               >
                 <svg
@@ -119,7 +119,7 @@ export function HowItWorksSection() {
 
         {/* Divider */}
         <div className="flex justify-center mb-20">
-          <div className="h-1 w-24 bg-gradient-to-r from-[#FFE860] to-[#FEFDD6] rounded-full"></div>
+          <div className="h-1 w-24 bg-gradient-to-r from-[#FFE860] to-[#FEFDD6] rounded-[4.5px]"></div>
         </div>
 
         {/* Core Components Section */}
@@ -137,10 +137,10 @@ export function HowItWorksSection() {
         {/* Core Components Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* $W3B Token */}
-          <div className="bg-white rounded-2xl p-10 border border-gray-200">
+          <div className="bg-white rounded-[4.5px] p-10 border border-gray-200">
             <div className="mb-6">
               <div
-                className="w-16 h-16 rounded-xl flex items-center justify-center"
+                className="w-16 h-16 rounded-[4.5px] flex items-center justify-center"
                 style={{ background: 'linear-gradient(to bottom right, #10B981, #6EE7B7)' }}
               >
                 <svg
@@ -169,7 +169,7 @@ export function HowItWorksSection() {
               authenticated physical notes in secure custody.
             </p>
 
-            {/* <button className="w-full py-4 px-6 rounded-xl text-white font-medium transition-all hover:opacity-90"
+            {/* <button className="w-full py-4 px-6 rounded-[4.5px] text-white font-medium transition-all hover:opacity-90"
               style={{ background: 'linear-gradient(to right, #10B981, #059669)' }}
             >
               Learn About $W3B
@@ -177,10 +177,10 @@ export function HowItWorksSection() {
           </div>
 
           {/* Verification System */}
-          <div className="bg-white rounded-2xl p-10 border border-gray-200">
+          <div className="bg-white rounded-[4.5px] p-10 border border-gray-200">
             <div className="mb-6">
               <div
-                className="w-16 h-16 rounded-xl flex items-center justify-center"
+                className="w-16 h-16 rounded-[4.5px] flex items-center justify-center"
                 style={{ background: 'linear-gradient(to bottom right, #3B82F6, #93C5FD)' }}
               >
                 <svg
@@ -209,7 +209,7 @@ export function HowItWorksSection() {
               and serialization records.
             </p>
 
-            {/* <button className="w-full py-4 px-6 rounded-xl text-white font-medium transition-all hover:opacity-90"
+            {/* <button className="w-full py-4 px-6 rounded-[4.5px] text-white font-medium transition-all hover:opacity-90"
               style={{ background: 'linear-gradient(to right, #3B82F6, #2563EB)' }}
             >
             

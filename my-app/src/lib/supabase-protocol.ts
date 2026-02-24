@@ -210,6 +210,46 @@ export async function fetchRecentSerials(limit = 50): Promise<GoldbackSerialReco
   return (data || []) as unknown as GoldbackSerialRecord[];
 }
 
+/**
+ * Get recent serials that are still pending inclusion in a merkle root
+ */
+export async function fetchRecentPendingSerials(limit = 50): Promise<GoldbackSerialRecord[]> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('goldback_serials')
+    .select('*')
+    .is('included_in_root', null)
+    .order('received_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('Error fetching recent pending serials:', error);
+    throw error;
+  }
+
+  return (data || []) as unknown as GoldbackSerialRecord[];
+}
+
+/**
+ * Get total count of pending serials (not yet included in a merkle root)
+ */
+export async function fetchPendingSerialsCount(): Promise<number> {
+  const supabase = getSupabaseClient();
+
+  const { count, error } = await supabase
+    .from('goldback_serials')
+    .select('*', { count: 'exact', head: true })
+    .is('included_in_root', null);
+
+  if (error) {
+    console.error('Error fetching pending serial count:', error);
+    throw error;
+  }
+
+  return count || 0;
+}
+
 // ==================== REDEMPTION ====================
 
 export interface RedemptionRecord {

@@ -87,52 +87,49 @@ const checkNetworkWarnings = (): string | null => {
   
   return null;
 };
-// Mainnet safety: warn if using devnet fallback addresses on mainnet
-const requireEnvOnMainnet = (envVar: string, fallback: string, label: string): string => {
-  const value = process.env[envVar];
-  if (value) return value;
-  
-  const network = getNetwork();
-  if (network === 'mainnet-beta') {
-    console.warn(
-      `WARNING: ${envVar} is not set but network is mainnet-beta. ` +
-      `Using devnet fallback for ${label}. ` +
-      `This is intended for pre-deployment testing on mainnet.`
+
+// Fail fast for critical protocol addresses to prevent silent stale fallbacks.
+// IMPORTANT: pass explicit process.env.NEXT_PUBLIC_* values so Next can inline them in client bundles.
+const requirePublicEnv = (
+  value: string | undefined,
+  envVar: string,
+  label: string
+): string => {
+  const trimmedValue = value?.trim();
+  if (!trimmedValue) {
+    throw new Error(
+      `Missing required env var: ${envVar} (${label}). ` +
+      "Set it in .env.local before starting the app."
     );
-    // Allow fallback even on mainnet (since contracts might not be deployed yet)
-    return fallback;
   }
-  return fallback;
+  return trimmedValue;
 };
+
+const PUBLIC_W3B_PROGRAM_ID = process.env.NEXT_PUBLIC_W3B_PROGRAM_ID;
+const PUBLIC_W3B_MINT = process.env.NEXT_PUBLIC_W3B_MINT;
+const PUBLIC_W3B_TREASURY_ACCOUNT = process.env.NEXT_PUBLIC_W3B_TREASURY_ACCOUNT;
+const PUBLIC_W3B_PROTOCOL_STATE_PDA = process.env.NEXT_PUBLIC_W3B_PROTOCOL_STATE_PDA;
 
 // Program and Account Addresses
 // NOTE: These must match what's stored in the ProtocolState PDA on-chain
 export const PROTOCOL_CONFIG = {
   // The W3B Protocol Program ID
-  programId: requireEnvOnMainnet(
-    'NEXT_PUBLIC_W3B_PROGRAM_ID',
-    '9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6',
-    'Program ID'
-  ),
+  programId: requirePublicEnv(PUBLIC_W3B_PROGRAM_ID, 'NEXT_PUBLIC_W3B_PROGRAM_ID', 'Program ID'),
   
   // Token Mint (SPL Token-2022) - stored in ProtocolState
-  w3bMint: requireEnvOnMainnet(
-    'NEXT_PUBLIC_W3B_MINT',
-    '5gw6McYxM3gCCiamCMCms9t6q2ytjPTD5P15ocjtVTVQ',
-    'W3B Mint'
-  ),
+  w3bMint: requirePublicEnv(PUBLIC_W3B_MINT, 'NEXT_PUBLIC_W3B_MINT', 'W3B Mint'),
   
   // Treasury Token Account - PDA-controlled (owner = protocolState PDA)
-  treasury: requireEnvOnMainnet(
+  treasury: requirePublicEnv(
+    PUBLIC_W3B_TREASURY_ACCOUNT,
     'NEXT_PUBLIC_W3B_TREASURY_ACCOUNT',
-    'FfADSgooHXMW4jHjF4KpBUJdmbsx3Nnw3PAbcemt8Ark',
     'Treasury Account'
   ),
   
   // Protocol State PDA
-  protocolState: requireEnvOnMainnet(
+  protocolState: requirePublicEnv(
+    PUBLIC_W3B_PROTOCOL_STATE_PDA,
     'NEXT_PUBLIC_W3B_PROTOCOL_STATE_PDA',
-    'CWYNiviNYPEApbGjjhDPZ8vmxRTMJiHsJto8JRZNPG8s',
     'Protocol State PDA'
   ),
   

@@ -1,31 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchUserRedemptions, fetchPendingRedemptions } from '@/lib/supabase-protocol';
+import { fetchUserRedemptions } from '@/lib/supabase-protocol';
+import { resolveAuthenticatedRequest } from '@/lib/mobile-auth';
 
 /**
  * GET /api/redemption/status?wallet=<pubkey>
- * Returns redemption requests for a given wallet.
- * If no wallet is provided, returns all pending requests (for fulfillers).
+ * Returns redemption requests for the authenticated wallet.
+ * Optional wallet query must match authenticated wallet.
  */
 export async function GET(request: NextRequest) {
   try {
-    const wallet = request.nextUrl.searchParams.get('wallet');
-
-    if (wallet) {
-      // User-specific: fetch all their redemptions
-      const requests = await fetchUserRedemptions(wallet);
-      return NextResponse.json({
-        success: true,
-        count: requests.length,
-        requests,
-      });
+    const auth = await resolveAuthenticatedRequest(request);
+    const authedWallet = auth.context?.walletAddress;
+    if (!authedWallet) {
+      return NextResponse.json(
+        { success: false, error: auth.error || 'Authentication required' },
+        { status: 401 }
+      );
     }
 
-    // No wallet: fetch pending orders for fulfiller marketplace
-    const pending = await fetchPendingRedemptions();
+    const requestedWallet = request.nextUrl.searchParams.get('wallet') || authedWallet;
+    if (requestedWallet !== authedWallet) {
+      return NextResponse.json(
+        { success: false, error: 'Wallet mismatch for redemption status query' },
+        { status: 403 }
+      );
+    }
+
+    const requests = await fetchUserRedemptions(requestedWallet);
     return NextResponse.json({
       success: true,
-      count: pending.length,
-      requests: pending,
+      count: requests.length,
+      requests,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error';

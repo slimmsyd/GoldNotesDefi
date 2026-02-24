@@ -1,6 +1,11 @@
-import fetch from 'node-fetch'; // You might need to install 'node-fetch' if using older node, or use native fetch in Node 18+
+import fetch from 'node-fetch';
+import dotenv from 'dotenv';
+import path from 'path';
+
+dotenv.config({ path: path.join(__dirname, '../../../.env') });
 
 const API_URL = 'http://localhost:3001/api/v1/goldback/new_batch';
+const SERVICE_SECRET = process.env.SERVICE_API_SECRET || '';
 
 function generateBatch(batchId: string, startId: number, count: number): string[] {
     const serials = [];
@@ -23,7 +28,10 @@ async function main() {
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${SERVICE_SECRET}`,
+            },
             body: JSON.stringify({ batchId, serials })
         });
 

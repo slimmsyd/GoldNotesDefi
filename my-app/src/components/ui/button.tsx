@@ -13,7 +13,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant = "primary", size = "default", asChild = false, ...props }, ref) => {
         const Comp = asChild ? Slot : "button";
 
-        const baseStyles = "inline-flex items-center justify-center whitespace-nowrap font-bold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] disabled:pointer-events-none disabled:opacity-50 active:scale-95 cursor-pointer rounded-none";
+        const baseStyles = "inline-flex items-center justify-center whitespace-nowrap font-bold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] disabled:pointer-events-none disabled:opacity-50 active:scale-95 cursor-pointer rounded-[4.5px]";
 
         const variants: Record<string, string> = {
             primary: "bg-linear-to-r from-[#c9a84c] to-[#a48a3a] text-black hover:brightness-110 shadow-[0_4px_16px_rgba(201,168,76,0.35)]",

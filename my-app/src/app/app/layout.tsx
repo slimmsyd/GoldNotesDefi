@@ -7,7 +7,7 @@
  */
 
 import { AppHeader } from '@/components/app/app-header';
-
+import { ChatbotInput } from '@/components/chatbot-input';
 export default function AppLayout({
   children,
 }: {
@@ -27,6 +27,7 @@ export default function AppLayout({
         {children}
       </main>
 
+      <ChatbotInput />
       {/* Footer */}
       <footer className="relative border-t border-gray-800/50 bg-[#0A0A0A]/80 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

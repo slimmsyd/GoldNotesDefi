@@ -121,7 +121,7 @@ export function VerifyNowButton({ onComplete }: { onComplete?: () => void }) {
       <button
         onClick={handleVerify}
         disabled={isVerifying}
-        className="flex items-center gap-2 bg-[#c9a84c]/10 border border-[#c9a84c]/30 px-4 py-2 text-[#e8d48b] hover:bg-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-colors disabled:opacity-50 focus:outline-none cursor-pointer"
+        className="flex items-center justify-center gap-2 bg-[#c9a84c]/10 border border-[#c9a84c]/30 px-4 py-2 text-[#e8d48b] hover:bg-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-colors disabled:opacity-50 focus:outline-none cursor-pointer rounded-full min-w-[100px]"
       >
         {isVerifying ? (
           <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -132,16 +132,7 @@ export function VerifyNowButton({ onComplete }: { onComplete?: () => void }) {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-        ) : (
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-            />
-          </svg>
-        )}
+        ) : null}
         <span className="text-xs font-medium">{isVerifying ? 'Verifying...' : 'Verify Now'}</span>
       </button>
 
@@ -156,11 +147,10 @@ export function VerifyNowButton({ onComplete }: { onComplete?: () => void }) {
             className="fixed bottom-6 right-6 z-50 max-w-md"
           >
             <div
-              className={`border p-4 shadow-2xl ${
-                result.success
-                  ? 'bg-gray-900 border-green-500/30'
-                  : 'bg-gray-900 border-red-500/30'
-              }`}
+              className={`border p-4 shadow-2xl rounded-[4.5px] ${result.success
+                ? 'bg-gray-900 border-green-500/30'
+                : 'bg-gray-900 border-red-500/30'
+                }`}
             >
               {/* Close button */}
               <button
@@ -175,16 +165,12 @@ export function VerifyNowButton({ onComplete }: { onComplete?: () => void }) {
               {/* Header */}
               <div className="flex items-center gap-3 mb-3">
                 {result.success ? (
-                  <div className="w-8 h-8 bg-green-500/20 flex items-center justify-center shrink-0">
-                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
+                  <div className="w-8 h-8 bg-transparent flex items-center justify-center shrink-0">
+                    <img src="/AppAssets/PNG Renders/safe_open_coins_black.png" alt="Success" className="w-6 h-6 object-contain drop-shadow-md" />
                   </div>
                 ) : (
-                  <div className="w-8 h-8 bg-red-500/20 flex items-center justify-center shrink-0">
-                    <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                  <div className="w-8 h-8 bg-transparent flex items-center justify-center shrink-0">
+                    <img src="/AppAssets/PNG Renders/umbrella_black.png" alt="Failed" className="w-6 h-6 object-contain drop-shadow-md" />
                   </div>
                 )}
                 <div>

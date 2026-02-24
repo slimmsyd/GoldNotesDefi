@@ -199,3 +199,36 @@ npx ts-node scripts/devnet_seed_reserves_and_mint.ts --target-reserves 5000 --mi
 npx ts-node scripts/devnet_verify_buy_burn_points.ts --amount 1 --fund-sol 0.2
 ```
 
+## 11) Pricing Cohesion Recovery Runbook (Phase 4 Dependency)
+
+If swap is blocked because pricing health is red (`on_chain_price_unset`, stale sync, or drift unknown), run:
+
+```bash
+# Primary recovery path (authoritative sync endpoint)
+curl -X POST http://localhost:3000/api/admin/price/sync \
+  -H "x-webhook-secret: $ADMIN_WEBHOOK_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+Fallback if endpoint fails:
+
+```bash
+npx ts-node /Users/sydneysanders/Desktop/Code_Projects/GoldBackProject/my-app/scripts/sync_price_cli.ts --network devnet --admin-override
+```
+
+Then re-check health:
+
+```bash
+curl http://localhost:3000/api/health/pricing
+```
+
+## 12) Daily Cron + Verify-Sync Alignment Note
+
+Operational pricing behavior is now:
+
+1. Daily cron remains baseline (`/api/cron/update-rate`).
+2. `POST /api/admin/auto-verify` attempts non-blocking authoritative price sync after successful reserve verification.
+3. Swap execution is anchored on on-chain price checks; DB age is warning/observability context.
+
+This keeps Phase 3 safety guarantees while removing stale-timestamp confusion during local and demo operations.

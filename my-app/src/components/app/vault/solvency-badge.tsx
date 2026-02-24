@@ -55,26 +55,26 @@ export function SolvencyBadge() {
 
     if (isLoading) {
         return (
-            <div className="bg-gray-900/50 border border-gray-800 p-6 animate-pulse">
-                <div className="h-8 bg-gray-700 w-48 mb-4"></div>
-                <div className="h-4 bg-gray-700 w-32"></div>
+            <div className="bg-black/40 backdrop-blur-xl border border-white/10 p-8 animate-pulse rounded-[32px] h-full">
+                <div className="h-8 bg-white/10 w-48 mb-4 rounded-full"></div>
+                <div className="h-4 bg-white/5 w-32 rounded-full"></div>
             </div>
         );
     }
 
     if (error || !status) {
         return (
-            <div className="bg-red-900/20 border border-red-800 p-6">
+            <div className="bg-red-950/40 backdrop-blur-xl border border-red-500/30 p-8 rounded-[32px] h-full flex flex-col justify-center">
                 <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 bg-red-500 animate-pulse"></div>
-                    <span className="text-red-400 font-semibold">Unable to verify on-chain status</span>
+                    <div className="w-4 h-4 bg-red-500 animate-pulse rounded-full"></div>
+                    <span className="text-red-400 font-bold tracking-wide">SYSTEM ERROR</span>
                 </div>
-                <p className="text-red-400/70 text-sm mt-2">{error}</p>
+                <p className="text-red-400/70 text-sm mt-2 font-mono">{error}</p>
                 <button
                     onClick={fetchStatus}
-                    className="mt-4 text-sm text-red-400 hover:text-red-300 underline"
+                    className="mt-6 w-fit bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 px-6 py-2 rounded-full font-bold text-xs tracking-wider transition-all"
                 >
-                    Retry
+                    RETRY CONNECTION
                 </button>
             </div>
         );
@@ -88,86 +88,100 @@ export function SolvencyBadge() {
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`relative overflow-hidden p-6 ${isSolvent
-                ? 'bg-gradient-to-br from-emerald-900/30 to-gray-900 border border-emerald-700/50'
-                : 'bg-gradient-to-br from-red-900/30 to-gray-900 border border-red-700/50'
-                }`}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`relative overflow-hidden p-8 rounded-[32px] h-full flex flex-col justify-between bg-black/40 backdrop-blur-xl border ${isSolvent ? 'border-emerald-500/20' : 'border-red-500/20'}`}
         >
-            {/* Animated glow effect */}
-            <div className={`absolute inset-0 ${isSolvent ? 'bg-emerald-500/5' : 'bg-red-500/5'} blur-3xl`}></div>
+            {/* Abstract Background Element */}
+            <div className={`absolute -bottom-24 -left-24 w-96 h-96 bg-gradient-radial rounded-full blur-[100px] opacity-30 z-0 ${isSolvent ? 'from-emerald-500/20 to-transparent' : 'from-red-500/20 to-transparent'}`}></div>
 
-            <div className="relative z-10">
+            <div className="relative z-10 flex-1 flex flex-col justify-between h-full">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                        <motion.div
-                            animate={{ scale: [1, 1.2, 1] }}
-                            transition={{ repeat: Infinity, duration: 2 }}
-                            className={`w-4 h-4 ${isSolvent ? 'bg-emerald-500' : 'bg-red-500'}`}
-                        ></motion.div>
-                        <h3 className="text-xl font-bold text-white">
-                            {isSolvent ? '✅ Verified Solvent' : '❌ Insolvency Detected'}
-                        </h3>
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-4">
+                        <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border backdrop-blur-md shadow-lg ${isSolvent ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+                            <motion.div
+                                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                                transition={{ repeat: Infinity, duration: 2 }}
+                                className={`w-2 h-2 rounded-full ${isSolvent ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]' : 'bg-red-400 shadow-[0_0_10px_rgba(248,113,113,0.8)]'}`}
+                            ></motion.div>
+                            <span className="text-xs font-bold tracking-widest uppercase">
+                                {isSolvent ? 'System Solvent' : 'Insolvency Detected'}
+                            </span>
+                        </div>
                     </div>
                     <button
                         onClick={fetchStatus}
-                        className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-1"
+                        className="px-4 py-2 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors text-gray-400 hover:text-white text-xs font-bold uppercase tracking-widest"
+                        title="Refresh"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
                         Refresh
                     </button>
                 </div>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-black/30 p-4">
-                        <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Proven Reserves</p>
-                        <p className="text-2xl font-bold text-white">{onChain.provenReserves.toLocaleString()}</p>
-                        <p className="text-emerald-400 text-xs">Goldbacks</p>
+                {/* Massive Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 mt-auto">
+                    {/* Stat Block 1 */}
+                    <div className="relative group p-4 border border-white/5 bg-white/[0.02] rounded-[24px] hover:bg-white/[0.04] transition-colors overflow-hidden flex flex-col justify-end min-h-[140px]">
+                        <div className="absolute -bottom-4 -right-2 text-[80px] font-black text-white/[0.03] leading-none select-none pointer-events-none tracking-tighter truncate z-0">
+                            {onChain.provenReserves}
+                        </div>
+                        <div className="relative z-10 flex flex-col items-start">
+                            <h4 className="text-[32px] font-bold text-white tracking-tighter leading-none mb-1">{onChain.provenReserves.toLocaleString()}</h4>
+                            <p className="text-[#c9a84c] text-[10px] font-bold uppercase tracking-widest">Physical Goldbacks</p>
+                        </div>
                     </div>
 
-                    <div className="bg-black/30 p-4">
-                        <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Token Supply</p>
-                        <p className="text-2xl font-bold text-white">{onChain.totalSupply.toLocaleString()}</p>
-                        <p className="text-[#e8d48b] text-xs">W3B</p>
+                    {/* Stat Block 2 */}
+                    <div className="relative group p-4 border border-white/5 bg-white/[0.02] rounded-[24px] hover:bg-white/[0.04] transition-colors overflow-hidden flex flex-col justify-end min-h-[140px]">
+                        <div className="absolute -bottom-4 -right-2 text-[80px] font-black text-white/[0.03] leading-none select-none pointer-events-none tracking-tighter truncate z-0">
+                            {onChain.totalSupply}
+                        </div>
+                        <div className="relative z-10 flex flex-col items-start">
+                            <h4 className="text-[32px] font-bold text-white tracking-tighter leading-none mb-1">{onChain.totalSupply.toLocaleString()}</h4>
+                            <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Minted W3B</p>
+                        </div>
                     </div>
 
-                    <div className="bg-black/30 p-4">
-                        <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Coverage Ratio</p>
-                        <p className={`text-2xl font-bold ${isSolvent ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {solvency.ratio !== null ? `${(solvency.ratio * 100).toFixed(0)}%` : '∞'}
-                        </p>
-                        <p className="text-gray-500 text-xs">{isSolvent ? 'Fully Backed' : 'Under-collateralized'}</p>
+                    {/* Stat Block 3 */}
+                    <div className="relative group p-4 border border-white/5 bg-white/[0.02] rounded-[24px] hover:bg-white/[0.04] transition-colors overflow-hidden flex flex-col justify-end min-h-[140px]">
+                        <div className="absolute -bottom-4 -right-2 text-[80px] font-black text-white/[0.03] leading-none select-none pointer-events-none tracking-tighter truncate z-0">
+                            {solvency.ratio !== null ? `${(solvency.ratio * 100).toFixed(0)}` : '∞'}
+                        </div>
+                        <div className="relative z-10 flex flex-col items-start">
+                            <h4 className={`text-[32px] font-bold tracking-tighter leading-none mb-1 ${isSolvent ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {solvency.ratio !== null ? `${(solvency.ratio * 100).toFixed(0)}%` : '∞'}
+                            </h4>
+                            <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">{isSolvent ? 'Coverage Ratio' : 'Under-collateralized'}</p>
+                        </div>
                     </div>
 
-                    <div className="bg-black/30 p-4">
-                        <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Last Audit</p>
-                        <p className="text-lg font-medium text-white truncate">{lastProof}</p>
-                        <p className="text-gray-500 text-xs">ZK Verified</p>
+                    {/* Stat Block 4 */}
+                    <div className="relative group p-4 border border-white/5 bg-white/[0.02] rounded-[24px] hover:bg-white/[0.04] transition-colors overflow-hidden flex flex-col justify-end min-h-[140px]">
+                        <div className="relative z-10 flex flex-col items-start mt-auto">
+                            <h4 className="text-lg font-bold text-white tracking-tight leading-snug mb-1 truncate w-full">{lastProof}</h4>
+                            <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Last ZK Audit</p>
+                        </div>
                     </div>
                 </div>
 
-                {/* Merkle Root */}
-                <div className="mt-4 bg-black/20 p-3 flex items-center justify-between">
-                    <div>
-                        <p className="text-gray-500 text-xs uppercase tracking-wider">Current Merkle Root</p>
-                        <p className="text-gray-300 font-mono text-sm truncate max-w-xs md:max-w-md">
+                {/* Footer: Merkle Root & Explorer Link */}
+                <div className="mt-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 bg-white/[0.02] border border-white/5 rounded-[24px]">
+                    <div className="flex flex-col">
+                        <span className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Current Merkle Root</span>
+                        <code className="text-gray-300 font-mono text-sm tracking-tight w-full md:w-auto overflow-hidden text-ellipsis whitespace-nowrap md:max-w-md">
                             {onChain.currentMerkleRoot}
-                        </p>
+                        </code>
                     </div>
                     <a
                         href="https://solscan.io/account/CWYNiviNYPEApbGjjhDPZ8vmxRTMJiHsJto8JRZNPG8s?cluster=devnet"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#e8d48b] hover:text-[#c9a84c] text-xs flex items-center gap-1"
+                        className="flex-shrink-0 bg-[#c9a84c]/10 border border-[#c9a84c]/30 text-[#c9a84c] px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-[#c9a84c]/20 transition-all flex items-center gap-2"
                     >
-                        View Protocol State
+                        View On-Chain State
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
                     </a>
                 </div>

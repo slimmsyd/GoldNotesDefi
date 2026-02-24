@@ -16,19 +16,17 @@ export default function SwapPage() {
 
   return (
     <div className="min-h-[70vh] flex flex-col items-center justify-center">
-      {/* Tab Selector */}
-      <div className="flex gap-1 bg-[#111111] border border-gray-800/50 p-1 mb-6 max-w-[480px] w-full mx-auto">
+      <div className="flex gap-1 bg-[#111111] border border-gray-800/50 p-1 mb-6 max-w-[480px] w-full mx-auto rounded-[4.5px]">
         {TABS.map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 py-2.5 text-sm font-medium transition-all ${
-              activeTab === tab.key
-                ? tab.key === 'redeem'
-                  ? 'bg-red-600/20 text-red-400 border border-red-600/30'
-                  : 'bg-[#c9a84c]/20 text-[#c9a84c] border border-[#c9a84c]/30'
-                : 'text-gray-500 hover:text-gray-300'
-            }`}
+            className={`flex-1 py-2.5 text-sm  cursor-pointer font-medium transition-all rounded-[4.5px] ${activeTab === tab.key
+              ? tab.key === 'redeem'
+                ? 'bg-red-600/20 text-red-400 border border-red-600/30'
+                : 'bg-[#c9a84c]/20 text-[#c9a84c] border border-[#c9a84c]/30'
+              : 'text-gray-500 hover:text-gray-300'
+              }`}
           >
             {tab.label}
             {tab.key === 'redeem' && (

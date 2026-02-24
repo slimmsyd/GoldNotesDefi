@@ -86,6 +86,31 @@ If fulfillment callback fails:
 ## Serialization Pipeline Note
 Reserve serialization (`goldback_serials`, `merkle_roots`, `/api/admin/auto-verify`) is intentionally independent from direct checkout points awarding. Keep troubleshooting paths separate during incidents.
 
+## Pricing Sync Operational Note
+Pricing is intentionally split across execution and observability:
+
+1. On-chain `w3b_price_lamports` is the execution source of truth.
+2. DB rate/timestamp is an operational visibility signal for UI.
+
+Operational cadence:
+
+1. Vercel cron (`/api/cron/update-rate`) runs daily as baseline maintenance.
+2. `POST /api/admin/auto-verify` now attempts a non-blocking authoritative price sync after successful verification.
+3. If price sync fails during verify, verification still succeeds and the error is returned in `data.priceSync`.
+
+Manual recovery:
+
+```bash
+curl -X POST http://localhost:3000/api/admin/price/sync \
+  -H "x-webhook-secret: $ADMIN_WEBHOOK_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+Stale warning semantics:
+- "Price data is X minutes old" indicates DB timestamp age.
+- Swap execution still validates on-chain price before sending transactions.
+
 ## Serialization Ingestion Command (Dev)
 ```bash
 curl -X POST http://localhost:3001/api/v1/goldback/new_batch \

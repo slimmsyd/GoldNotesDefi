@@ -7,13 +7,13 @@ import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { PROTOCOL_CONFIG } from '@/lib/protocol-constants';
 
-const W3B_MINT = new PublicKey(PROTOCOL_CONFIG.w3bMint);
+const WGB_MINT = new PublicKey(PROTOCOL_CONFIG.w3bMint);
 
 export default function ProfilePage() {
     const { publicKey, connected } = useWallet();
     const { connection } = useConnection();
     const [solBalance, setSolBalance] = useState<number | null>(null);
-    const [w3bBalance, setW3bBalance] = useState<number | null>(null);
+    const [wgbBalance, setWgbBalance] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -27,19 +27,19 @@ export default function ProfilePage() {
                 const solBal = await connection.getBalance(publicKey);
                 setSolBalance(solBal / LAMPORTS_PER_SOL);
 
-                // Fetch W3B token balance (Token-2022)
+                // Fetch WGB token balance (Token-2022)
                 try {
                     const ata = await getAssociatedTokenAddress(
-                        W3B_MINT,
+                        WGB_MINT,
                         publicKey,
                         false,
                         TOKEN_2022_PROGRAM_ID
                     );
                     const tokenAccountInfo = await connection.getTokenAccountBalance(ata);
-                    setW3bBalance(tokenAccountInfo.value.uiAmount ?? 0);
+                    setWgbBalance(tokenAccountInfo.value.uiAmount ?? 0);
                 } catch (tokenErr) {
-                    // User doesn't have a W3B token account yet
-                    setW3bBalance(0);
+                    // User doesn't have a WGB token account yet
+                    setWgbBalance(0);
                 }
             } catch (err) {
                 console.error('Failed to fetch balances:', err);
@@ -110,13 +110,13 @@ export default function ProfilePage() {
                     {/* Balances */}
                     <div className="grid grid-cols-3 gap-4">
                         <div className="bg-black/30 p-4">
-                            <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">W3B Balance</p>
+                            <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">WGB Balance</p>
                             {isLoading ? (
                                 <div className="h-7 w-16 bg-gray-800 animate-pulse" />
                             ) : (
                                 <p className="text-2xl font-bold text-[#e8d48b]">
-                                    {w3bBalance?.toLocaleString() ?? '0'}
-                                    <span className="text-gray-500 text-sm ml-1">W3B</span>
+                                    {wgbBalance?.toLocaleString() ?? '0'}
+                                    <span className="text-gray-500 text-sm ml-1">WGB</span>
                                 </p>
                             )}
                         </div>

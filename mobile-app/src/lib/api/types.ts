@@ -159,6 +159,116 @@ export interface DirectCheckoutConfirmResponse {
   txSignature: string;
 }
 
+export interface ProtocolAuditRecord {
+  id?: number | string;
+  root_hash?: string;
+  total_serials?: number;
+  anchored_at?: string;
+  solana_tx_hash?: string | null;
+  status?: string;
+}
+
+export interface ProtocolStatusData {
+  onChain: {
+    totalSupply: number;
+    provenReserves: number;
+    lastProofTimestamp: string | null;
+    currentMerkleRoot: string;
+    isPaused: boolean;
+  };
+  solvency: {
+    isSolvent: boolean;
+    ratio: number | null;
+    status: string;
+  };
+  offChain: {
+    lastAuditRecord: ProtocolAuditRecord | null;
+    totalBatches: number;
+    auditHistory?: ProtocolAuditRecord[];
+  };
+  fetchedAt: string;
+}
+
+export interface ProtocolStatusResponse {
+  success: boolean;
+  data: ProtocolStatusData | null;
+  error?: string;
+}
+
+export type ProtocolStatusHistoryResponse = ProtocolStatusResponse;
+
+export interface VaultSummaryResponse {
+  success: boolean;
+  solvencyStatus: string;
+  ratio: number | null;
+  totalSupply: number;
+  provenReserves: number;
+  totalBatches: number;
+  currentMerkleRoot: string;
+  fetchedAt: string;
+}
+
+export interface SwapQuoteView {
+  payToken: 'SOL';
+  payAmountSol: number;
+  solPriceUsd: number;
+  goldbackRateUsd: number;
+  estimatedW3b: number;
+  verifiedAt: string;
+}
+
+export interface SwapExecutionResult {
+  txSignature: string;
+  explorerUrl: string;
+  purchasedW3b: number;
+}
+
+export interface RedemptionStatusItem {
+  id: string;
+  amount: number;
+  status: number;
+  created_at: string;
+  burn_tx_hash?: string | null;
+  shipping_name?: string | null;
+  shipping_address?: string | null;
+  shipping_city?: string | null;
+  shipping_state?: string | null;
+  shipping_zip?: string | null;
+  shipping_country?: string | null;
+}
+
+export interface RedemptionStatusResponse {
+  success: boolean;
+  count: number;
+  requests: RedemptionStatusItem[];
+}
+
+export interface RedemptionCreateRequest {
+  request_id: number;
+  amount: number;
+  burn_tx_hash: string;
+  shipping_name: string;
+  shipping_address: string;
+  shipping_city: string;
+  shipping_state: string;
+  shipping_zip: string;
+  shipping_country: string;
+}
+
+export interface RedemptionCreateResponse {
+  success: boolean;
+  redemption?: {
+    id: string;
+    user_wallet: string;
+    request_id: number;
+    amount: number;
+    status: number;
+    burn_tx_hash: string | null;
+    created_at: string;
+  };
+  error?: string;
+}
+
 export interface WalletSessionState {
   walletAddress: string | null;
   authToken: string | null;

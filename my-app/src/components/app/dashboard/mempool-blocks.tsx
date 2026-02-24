@@ -65,7 +65,7 @@ export function MempoolBlocks({ goldbackPrice }: MempoolBlocksProps) {
 
   if (isLoading) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 p-6">
+      <div className="bg-gray-900/50 border border-gray-800 p-6 rounded-[4.5px]">
         <div className="flex items-center justify-between mb-6">
           <div className="h-6 w-48 bg-gray-800 animate-pulse" />
           <div className="h-5 w-24 bg-gray-800 animate-pulse" />
@@ -74,7 +74,7 @@ export function MempoolBlocks({ goldbackPrice }: MempoolBlocksProps) {
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
-              className="shrink-0 w-44 h-48 bg-gray-800/50 animate-pulse"
+              className="shrink-0 w-44 h-48 bg-gray-800/50 rounded-[4.5px] animate-pulse"
               style={{ animationDelay: `${i * 0.1}s` }}
             />
           ))}
@@ -85,11 +85,9 @@ export function MempoolBlocks({ goldbackPrice }: MempoolBlocksProps) {
 
   if (blocks.length === 0) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 p-8 text-center">
-        <div className="w-16 h-16 bg-[#c9a84c]/10 flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-[#c9a84c]/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
+      <div className="bg-gray-900/50 border border-gray-800 p-8 rounded-[4.5px] text-center">
+        <div className="w-16 h-16 bg-transparent flex items-center justify-center mx-auto mb-4">
+          <img src="/AppAssets/PNG Renders/laptop_security_black.png" alt="Awaiting Proofs" className="w-10 h-10 object-contain drop-shadow-md" />
         </div>
         <p className="text-white font-medium mb-1">Awaiting ZK Proofs</p>
         <p className="text-gray-500 text-sm mb-3">Verified Goldback batches will appear here once submitted to the network</p>
@@ -102,14 +100,12 @@ export function MempoolBlocks({ goldbackPrice }: MempoolBlocksProps) {
   }
 
   return (
-    <div className="bg-gray-900/50 border border-gray-800 overflow-hidden">
+    <div className="bg-gray-900/50 border border-gray-800 rounded-[4.5px] overflow-hidden">
       {/* Header */}
       <div className="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-800/50">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-[#c9a84c]/20 flex items-center justify-center">
-            <svg className="w-5 h-5 text-[#c9a84c]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
+          <div className="w-10 h-10 bg-transparent flex items-center justify-center">
+            <img src="/AppAssets/PNG Renders/cheque_black.png" alt="Verified Batches" className="w-6 h-6 object-contain drop-shadow-md" />
           </div>
           <div>
             <h2 className="text-white font-semibold">Verified Batches</h2>
@@ -191,11 +187,10 @@ function MempoolBlock({ block, index, isAnchored, formatAge, goldbackPrice }: Me
       className="shrink-0 cursor-pointer group"
     >
       <div
-        className={`relative w-44 border overflow-hidden transition-all duration-200 ${
-          isAnchored
-            ? 'bg-gradient-to-b from-gray-800 to-gray-900 border-gray-700/50 group-hover:border-[#c9a84c]/30 group-hover:shadow-lg group-hover:shadow-[#c9a84c]/10'
-            : 'bg-gradient-to-b from-[#c9a84c]/10 to-gray-900 border-[#c9a84c]/30 group-hover:shadow-lg group-hover:shadow-[#c9a84c]/10'
-        }`}
+        className={`relative w-44 border rounded-[4.5px] overflow-hidden transition-all duration-200 ${isAnchored
+          ? 'bg-gradient-to-b from-gray-800 to-gray-900 border-gray-700/50 group-hover:border-[#c9a84c]/30 group-hover:shadow-lg group-hover:shadow-[#c9a84c]/10'
+          : 'bg-gradient-to-b from-[#c9a84c]/10 to-gray-900 border-[#c9a84c]/30 group-hover:shadow-lg group-hover:shadow-[#c9a84c]/10'
+          }`}
       >
         {/* Top Accent Bar */}
         <div className={`h-1 ${isAnchored ? 'bg-gradient-to-r from-[#c9a84c] to-[#a48a3a]' : 'bg-gradient-to-r from-yellow-500 to-orange-500'}`} />
@@ -207,11 +202,10 @@ function MempoolBlock({ block, index, isAnchored, formatAge, goldbackPrice }: Me
               #{(block.blockNumber ?? index + 1).toString().padStart(5, '0')}
             </span>
             <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium ${
-                isAnchored
-                  ? 'bg-green-500/20 text-green-400'
-                  : 'bg-yellow-500/20 text-yellow-400'
-              }`}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium ${isAnchored
+                ? 'bg-green-500/20 text-green-400'
+                : 'bg-yellow-500/20 text-yellow-400'
+                }`}
             >
               <span className={`w-1 h-1 rounded-full ${isAnchored ? 'bg-green-400' : 'bg-yellow-400 animate-pulse'}`} />
               {isAnchored ? 'Verified' : 'Pending'}
@@ -233,10 +227,8 @@ function MempoolBlock({ block, index, isAnchored, formatAge, goldbackPrice }: Me
 
           {/* Serial Count */}
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#c9a84c]/20 flex items-center justify-center">
-              <svg className="w-4 h-4 text-[#c9a84c]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-              </svg>
+            <div className="w-8 h-8 bg-transparent flex items-center justify-center">
+              <img src="/AppAssets/PNG Renders/coin_stack_gold_black.png" alt="Serials" className="w-5 h-5 object-contain drop-shadow-md" />
             </div>
             <div>
               <div className="text-white font-semibold text-sm">{block.serialCount.toLocaleString()}</div>

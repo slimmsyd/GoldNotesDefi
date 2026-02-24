@@ -34,13 +34,13 @@ export function AuditTrail() {
     switch (status) {
       case 'anchored':
       case 'confirmed':
-        return { color: 'bg-green-500', text: 'text-green-400', bg: 'bg-green-500/20' };
+        return { color: 'bg-emerald-400', text: 'text-emerald-400', bg: 'bg-emerald-500/10 border border-emerald-500/30' };
       case 'unconfirmed':
-        return { color: 'bg-yellow-500', text: 'text-yellow-400', bg: 'bg-yellow-500/20' };
+        return { color: 'bg-yellow-400', text: 'text-yellow-400', bg: 'bg-yellow-500/10 border border-yellow-500/30' };
       case 'failed':
-        return { color: 'bg-red-500', text: 'text-red-400', bg: 'bg-red-500/20' };
+        return { color: 'bg-red-400', text: 'text-red-400', bg: 'bg-red-500/10 border border-red-500/30' };
       default:
-        return { color: 'bg-gray-500', text: 'text-gray-400', bg: 'bg-gray-500/20' };
+        return { color: 'bg-gray-400', text: 'text-gray-400', bg: 'bg-white/5 border border-white/10' };
     }
   };
 
@@ -67,62 +67,58 @@ export function AuditTrail() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.4 }}
-      className="bg-gray-900/50 border border-gray-800 overflow-hidden"
+      className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] overflow-hidden"
     >
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-800/50 flex items-center justify-between">
+      <div className="p-8 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-[#c9a84c]/20 flex items-center justify-center">
-            <svg className="w-5 h-5 text-[#c9a84c]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
+          <div className="p-2 bg-white/5 rounded-[12px] border border-white/10 flex items-center justify-center">
+            <img src="/AppAssets/PNG Renders/laptop_security_black.png" alt="Proof History" className="w-6 h-6 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] brightness-200" />
           </div>
           <div>
-            <h3 className="text-white font-semibold">Proof History</h3>
-            <p className="text-gray-500 text-xs">ZK-verified merkle roots</p>
+            <h3 className="text-xl font-medium text-white">Proof History</h3>
+            <p className="text-gray-500 text-sm mt-1 font-medium">ZK-verified merkle roots</p>
           </div>
         </div>
-        <span className="text-xs text-gray-500 bg-gray-800/50 px-3 py-1">
+        <span className="text-[10px] font-bold text-gray-400 bg-white/5 border border-white/10 px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">
           {roots.length} records
         </span>
       </div>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="p-6">
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-20 bg-gray-800/50 animate-pulse" />
+              <div key={i} className="h-24 bg-white/5 rounded-[24px] animate-pulse" />
             ))}
           </div>
         ) : roots.length === 0 ? (
           <div className="text-center py-12">
-            <div className="w-16 h-16 bg-green-500/10 flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-500/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
+            <div className="w-16 h-16 bg-white/5 rounded-[24px] border border-white/10 flex items-center justify-center mx-auto mb-4">
+              <img src="/AppAssets/PNG Renders/safe_open_coins_black.png" alt="Building Proof History" className="w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] brightness-200" />
             </div>
-            <p className="text-white font-medium mb-1">Building Proof History</p>
-            <p className="text-gray-500 text-sm mb-3">ZK-verified merkle roots will be recorded here for transparent auditing</p>
-            <div className="inline-flex items-center gap-2 text-xs text-gray-500 bg-gray-800/50 px-3 py-1.5">
-              <svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            <p className="text-white font-bold tracking-tight mb-2">Building Proof History</p>
+            <p className="text-gray-500 text-sm mb-4">ZK-verified merkle roots will be recorded here for transparent auditing</p>
+            <div className="inline-flex items-center gap-2 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-full uppercase tracking-widest">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
               Proofs are submitted daily
             </div>
           </div>
         ) : (
-          <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-700">
+          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/20">
             {roots.map((root, index) => {
               const explorerUrl = getExplorerUrl(root.solana_tx_hash);
               const statusConfig = getStatusConfig(root.status);
               const Wrapper = explorerUrl ? 'a' : 'div';
               const wrapperProps = explorerUrl
                 ? {
-                    href: explorerUrl,
-                    target: '_blank',
-                    rel: 'noopener noreferrer',
-                  }
+                  href: explorerUrl,
+                  target: '_blank',
+                  rel: 'noopener noreferrer',
+                }
                 : {};
 
               return (
@@ -134,55 +130,48 @@ export function AuditTrail() {
                 >
                   <Wrapper
                     {...wrapperProps}
-                    className={`block bg-gray-800/30 p-4 border border-gray-800/50 transition-all duration-200 ${
-                      explorerUrl ? 'hover:bg-gray-800/50 hover:border-gray-600 hover:translate-y-[-2px] hover:shadow-lg cursor-pointer group focus:outline-none' : ''
-                    }`}
+                    className={`block bg-white/[0.02] p-5 border border-white/5 rounded-[24px] transition-all duration-300 ${explorerUrl ? 'hover:bg-white/[0.04] hover:border-white/10 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] cursor-pointer group focus:outline-none' : ''
+                      }`}
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-center gap-6">
                       {/* Status Icon */}
-                      <div className={`w-10 h-10 ${statusConfig.bg} flex items-center justify-center flex-shrink-0`}>
+                      <div className={`p-2 bg-white/5 border border-white/10 rounded-2xl flex-shrink-0`}>
                         {root.status === 'anchored' || root.status === 'confirmed' ? (
-                          <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
+                          <img src="/AppAssets/PNG Renders/safe_open_coins_black.png" alt="Confirmed" className="w-8 h-8 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] brightness-200" />
                         ) : root.status === 'unconfirmed' ? (
-                          <svg className="w-5 h-5 text-yellow-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
+                          <img src="/AppAssets/PNG Renders/calendar_black.png" alt="Unconfirmed" className="w-8 h-8 object-contain animate-pulse drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] brightness-200" />
                         ) : (
-                          <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
+                          <img src="/AppAssets/PNG Renders/umbrella_black.png" alt="Failed" className="w-8 h-8 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] brightness-200" />
                         )}
                       </div>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}>
-                            <span className={`w-1 h-1 rounded-full ${statusConfig.color}`} />
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm ${statusConfig.bg} ${statusConfig.text}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.color} shadow-[0_0_8px_currentColor]`} />
                             {root.status.charAt(0).toUpperCase() + root.status.slice(1)}
                           </span>
-                          <span className="text-gray-500 text-xs">{formatTimeAgo(root.anchored_at)}</span>
+                          <span className="text-gray-500 text-xs font-medium">{formatTimeAgo(root.anchored_at)}</span>
                         </div>
-                        <p className="text-gray-500 text-xs font-mono truncate" title={root.root_hash}>
+                        <p className="text-gray-400 text-[10px] font-mono truncate bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 inline-block" title={root.root_hash}>
                           {root.root_hash.slice(0, 20)}...{root.root_hash.slice(-8)}
                         </p>
                       </div>
 
                       {/* Stats */}
                       <div className="text-right flex-shrink-0">
-                        <p className="text-[#e8d48b] font-bold text-lg">{root.total_serials.toLocaleString()}</p>
-                        <p className="text-gray-500 text-xs uppercase tracking-wider">serials</p>
+                        <p className="text-[#c9a84c] font-bold text-2xl tracking-tighter drop-shadow-md">{root.total_serials.toLocaleString()}</p>
+                        <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">serials</p>
                       </div>
 
                       {/* Verification Link */}
                       {explorerUrl && (
-                        <div className="flex items-center self-center ml-2 flex-shrink-0">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-800/50 text-xs font-medium text-gray-400 group-hover:text-[#e8d48b] group-hover:bg-[#c9a84c]/10 transition-colors">
+                        <div className="flex items-center self-center ml-4 flex-shrink-0">
+                          <span className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest text-gray-400 group-hover:text-white group-hover:bg-white/10 transition-all shadow-sm">
                             <span className="hidden sm:inline">Verify</span>
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
                           </span>
                         </div>

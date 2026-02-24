@@ -17,11 +17,11 @@
 import { motion } from 'framer-motion';
 import { useProtocolData } from '@/hooks/useProtocolData';
 import { MempoolBlocks } from '@/components/app/dashboard/mempool-blocks';
-import { SolvencyHero } from '@/components/app/dashboard/solvency-hero';
 import { StatsGrid } from '@/components/app/dashboard/stats-grid';
-import { AuditTrail } from '@/components/app/dashboard/audit-trail';
-import { ArchitectureExplainer } from '@/components/app/dashboard/architecture-explainer';
+import { PortfolioHero } from '@/components/app/dashboard/portfolio-hero';
+import { QuickActions } from '@/components/app/dashboard/quick-actions';
 import { VerifyNowButton } from '@/components/app/dashboard/verify-now-button';
+import { RecentBatches } from '@/components/app/dashboard/recent-batches';
 
 // Animation variants - standardized timing (Phase 3)
 const fadeInUp = {
@@ -54,8 +54,8 @@ export default function AppDashboard() {
       {/* Page Header - Single Live indicator (removed duplicate) */}
       <motion.div variants={fadeInUp} className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-white tracking-tight">Dashboard</h1>
-          <p className="text-gray-400 mt-2">Real-time protocol overview</p>
+          {/* <h1 className="text-4xl font-bold text-white tracking-tight">Dashboard</h1>
+          <p className="text-gray-400 mt-2">Real-time protocol overview</p> */}
         </div>
         <div className="flex items-center gap-3">
           {/* Verify Now (Admin Only) */}
@@ -65,22 +65,15 @@ export default function AppDashboard() {
           <button
             onClick={refresh}
             disabled={isLoading}
-            className="flex items-center gap-2 bg-gray-900/50 border border-gray-800 px-4 py-2 text-gray-400 hover:text-white hover:border-[#c9a84c]/50 transition-colors disabled:opacity-50 focus:outline-none cursor-pointer"
+            className="flex items-center justify-center gap-2 bg-[#c9a84c]/10 border border-[#c9a84c]/30 px-4 py-2 text-[#e8d48b] hover:bg-[#c9a84c]/20 hover:border-[#c9a84c]/50 transition-colors disabled:opacity-50 focus:outline-none cursor-pointer rounded-full min-w-[100px]"
           >
-            <svg
-              className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            <span className="text-xs font-medium">Refresh</span>
+            {isLoading ? (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+            ) : null}
+            <span className="text-xs font-medium">{isLoading ? 'Refreshing...' : 'Refresh'}</span>
           </button>
         </div>
       </motion.div>
@@ -90,17 +83,11 @@ export default function AppDashboard() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-red-500/20 border border-red-500/30 p-4 flex items-center justify-between"
+          className="bg-red-500/20 border border-red-500/30 p-4 flex items-center justify-between rounded-[4.5px]"
         >
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-red-500/20 flex items-center justify-center">
-              <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
+            <div className="w-10 h-10 bg-transparent flex items-center justify-center">
+              <img src="/AppAssets/PNG Renders/umbrella_black.png" alt="Error" className="w-5 h-5 object-contain" />
             </div>
             <div>
               <p className="text-red-400 font-medium text-sm">Connection Error</p>
@@ -109,36 +96,37 @@ export default function AppDashboard() {
           </div>
           <button
             onClick={refresh}
-            className="bg-red-500/20 text-red-400 font-medium px-4 py-3 hover:bg-red-500/30 border border-red-500/30 transition-colors text-sm focus:outline-none"
+            className="bg-red-500/20 text-red-400 font-medium px-4 py-3 hover:bg-red-500/30 border border-red-500/30 transition-colors text-sm focus:outline-none rounded-[4.5px]"
           >
             Retry
           </button>
         </motion.div>
       )}
 
-      {/* 1. SOLVENCY STATUS - Primary focal point */}
+      {/* 1. PORTFOLIO HERO - Primary focal point */}
       <motion.div variants={fadeInUp}>
-        <SolvencyHero data={data} isLoading={isLoading} />
+        <PortfolioHero data={data} isLoading={isLoading} />
       </motion.div>
 
-      {/* 1.5 ARCHITECTURE EXPLAINER - How the trust model works */}
+      {/* 2. QUICK ACTIONS */}
       <motion.div variants={fadeInUp}>
-        <ArchitectureExplainer />
+        <QuickActions />
       </motion.div>
 
-      {/* 2. KEY METRICS - Supporting data */}
+      {/* 3. ASSET STATS - Supporting data */}
       <motion.div variants={fadeInUp}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-gray-400 text-sm font-medium uppercase tracking-wider">Asset Information</h3>
+        </div>
         <StatsGrid data={data} isLoading={isLoading} />
       </motion.div>
 
-      {/* 3. MEMPOOL BLOCKS - Live activity */}
+      {/* 4. RECENT BATCHES - Incoming serial batches */}
       <motion.div variants={fadeInUp}>
-        <MempoolBlocks goldbackPrice={data?.goldbackPrice ?? null} />
-      </motion.div>
-
-      {/* 4. AUDIT TRAIL - Historical data */}
-      <motion.div variants={fadeInUp}>
-        <AuditTrail />
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-gray-400 text-sm font-medium uppercase tracking-wider">Recent Batches</h3>
+        </div>
+        <RecentBatches goldbackPrice={data?.goldbackPrice ?? null} />
       </motion.div>
 
       {/* Footer Meta */}

@@ -4,7 +4,6 @@ import { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { D3WorldTourBg } from './d3-world-tour-bg';
-import { LearnMoreModal } from './learn-more-modal';
 import { Button } from '@/components/ui/button';
 
 
@@ -12,7 +11,6 @@ import { Button } from '@/components/ui/button';
 export function Hero() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [isLearnMoreModalOpen, setIsLearnMoreModalOpen] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -246,11 +244,11 @@ export function Hero() {
             </Button>
 
             <Button
+              asChild
               variant="secondary"
               size="lg"
-              onClick={() => setIsLearnMoreModalOpen(true)}
             >
-              Learn More
+              <a href="/shop-gold-backs">Shop Gold Backs</a>
             </Button>
           </motion.div>
         </motion.div>
@@ -258,8 +256,6 @@ export function Hero() {
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-500/20 rounded-full blur-3xl animate-pulse z-1 pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-yellow-500/20 rounded-full blur-3xl animate-pulse delay-1000 z-1 pointer-events-none" />
       </section>
-
-      <LearnMoreModal isOpen={isLearnMoreModalOpen} onClose={() => setIsLearnMoreModalOpen(false)} />
 
     </>
   );

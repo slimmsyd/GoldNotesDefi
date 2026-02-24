@@ -1,14 +1,14 @@
-# Prover.toml - Batch 4 of 4
-# Generated at: 2026-02-06T19:22:27.130Z
+# Prover.toml - Batch 1 of 1
+# Generated at: 2026-02-24T15:09:30.073Z
 #
-# Contains SHA256 hashes of 10 Goldback serial numbers.
+# Contains SHA256 hashes of 6 Goldback serial numbers.
 # Hashes are sorted in ascending order for O(n) uniqueness verification.
 
 # Private inputs (never revealed in the proof)
-serials = ["0xe50ce31e9ad2b3da2d402da8a9244d75c8ff42fbdb5493b30071fb6fce2735", "0xe65206e6f0ad7d9845ba6d62e115139e622e62c95838735d1dcdaa48bc9b9d", "0xeaad383ce9f7836e0e2d43bbd2a554c2a6b27049842223272d38ab59f9b5fd", "0xee3d5cea030f168c4f62a11e04fd63ae72f83a15c525bf290d6a23dfefc7cf", "0xf17c6be501d13a832bf8b8d0d003e3d2c85c22d6a87bd2762be1d727fd7cfe", "0xf26fc8745e275f7c5c0821f17b89648cfe3e2d2e070907cdffe7cb2d476f3f", "0xf646b54103f5ed1c1a451d604c769ca32fb30e0ccd7e5716923e09c15fc587", "0xfab16eb19fcecc609b901dea6a020e30ee0bf0fc99d443dd6db245367b0f01", "0xfbb763000345e586be5c62d2408429b4c08a6d77a678d95d597cddd86abf9a", "0xff5847c9d2585c42a1ad47a15b15c9e20dcecc002ae23852188b6cc818dd67", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"]
-active_count = "10"
+serials = ["0x518a66d1379a797bfe4a9a4b229ea2b7404a762ef5fd474178f414a2d15811", "0x6df9aa3922e7219d90346805293c7f922d33541521eb797044db6f948f5fa6", "0xb8cac09ac76437d3764c0ffc7949982311deb7c6373a86cfb0eb11957578e6", "0xd8631a892e101c6d5580a771361d9865e29a1710f5cebf46a0e8e4022fe25a", "0xdd9597f89f5002e2ef7cdac96cff2c98c7f618784d23478d52c9b46262afa5", "0xe558d6027a26e108c77a5a118a4285e86d208a2cee572b6a2b4e2c1586bcfc", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"]
+active_count = "6"
 
 # Public inputs (visible on-chain)
 # NOTE: Run "nargo execute" to compute the correct merkle_root
 merkle_root = "0x0000000000000000000000000000000000000000000000000000000000000000"
-total_supply = "10"
+total_supply = "6"

@@ -26,6 +26,7 @@ import { MerkleTree } from "merkletreejs";
 import crypto from "crypto";
 import { PROTOCOL_CONFIG } from "@/lib/protocol-constants";
 import { assertMyAppSecurityEnv, authenticateAutoVerifyRequest } from "@/lib/admin-auth";
+import { runAuthoritativePriceSync } from "@/lib/price-cohesion";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Allow up to 60s for Solana transactions
@@ -187,6 +188,8 @@ async function fetchProtocolStateSnapshot(
 export async function POST(request: Request) {
   const startTime = Date.now();
   const logs: string[] = [];
+  const autoVerifyPriceSyncEnabled =
+    process.env.AUTO_VERIFY_PRICE_SYNC_ENABLED !== "false";
 
   function log(msg: string) {
     console.log(`[auto-verify] ${msg}`);
@@ -247,7 +250,14 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         message: "No serials to verify",
-        data: { totalSerials: 0 },
+        data: {
+          totalSerials: 0,
+          priceSync: {
+            attempted: false,
+            success: false,
+            error: "Skipped because there were no serials to verify.",
+          },
+        },
         logs,
         elapsed: Date.now() - startTime,
       });
@@ -465,6 +475,35 @@ export async function POST(request: Request) {
       log("Warning: Could not fetch post-state");
     }
 
+    const priceSyncResult: {
+      attempted: boolean;
+      success?: boolean;
+      tx?: string | null;
+      mode?: "noop" | "operator" | "admin_override";
+      error?: string;
+    } = { attempted: false };
+
+    if (autoVerifyPriceSyncEnabled) {
+      priceSyncResult.attempted = true;
+      try {
+        const sync = await runAuthoritativePriceSync({ trigger: "auto_verify" });
+        priceSyncResult.success = true;
+        priceSyncResult.tx = sync.tx;
+        priceSyncResult.mode = sync.mode;
+        log(
+          `Price sync complete (mode=${sync.mode}, tx=${sync.tx ?? "none"})`
+        );
+      } catch (priceErr) {
+        const message =
+          priceErr instanceof Error ? priceErr.message : "Unknown error";
+        priceSyncResult.success = false;
+        priceSyncResult.error = message;
+        log(`Price sync failed (non-blocking): ${message}`);
+      }
+    } else {
+      log("Skipping price sync (AUTO_VERIFY_PRICE_SYNC_ENABLED=false)");
+    }
+
     const elapsed = Date.now() - startTime;
     log(`Complete in ${elapsed}ms`);
 
@@ -481,6 +520,7 @@ export async function POST(request: Request) {
         mintReason: Math.max(0, serials.length - currentReserves) > 0 ? "reserve_increase" : "none",
         finalState,
         triggerSource,
+        priceSync: priceSyncResult,
       },
       logs,
       elapsed,
@@ -520,6 +560,7 @@ export async function GET() {
       "ADMIN_WALLET_ALLOWLIST",
       "CRON_SECRET",
       "AUTO_MINT_ENABLED (optional, default: true)",
+      "AUTO_VERIFY_PRICE_SYNC_ENABLED (optional, default: true)",
     ],
   });
 }

@@ -23,7 +23,7 @@ export function ReserveGrowthChart() {
     async function loadData() {
       try {
         const roots = await fetchMerkleRootHistory(20);
-        
+
         // Transform to cumulative data points
         const points: DataPoint[] = roots
           .reverse() // Oldest first
@@ -61,7 +61,7 @@ export function ReserveGrowthChart() {
 
     const margin = { top: 40, right: 40, bottom: 60, left: 70 };
     const width = container.clientWidth - margin.left - margin.right;
-    const height = 400 - margin.top - margin.bottom;
+    const height = 450 - margin.top - margin.bottom; // Increased height
 
     const g = svg
       .attr('width', width + margin.left + margin.right)
@@ -94,14 +94,14 @@ export function ReserveGrowthChart() {
     gradient
       .append('stop')
       .attr('offset', '0%')
-      .attr('stop-color', '#f59e0b')
-      .attr('stop-opacity', 0.4);
+      .attr('stop-color', '#c9a84c') // Changed to standard gold
+      .attr('stop-opacity', 0.5); // Increased top opacity
 
     gradient
       .append('stop')
       .attr('offset', '100%')
-      .attr('stop-color', '#f59e0b')
-      .attr('stop-opacity', 0.05);
+      .attr('stop-color', '#c9a84c')
+      .attr('stop-opacity', 0.01); // Fade to almost clear
 
     // Grid lines
     g.append('g')
@@ -165,8 +165,8 @@ export function ReserveGrowthChart() {
     g.append('path')
       .datum(data)
       .attr('fill', 'none')
-      .attr('stroke', '#f59e0b')
-      .attr('stroke-width', 3)
+      .attr('stroke', '#e8d48b') // Bright gold
+      .attr('stroke-width', 4) // Slightly thicker
       .attr('d', line)
       .attr('stroke-dasharray', function () {
         return this.getTotalLength();
@@ -189,8 +189,8 @@ export function ReserveGrowthChart() {
       .attr('cx', (d) => xScale(d.date))
       .attr('cy', (d) => yScale(d.totalSerials))
       .attr('r', 0)
-      .attr('fill', '#f59e0b')
-      .attr('stroke', '#1f2937')
+      .attr('fill', '#000000') // Black center
+      .attr('stroke', '#e8d48b') // Gold ring
       .attr('stroke-width', 3)
       .style('cursor', 'pointer');
 
@@ -206,8 +206,9 @@ export function ReserveGrowthChart() {
         d3.select(this)
           .transition()
           .duration(150)
-          .attr('r', 12)
-          .attr('fill', '#fbbf24');
+          .attr('r', 10)
+          .attr('stroke-width', 4)
+          .attr('fill', '#c9a84c');
         setHoveredPoint(d);
       })
       .on('mouseleave', function () {
@@ -215,7 +216,8 @@ export function ReserveGrowthChart() {
           .transition()
           .duration(150)
           .attr('r', 8)
-          .attr('fill', '#f59e0b');
+          .attr('stroke-width', 3)
+          .attr('fill', '#000000');
         setHoveredPoint(null);
       });
 
@@ -264,20 +266,20 @@ export function ReserveGrowthChart() {
 
   if (isLoading) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 p-6 h-[500px] animate-pulse flex items-center justify-center">
-        <div className="text-gray-500">Loading reserve data...</div>
+      <div className="bg-black/40 backdrop-blur-xl border border-white/10 p-8 h-[500px] animate-pulse flex items-center justify-center rounded-[32px]">
+        <div className="text-gray-500 font-bold tracking-widest uppercase">Loading reserve data...</div>
       </div>
     );
   }
 
   if (data.length === 0) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 p-6 h-[500px] flex flex-col items-center justify-center">
-        <svg className="w-16 h-16 text-gray-700 mb-4" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+      <div className="bg-black/40 backdrop-blur-xl border border-white/10 p-8 h-[500px] flex flex-col items-center justify-center rounded-[32px]">
+        <svg className="w-16 h-16 text-white/20 mb-4" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />
         </svg>
-        <p className="text-gray-500">No reserve data yet</p>
-        <p className="text-gray-600 text-sm mt-1">Run the pipeline to see growth over time</p>
+        <p className="text-gray-400 font-bold tracking-widest uppercase">No reserve data yet</p>
+        <p className="text-gray-500 text-[10px] mt-2 font-mono">Run the pipeline to see growth over time</p>
       </div>
     );
   }
@@ -285,26 +287,26 @@ export function ReserveGrowthChart() {
   const latestPoint = data[data.length - 1];
 
   return (
-    <div className="bg-gray-900/50 border border-gray-800 overflow-hidden">
+    <div className="bg-black/40 backdrop-blur-xl border border-white/10 overflow-hidden rounded-[32px]">
       {/* Header */}
-      <div className="p-6 border-b border-gray-800 flex justify-between items-start">
+      <div className="p-8 border-b border-white/5 flex justify-between items-start">
         <div>
-          <h3 className="text-white font-semibold text-lg flex items-center gap-2">
-            <svg className="w-5 h-5 text-[#c9a84c]" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
-            </svg>
+          <h3 className="text-white font-medium text-lg flex items-center gap-3">
+            <div className="p-2 bg-white/5 rounded-[12px] border border-white/10">
+              <img src="/AppAssets/PNG Renders/scale_black.png" alt="Vault" className="w-6 h-6 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] brightness-200" />
+            </div>
             Reserve Growth Since Inception
           </h3>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-gray-500 text-sm mt-2 font-medium">
             Cumulative verified Goldbacks anchored on-chain
           </p>
         </div>
-        
-        <div className="text-right">
-          <div className="text-3xl font-bold text-[#c9a84c]">
+
+        <div className="text-right flex flex-col items-end">
+          <div className="text-[40px] font-bold text-[#c9a84c] tracking-tighter leading-none mb-1 drop-shadow-lg">
             {latestPoint?.totalSerials.toLocaleString()}
           </div>
-          <div className="text-gray-500 text-xs uppercase tracking-wider">
+          <div className="bg-[#c9a84c]/10 border border-[#c9a84c]/30 text-[#c9a84c] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-lg">
             Total Verified
           </div>
         </div>
@@ -312,10 +314,10 @@ export function ReserveGrowthChart() {
 
       {/* Tooltip */}
       {hoveredPoint && (
-        <div className="absolute z-20 bg-gray-800 border border-gray-700 p-3 shadow-xl pointer-events-none">
-          <div className="text-[#c9a84c] font-bold">{hoveredPoint.totalSerials.toLocaleString()} Goldbacks</div>
-          <div className="text-gray-400 text-xs mt-1">{hoveredPoint.date.toLocaleString()}</div>
-          <div className="text-gray-600 text-[10px] font-mono mt-1 truncate max-w-[200px]">
+        <div className="absolute z-20 bg-white/10 backdrop-blur-2xl border border-white/20 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)] pointer-events-none rounded-[24px]">
+          <div className="text-[#c9a84c] font-bold text-lg tracking-tight mb-1">{hoveredPoint.totalSerials.toLocaleString()} Physical Assets</div>
+          <div className="text-gray-300 text-[10px] font-bold tracking-widest uppercase mb-2">{hoveredPoint.date.toLocaleString()}</div>
+          <div className="text-gray-500 text-[10px] font-mono mt-1 truncate max-w-[200px] bg-black/40 px-2 py-1 rounded-md border border-white/5">
             {hoveredPoint.rootHash}
           </div>
         </div>
