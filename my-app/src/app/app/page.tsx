@@ -21,6 +21,7 @@ import { StatsGrid } from '@/components/app/dashboard/stats-grid';
 import { PortfolioHero } from '@/components/app/dashboard/portfolio-hero';
 import { QuickActions } from '@/components/app/dashboard/quick-actions';
 import { VerifyNowButton } from '@/components/app/dashboard/verify-now-button';
+import { RecentBatches } from '@/components/app/dashboard/recent-batches';
 
 // Animation variants - standardized timing (Phase 3)
 const fadeInUp = {
@@ -118,6 +119,14 @@ export default function AppDashboard() {
           <h3 className="text-gray-400 text-sm font-medium uppercase tracking-wider">Asset Information</h3>
         </div>
         <StatsGrid data={data} isLoading={isLoading} />
+      </motion.div>
+
+      {/* 4. RECENT BATCHES - Incoming serial batches */}
+      <motion.div variants={fadeInUp}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-gray-400 text-sm font-medium uppercase tracking-wider">Recent Batches</h3>
+        </div>
+        <RecentBatches goldbackPrice={data?.goldbackPrice ?? null} />
       </motion.div>
 
       {/* Footer Meta */}

@@ -7,9 +7,10 @@ import { getOnChainPriceLamports, getPriceSyncErrorContext, syncOnChainPrice } f
 
 const DEFAULT_GOLDBACK_RATE = 9.02;
 const DEFAULT_MAX_DRIFT_PERCENT = 5;
-const DEFAULT_SYNC_SLA_MINUTES = 15;
+const DEFAULT_SYNC_SLA_MINUTES = 1440;
 const PRICE_HISTORY_RETENTION_HOURS = 48;
 const ALERT_THROTTLE_MS = 5 * 60 * 1000;
+const SYNC_ATTEMPT_COOLDOWN_MS = 60 * 60 * 1000;
 
 export interface PriceSyncMetrics {
   successCount: number;
@@ -80,6 +81,7 @@ type GlobalState = {
   metrics: InternalMetricsState;
   startupGuardExecuted: boolean;
   lastAlertAt: number | null;
+  lastAutoSyncAttemptAt: number | null;
 };
 
 const globalForPricing = globalThis as unknown as {
@@ -101,6 +103,7 @@ function getState(): GlobalState {
       },
       startupGuardExecuted: false,
       lastAlertAt: null,
+      lastAutoSyncAttemptAt: null,
     };
   }
   return globalForPricing.__w3bPricingState;
@@ -300,14 +303,68 @@ export async function ensureStartupPricingGuard(): Promise<{
   state.startupGuardExecuted = true;
 
   const onChain = await getOnChainPriceLamports();
-  if (onChain && onChain > 0) {
-    return { checked: true, triggered: false, result: null };
+
+  if (!onChain || onChain <= 0) {
+    const result = await runAuthoritativePriceSync({ trigger: 'startup_guard' });
+    return { checked: true, triggered: true, result };
   }
 
-  const result = await runAuthoritativePriceSync({
-    trigger: 'startup_guard',
-  });
-  return { checked: true, triggered: true, result };
+  try {
+    const settings = await prisma.siteSettings.findUnique({ where: { id: 'main' } });
+    if (settings?.updatedAt) {
+      const minutesSinceUpdate = (Date.now() - settings.updatedAt.getTime()) / (1000 * 60);
+      if (minutesSinceUpdate > getSyncSlaMinutes()) {
+        const result = await runAuthoritativePriceSync({ trigger: 'startup_guard_stale' });
+        return { checked: true, triggered: true, result };
+      }
+    } else {
+      const result = await runAuthoritativePriceSync({ trigger: 'startup_guard_no_db' });
+      return { checked: true, triggered: true, result };
+    }
+  } catch (err) {
+    console.warn('[price-cohesion] Startup guard stale check failed:', err);
+  }
+
+  return { checked: true, triggered: false, result: null };
+}
+
+export async function ensurePriceFreshness(): Promise<{
+  synced: boolean;
+  trigger: string | null;
+  error: string | null;
+}> {
+  const state = getState();
+  const now = Date.now();
+
+  if (state.lastAutoSyncAttemptAt && (now - state.lastAutoSyncAttemptAt) < SYNC_ATTEMPT_COOLDOWN_MS) {
+    return { synced: false, trigger: null, error: null };
+  }
+
+  try {
+    const settings = await prisma.siteSettings.findUnique({ where: { id: 'main' } });
+    const updatedAt = settings?.updatedAt ?? null;
+
+    let isStale = true;
+    if (updatedAt) {
+      const minutesSinceUpdate = (Date.now() - updatedAt.getTime()) / (1000 * 60);
+      isStale = minutesSinceUpdate > getSyncSlaMinutes();
+    }
+
+    if (!isStale) {
+      return { synced: false, trigger: null, error: null };
+    }
+
+    state.lastAutoSyncAttemptAt = now;
+
+    const result = await runAuthoritativePriceSync({ trigger: 'auto_freshness' });
+
+    return { synced: true, trigger: 'auto_freshness', error: null };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn('[price-cohesion] Auto-freshness sync failed:', message);
+
+    return { synced: false, trigger: 'auto_freshness', error: message };
+  }
 }
 
 export async function getPricingHealthSnapshot(): Promise<PricingHealthSnapshot> {

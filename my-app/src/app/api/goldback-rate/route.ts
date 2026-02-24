@@ -41,7 +41,7 @@ export async function GET() {
       updatedAt: updatedAt?.toISOString() ?? null,
       previousRate,
       change24h,
-      isStale: minutesSinceUpdate !== null ? minutesSinceUpdate > 30 : true,
+      isStale: minutesSinceUpdate !== null ? minutesSinceUpdate > 1440 : true,
       minutesSinceUpdate,
       health,
       priceSync: {

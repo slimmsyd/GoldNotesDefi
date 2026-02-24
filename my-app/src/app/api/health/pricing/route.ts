@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getPricingHealthSnapshot } from '@/lib/price-cohesion';
+import { getPricingHealthSnapshot, ensurePriceFreshness } from '@/lib/price-cohesion';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    await ensurePriceFreshness();
     const snapshot = await getPricingHealthSnapshot();
     return NextResponse.json(
       {

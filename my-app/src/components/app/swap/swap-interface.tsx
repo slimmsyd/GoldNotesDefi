@@ -810,7 +810,7 @@ export function SwapInterface() {
               )}
 
               {/* Price staleness warning */}
-              {!isPriceFallback && priceMinutesSinceUpdate !== null && priceMinutesSinceUpdate > 30 && (
+              {!isPriceFallback && priceMinutesSinceUpdate !== null && priceMinutesSinceUpdate > 1440 && (
                 <div className="bg-yellow-900/30 border border-yellow-800 p-3 text-yellow-400 text-sm flex items-center gap-2 rounded-[4.5px]">
                   <img src="/AppAssets/PNG Renders/calendar_black.png" alt="Staleness Warning" className="w-6 h-6 flex-shrink-0 object-contain drop-shadow-md" />
                   <span>Price data is {priceMinutesSinceUpdate} minutes old. Execution uses on-chain price.</span>
@@ -901,9 +901,9 @@ export function SwapInterface() {
                 <div className="absolute inset-0 border-4 border-transparent border-t-[#c9a84c] rounded-full animate-spin" />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <img
-                    src="/AppAssets/BlackW3BCoin.jpg"
+                    src="/AppAssets/shiny_gold_logo.PNG"
                     alt="WGB"
-                    className="w-8 h-8 rounded-[4.5px]"
+                    className="w-10 h-10 rounded-full object-contain"
                   />
                 </div>
               </div>
@@ -946,9 +946,9 @@ export function SwapInterface() {
               animate={{ opacity: 1, scale: 1 }}
               className="text-center py-8"
             >
-              <div className="w-24 h-24 bg-green-500/10 rounded-[4.5px] flex items-center justify-center mx-auto mb-6 relative overflow-hidden">
-                <div className="absolute inset-0 bg-green-500/20 animate-pulse" />
-                <img src="/AppAssets/PNG Renders/safe_open_coins_black.png" alt="Success" className="w-16 h-16 object-contain relative z-10 drop-shadow-xl" />
+              <div className="w-24 h-24 bg-[#c9a84c]/10 rounded-full flex items-center justify-center mx-auto mb-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[#c9a84c]/10 animate-pulse rounded-full" />
+                <img src="/AppAssets/shiny_gold_logo.PNG" alt="Success" className="w-16 h-16 object-contain relative z-10 drop-shadow-xl rounded-full" />
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">Swap Complete!</h3>
               <p className="text-gray-400 mb-4">

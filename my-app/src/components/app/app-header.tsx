@@ -11,10 +11,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getAssociatedTokenAddress, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+import { PublicKey } from '@solana/web3.js';
 import { PROTOCOL_CONFIG } from '@/lib/protocol-constants';
 
 /* ─── Framer Motion variants (matching homepage) ─── */
@@ -97,9 +99,11 @@ function NavLink({
 /* ─── Custom Wallet Button ─── */
 function CustomWalletButton() {
   const { publicKey, connected, disconnect } = useWallet();
+  const { connection } = useConnection();
   const walletButtonRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [w3bUsdValue, setW3bUsdValue] = useState<number | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -113,6 +117,45 @@ function CustomWalletButton() {
       return () => document.removeEventListener('click', handleClickOutside);
     }
   }, [isDropdownOpen]);
+
+  // Fetch W3B balance and compute USD value
+  useEffect(() => {
+    if (!connected || !publicKey) {
+      setW3bUsdValue(null);
+      return;
+    }
+
+    async function fetchW3bValue() {
+      try {
+        const [rateRes, ata] = await Promise.all([
+          fetch('/api/goldback-rate').then(r => r.json()),
+          getAssociatedTokenAddress(
+            new PublicKey(PROTOCOL_CONFIG.w3bMint),
+            publicKey!,
+            false,
+            TOKEN_2022_PROGRAM_ID
+          ),
+        ]);
+
+        const rate: number = rateRes?.rate ?? 0;
+        let balance = 0;
+        try {
+          const tokenInfo = await connection.getTokenAccountBalance(ata);
+          balance = tokenInfo.value.uiAmount ?? 0;
+        } catch {
+          balance = 0;
+        }
+
+        setW3bUsdValue(balance * rate);
+      } catch {
+        setW3bUsdValue(null);
+      }
+    }
+
+    void fetchW3bValue();
+    const interval = setInterval(fetchW3bValue, 30_000);
+    return () => clearInterval(interval);
+  }, [connected, publicKey, connection]);
 
   const handleConnect = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -152,7 +195,10 @@ function CustomWalletButton() {
 
           {/* Balance Seg */}
           <div className="flex items-center px-3.5 h-full bg-[#c9a84c]/10 text-[#c9a84c] text-xs font-semibold">
-            $0.00
+            {w3bUsdValue === null
+              ? '...'
+              : `$${w3bUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            }
           </div>
         </button>
 
