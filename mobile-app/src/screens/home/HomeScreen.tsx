@@ -206,7 +206,7 @@ export function HomeScreen({ navigation }: Props) {
       </ScrollView>
 
       {/* Floating Chat Input */}
-      <View style={styles.chatFloatingContainer}>
+      {/* <View style={styles.chatFloatingContainer}>
         <View style={styles.chatInputWrapper}>
           <View style={styles.chatAvatar}>
             <Text style={styles.chatAvatarText}>G</Text>
@@ -227,7 +227,7 @@ export function HomeScreen({ navigation }: Props) {
             <Text style={[styles.chatSendArrow, chatDraft.trim() ? styles.chatSendArrowActive : null]}>↑</Text>
           </Pressable>
         </View>
-      </View>
+      </View> */}
     </View>
   );
 }
@@ -378,18 +378,21 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     zIndex: 1,
     marginBottom: 24,
+    gap: 8,
   },
   cardTitle: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
     lineHeight: 22,
+    flexShrink: 1,
   },
   badgeNeutral: {
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 4,
+    flexShrink: 0,
   },
   badgeNeutralText: {
     color: '#d1d5db',
@@ -423,6 +426,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
+    flexShrink: 0,
   },
   badgeEmeraldText: {
     color: '#34d399',

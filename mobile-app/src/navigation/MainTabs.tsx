@@ -1,6 +1,6 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, Platform } from 'react-native';
 import { HomeScreen } from '../screens/home/HomeScreen';
 import { ShopScreen } from '../screens/shop/ShopScreen';
 import { CheckoutScreen } from '../screens/checkout/CheckoutScreen';
@@ -26,7 +26,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 function TabIcon({ glyph, color, size, focused }: { glyph: string; color: string; size: number; focused: boolean }) {
   return (
     <View style={[styles.iconContainer, focused && styles.iconContainerFocused]}>
-      <Text style={{ fontSize: size - 2, color, textAlign: 'center' }}>{glyph}</Text>
+      <Text style={{ fontSize: size, color, textAlign: 'center', lineHeight: size + 4 }}>{glyph}</Text>
     </View>
   );
 }
@@ -54,7 +54,7 @@ export function MainTabs({ onOpenWallet }: MainTabsProps) {
         tabBarShowLabel: false,
         tabBarStyle: {
           position: 'absolute',
-          bottom: 24,
+          bottom: Platform.OS === 'ios' ? 32 : 24,
           left: 24,
           right: 24,
           elevation: 0,
@@ -69,6 +69,13 @@ export function MainTabs({ onOpenWallet }: MainTabsProps) {
           shadowOffset: { width: 0, height: 10 },
           shadowOpacity: 0.5,
           shadowRadius: 20,
+          paddingBottom: 0, // Critical for vertical centering on iOS
+          paddingTop: 0,
+        },
+        tabBarItemStyle: {
+          padding: 0,
+          marginTop: 10, // Center the icon within the 64px height
+          height: 44,
         },
         headerRight: () => <WalletButton onPress={onOpenWallet} />,
       }}
@@ -77,8 +84,8 @@ export function MainTabs({ onOpenWallet }: MainTabsProps) {
         name="Home"
         component={HomeScreen}
         options={{
-          title: 'GoldBack',
-          tabBarIcon: ({ color, size, focused }) => <TabIcon glyph="⬡" color={color} size={size} focused={focused} />,
+          headerTitle: '',
+          tabBarIcon: ({ color, size, focused }) => <TabIcon glyph="⬡" color={color} size={22} focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -86,7 +93,7 @@ export function MainTabs({ onOpenWallet }: MainTabsProps) {
         component={ShopScreen}
         options={{
           title: 'Shop',
-          tabBarIcon: ({ color, size, focused }) => <TabIcon glyph="🛒" color={color} size={size} focused={focused} />,
+          tabBarIcon: ({ color, size, focused }) => <TabIcon glyph="🛒" color={color} size={22} focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -94,7 +101,7 @@ export function MainTabs({ onOpenWallet }: MainTabsProps) {
         options={{
           title: 'Web3',
           headerShown: false,
-          tabBarIcon: ({ color, size, focused }) => <TabIcon glyph="⛓" color={color} size={size} focused={focused} />,
+          tabBarIcon: ({ color, size, focused }) => <TabIcon glyph="⛓" color={color} size={22} focused={focused} />,
         }}
       >
         {() => <Web3Stack onOpenWallet={onOpenWallet} />}
@@ -104,7 +111,7 @@ export function MainTabs({ onOpenWallet }: MainTabsProps) {
         component={CheckoutScreen}
         options={{
           title: 'Checkout',
-          tabBarIcon: ({ color, size, focused }) => <TabIcon glyph="💳" color={color} size={size} focused={focused} />,
+          tabBarIcon: ({ color, size, focused }) => <TabIcon glyph="💳" color={color} size={22} focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -112,7 +119,7 @@ export function MainTabs({ onOpenWallet }: MainTabsProps) {
         component={OrdersScreen}
         options={{
           title: 'Orders',
-          tabBarIcon: ({ color, size, focused }) => <TabIcon glyph="📋" color={color} size={size} focused={focused} />,
+          tabBarIcon: ({ color, size, focused }) => <TabIcon glyph="📋" color={color} size={22} focused={focused} />,
         }}
       />
     </Tab.Navigator>

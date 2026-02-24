@@ -20,7 +20,7 @@ export function ChatbotInput() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [activeAiId, setActiveAiId] = useState<string | null>(null);
   const [activeStatus, setActiveStatus] = useState<string | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const prevBodyStylesRef = useRef<{ paddingRight: string; overflowX: string; transition: string } | null>(
     null
   );
@@ -388,8 +388,8 @@ export function ChatbotInput() {
               type="button"
               onClick={() => setIsDarkMode(!isDarkMode)}
               className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 border shadow-lg ${isDarkMode
-                  ? 'bg-black/60 border-white/10 text-yellow-400 hover:bg-black/80 hover:border-yellow-400/50'
-                  : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-yellow-500'
+                ? 'bg-black/60 border-white/10 text-yellow-400 hover:bg-black/80 hover:border-yellow-400/50'
+                : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-yellow-500'
                 }`}
               aria-label="Toggle dark mode"
             >
@@ -404,8 +404,8 @@ export function ChatbotInput() {
               )}
             </button>
             <div className={`relative flex-1 flex items-center backdrop-blur-md rounded-full border shadow-lg hover:shadow-xl transition-shadow duration-200 overflow-hidden ${isDarkMode
-                ? 'bg-black/60 border-white/10'
-                : 'bg-white/90 border-gray-300'
+              ? 'bg-black/60 border-white/10'
+              : 'bg-white/90 border-gray-300'
               }`}>
               <input
                 type="text"
@@ -413,8 +413,8 @@ export function ChatbotInput() {
                 onChange={(e) => setDraft(e.target.value)}
                 placeholder="Ask For Gnosis"
                 className={`flex-1 bg-transparent px-6 py-4 focus:outline-none text-base font-light ${isDarkMode
-                    ? 'text-white placeholder-gray-400'
-                    : 'text-gray-900 placeholder-gray-500'
+                  ? 'text-white placeholder-gray-400'
+                  : 'text-gray-900 placeholder-gray-500'
                   }`}
               />
 

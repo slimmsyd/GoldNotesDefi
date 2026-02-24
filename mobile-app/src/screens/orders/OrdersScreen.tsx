@@ -77,17 +77,26 @@ export function OrdersScreen() {
         )}
       </View>
 
-      {(orders?.orders || []).slice(0, 8).map((order) => (
-        <View key={order.id} style={styles.orderRow}>
-          <Text style={styles.orderTitle}>{order.orderNumber || order.id}</Text>
-          <Text style={styles.meta}>
-            {order.source.toUpperCase()} • {order.status} • ${order.totalAmount.toFixed(2)}
-          </Text>
-        </View>
-      ))}
+      <View style={styles.listContainer}>
+        <Text style={styles.listTitle}>Recent Orders</Text>
+        {(orders?.orders || []).slice(0, 8).map((order) => (
+          <View key={order.id} style={styles.orderRow}>
+            <View style={styles.orderLeft}>
+              <Text style={styles.orderTitle}>{order.orderNumber || order.id}</Text>
+              <Text style={styles.orderMeta}>
+                {order.source.toUpperCase()} • {order.status}
+              </Text>
+            </View>
+            <Text style={styles.orderPrice}>${order.totalAmount.toFixed(2)}</Text>
+          </View>
+        ))}
+        {(!orders?.orders || orders.orders.length === 0) && (
+          <Text style={styles.emptyText}>No previous orders found.</Text>
+        )}
+      </View>
 
       <Pressable style={styles.button} onPress={() => void refresh()} disabled={busy}>
-        <Text style={styles.buttonText}>{busy ? 'Refreshing...' : 'Refresh Orders + Loyalty'}</Text>
+        <Text style={styles.buttonText}>{busy ? 'Refreshing...' : 'Refresh Orders'}</Text>
       </Pressable>
 
       <Text style={styles.status}>{status}</Text>
@@ -97,69 +106,119 @@ export function OrdersScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    gap: 10,
-    backgroundColor: tokens.colors.bgBase,
+    paddingHorizontal: tokens.spacing.lg,
+    paddingTop: 40,
+    paddingBottom: 44,
+    gap: tokens.spacing.lg,
+    backgroundColor: '#0a0a0a',
+    flexGrow: 1,
   },
   title: {
+    textAlign: 'center',
     fontSize: 24,
     fontWeight: '800',
-    color: tokens.colors.textPrimary,
+    color: '#ffffff',
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
   subtitle: {
-    color: tokens.colors.textSecondary,
-    fontSize: 12,
+    textAlign: 'center',
+    color: '#9ca3af',
+    fontSize: 14,
+    marginBottom: tokens.spacing.md,
   },
   card: {
-    backgroundColor: tokens.colors.bgElevated,
+    backgroundColor: 'rgba(255,255,255,0.02)',
     borderWidth: 1,
-    borderColor: tokens.colors.hairline,
-    borderRadius: 0,
-    padding: 12,
-    gap: 3,
+    borderColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 32,
+    padding: 24,
+    gap: 8,
   },
   cardLabel: {
-    color: tokens.colors.textTertiary,
+    color: '#6b7280',
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 2,
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   cardValue: {
-    color: tokens.colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '700',
+    color: '#c9a84c',
+    fontSize: 28,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  listContainer: {
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 32,
+    padding: 24,
+    gap: 16,
+    marginTop: tokens.spacing.sm,
+  },
+  listTitle: {
+    fontSize: 14,
+    color: '#ffffff',
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
   orderRow: {
-    backgroundColor: tokens.colors.bgElevated,
-    borderWidth: 1,
-    borderColor: tokens.colors.hairline,
-    borderRadius: 0,
-    padding: 10,
-    gap: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 24,
+    padding: 16,
+  },
+  orderLeft: {
+    flex: 1,
+    gap: 4,
   },
   orderTitle: {
-    color: tokens.colors.textPrimary,
-    fontSize: 13,
-    fontWeight: '700',
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  orderMeta: {
+    color: '#9ca3af',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  orderPrice: {
+    color: '#c9a84c',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  emptyText: {
+    color: '#9ca3af',
+    fontSize: 14,
+    textAlign: 'center',
+    paddingVertical: 16,
   },
   meta: {
-    color: tokens.colors.textSecondary,
-    fontSize: 12,
+    color: '#9ca3af',
+    fontSize: 13,
+    lineHeight: 20,
   },
   button: {
-    backgroundColor: tokens.colors.accentGold,
-    borderRadius: 0,
-    paddingVertical: 12,
+    backgroundColor: '#c9a84c',
+    borderRadius: 999,
+    paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: tokens.spacing.md,
   },
   buttonText: {
     color: '#0a0a0a',
-    fontWeight: '700',
-    fontSize: 13,
+    fontWeight: '800',
+    fontSize: 15,
   },
   status: {
-    color: tokens.colors.textSecondary,
+    textAlign: 'center',
+    color: '#6b7280',
     fontSize: 12,
+    marginTop: 16,
   },
 });
