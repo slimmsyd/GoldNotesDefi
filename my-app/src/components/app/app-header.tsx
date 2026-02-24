@@ -290,8 +290,8 @@ export function AppHeader() {
           {/* Logo Group */}
           <div className="flex items-center gap-2.5">
             <Link href="/app" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 bg-[#c9a84c] rounded-xl flex items-center justify-center">
-                <span className="text-black font-bold text-base">W</span>
+              <div className="w-10 h-10 bg-[#c9a84c] rounded-xl flex items-center justify-center overflow-hidden">
+                <img src="/AppAssets/shiny_gold_logo.PNG" alt="WGB Logo" className="w-full h-full object-cover" />
               </div>
               <span className="text-base font-semibold text-white tracking-[2px]">WGB</span>
             </Link>
@@ -373,8 +373,8 @@ export function AppHeader() {
               {/* Mobile Menu Header */}
               <div className="flex items-center justify-between h-[68px] px-8 border-b border-white/5">
                 <Link href="/app" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 bg-[#c9a84c] rounded-xl flex items-center justify-center">
-                    <span className="text-black font-bold text-base">W</span>
+                  <div className="w-10 h-10 bg-[#c9a84c] rounded-xl flex items-center justify-center overflow-hidden">
+                    <img src="/AppAssets/shiny_gold_logo.PNG" alt="WGB Logo" className="w-full h-full object-cover" />
                   </div>
                   <span className="text-base font-semibold text-white tracking-[2px]">WGB</span>
                 </Link>

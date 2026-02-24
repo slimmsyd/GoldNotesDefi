@@ -40,7 +40,7 @@ const WGB_TOKEN: TokenInfo = {
   symbol: 'WGB',
   name: 'GoldBack Token',
   decimals: 9,
-  logoURI: '/AppAssets/BlackW3BCoin.jpg'
+  logoURI: '/AppAssets/shiny_gold_logo.PNG'
 };
 
 const SOL_MINT_ADDRESS = 'So11111111111111111111111111111111111111112';
@@ -659,7 +659,7 @@ export function SwapInterface() {
                   <div className="flex-shrink-0">
                     <div className="bg-white/5 hover:bg-white/10 pl-2 pr-5 py-2 flex items-center gap-3 transition-colors cursor-default border border-white/5 group rounded-full">
                       <img
-                        src="/AppAssets/BlackW3BCoin.jpg"
+                        src="/AppAssets/shiny_gold_logo.PNG"
                         alt="WGB Token"
                         className="w-8 h-8 shadow-lg shadow-[#c9a84c]/20 rounded-full"
                       />
