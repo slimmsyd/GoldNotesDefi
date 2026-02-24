@@ -91,8 +91,9 @@ function NavLink({ href, children, isComingSoon = false, isInverted = false }: N
     return (
       <div className={`relative px-3 py-2 text-sm font-medium cursor-not-allowed ${isInverted ? 'text-gray-400' : 'text-gray-500'
         }`}>
-        <span className="absolute -top-2 -right-2 text-[10px] px-2 py-0.5 uppercase font-mono bg-[#c9a84c]/20 text-[#c9a84c] leading-none rounded-[4.5px]">
-          Soon
+        {children}
+        <span className="ml-2 text-[10px] px-2 py-0.5 uppercase font-mono bg-[#c9a84c]/20 text-[#c9a84c] leading-none rounded-[4.5px]">
+          Coming Soon
         </span>
       </div>
     );
@@ -441,7 +442,7 @@ export function Header() {
                       <div className="flex items-center gap-3 px-4 py-5 text-gray-500 text-lg font-medium cursor-not-allowed border-b border-white/5">
                         {item.label}
                         <span className="text-[10px] px-2 py-0.5 uppercase font-mono bg-[#c9a84c]/20 text-[#c9a84c]">
-                          Soon
+                          Coming Soon
                         </span>
                       </div>
                     ) : (
