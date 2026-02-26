@@ -9,8 +9,8 @@ interface FAQItem {
 
 const faqs: FAQItem[] = [
   {
-    question: 'What is BlackW3B?',
-    answer: 'Black W3B: a gold-backed, AI-powered decentralized ecosystem fusing blockchain, culture, and sovereignty through DeFi, NFTs, DAOs, and AI agents. A digital-physical economy where Indigenous Ancient Futurism, creative ownership, and financial freedom shape sovereign wealth.',
+    question: 'What is BlackWGB?',
+    answer: 'Black WGB: a gold-backed, AI-powered decentralized ecosystem fusing blockchain, culture, and sovereignty through DeFi, NFTs, DAOs, and AI agents. A digital-physical economy where Indigenous Ancient Futurism, creative ownership, and financial freedom shape sovereign wealth.',
   },
   {
     question: 'What is the benefit of having physical Goldbacks on a blockchain?',
@@ -18,19 +18,19 @@ const faqs: FAQItem[] = [
   },
   {
     question: 'How much Goldback backing is in the total supply?',
-    answer: 'BlackW3B maintains strict 1:1 backing with physical Goldbacks. Every token in circulation is backed by one locked, serialized Goldback note stored in secure vaults. The system enforces non-rehypothecation to preserve the peg, with daily attestations and monthly third-party audits providing transparency.'
+    answer: 'BlackWGB maintains strict 1:1 backing with physical Goldbacks. Every token in circulation is backed by one locked, serialized Goldback note stored in secure vaults. The system enforces non-rehypothecation to preserve the peg, with daily attestations and monthly third-party audits providing transparency.'
   },
   {
-    question: 'Can I get a fractional amount of a BlackW3B token?',
-    answer: 'Yes, BlackW3B tokens are divisible, allowing you to hold and transfer fractional amounts. This enables micro-transactions and flexible position sizing while maintaining the underlying 1:1 backing with physical Goldbacks.'
+    question: 'Can I get a fractional amount of a BlackWGB token?',
+    answer: 'Yes, BlackWGB tokens are divisible, allowing you to hold and transfer fractional amounts. This enables micro-transactions and flexible position sizing while maintaining the underlying 1:1 backing with physical Goldbacks.'
   },
   {
     question: 'How does the vault custody system work?',
     answer: 'Physical Goldbacks are stored in secure, audited vaults with serialization for anti-counterfeit protection. The system uses segregated keys and Hardware Security Modules (HSMs) to maintain tamper-evident security. All custody operations are recorded on-chain with transparent events for full auditability.'
   },
   {
-    question: 'What are the fees associated with BlackW3B?',
-    answer: 'BlackW3B offers a cost-effective structure with low transaction fees and zero storage fees. Detailed fee information including minting, redemption, and transfer costs can be found in our white paper and investor documentation.'
+    question: 'What are the fees associated with BlackWGB?',
+    answer: 'BlackWGB offers a cost-effective structure with low transaction fees and zero storage fees. Detailed fee information including minting, redemption, and transfer costs can be found in our white paper and investor documentation.'
   }
 ];
 
@@ -51,7 +51,7 @@ export function FAQSection() {
               FAQ
             </h2>
             <p className="text-[13px] text-gray-600 leading-relaxed">
-              Review frequently asked questions about BlackW3B. For more information view our{' '}
+              Review frequently asked questions about BlackWGB. For more information view our{' '}
               <a href="#" className="text-gray-900 underline hover:text-gray-700 transition-colors">
                 documentation
               </a>

@@ -62,7 +62,7 @@ export function buildAdminVerifyMessage(
   nonce: string
 ): string {
   return [
-    "W3B Admin Verify Request",
+    "WGB Admin Verify Request",
     `wallet:${wallet}`,
     `timestamp:${timestamp}`,
     `nonce:${nonce}`,

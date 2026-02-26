@@ -1,5 +1,5 @@
 /**
- * Solana Program Integration for W3B Protocol
+ * Solana Program Integration for WGB Protocol
  * Provides functions to read on-chain protocol state
  */
 
@@ -7,10 +7,10 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import { Program, AnchorProvider, Idl, BN } from '@coral-xyz/anchor';
 import { PROTOCOL_CONFIG, ProtocolStateData } from './protocol-constants';
 
-// W3B Protocol IDL — V2 layout (minimal version for reading state)
-const W3B_IDL: Idl = {
+// WGB Protocol IDL — V2 layout (minimal version for reading state)
+const WGB_IDL: Idl = {
   version: '0.1.0',
-  name: 'w3b_protocol',
+  name: 'wgb_protocol',
   instructions: [],
   accounts: [
     {
@@ -20,7 +20,7 @@ const W3B_IDL: Idl = {
         fields: [
           { name: 'authority', type: 'publicKey' },
           { name: 'operator', type: 'publicKey' },
-          { name: 'w3bMint', type: 'publicKey' },
+          { name: 'wgbMint', type: 'publicKey' },
           { name: 'treasury', type: 'publicKey' },
           { name: 'totalSupply', type: 'u64' },
           { name: 'totalBurned', type: 'u64' },
@@ -28,7 +28,7 @@ const W3B_IDL: Idl = {
           { name: 'provenReserves', type: 'u64' },
           { name: 'lastRootUpdate', type: 'i64' },
           { name: 'lastProofTimestamp', type: 'i64' },
-          { name: 'w3bPriceLamports', type: 'u64' },
+          { name: 'wgbPriceLamports', type: 'u64' },
           { name: 'solReceiver', type: 'publicKey' },
           { name: 'yieldApyBps', type: 'u16' },
           { name: 'totalYieldDistributed', type: 'u64' },
@@ -74,7 +74,7 @@ export async function fetchProtocolStateRaw(): Promise<ProtocolStateData | null>
     //   8  discriminator
     //  32  authority        (offset  8)
     //  32  operator         (offset 40)
-    //  32  w3bMint          (offset 72)
+    //  32  wgbMint          (offset 72)
     //  32  treasury         (offset 104)
     //   8  totalSupply      (offset 136)
     //   8  totalBurned      (offset 144)
@@ -82,7 +82,7 @@ export async function fetchProtocolStateRaw(): Promise<ProtocolStateData | null>
     //   8  provenReserves   (offset 184)
     //   8  lastRootUpdate   (offset 192)
     //   8  lastProofTimestamp(offset 200)
-    //   8  w3bPriceLamports (offset 208)
+    //   8  wgbPriceLamports (offset 208)
     //  32  solReceiver      (offset 216)
     //   2  yieldApyBps      (offset 248)
     //   8  totalYieldDist   (offset 250)
@@ -99,7 +99,7 @@ export async function fetchProtocolStateRaw(): Promise<ProtocolStateData | null>
     const operator = new PublicKey(data.slice(offset, offset + 32)).toBase58();
     offset += 32; // 72
 
-    const w3bMint = new PublicKey(data.slice(offset, offset + 32)).toBase58();
+    const wgbMint = new PublicKey(data.slice(offset, offset + 32)).toBase58();
     offset += 32; // 104
 
     const treasury = new PublicKey(data.slice(offset, offset + 32)).toBase58();
@@ -123,7 +123,7 @@ export async function fetchProtocolStateRaw(): Promise<ProtocolStateData | null>
     const lastProofTimestamp = Number(data.readBigInt64LE(offset));
     offset += 8; // 208
 
-    const w3bPriceLamports = Number(data.readBigUInt64LE(offset));
+    const wgbPriceLamports = Number(data.readBigUInt64LE(offset));
     offset += 8; // 216
 
     const solReceiver = new PublicKey(data.slice(offset, offset + 32)).toBase58();
@@ -146,7 +146,7 @@ export async function fetchProtocolStateRaw(): Promise<ProtocolStateData | null>
     return {
       authority,
       operator,
-      w3bMint,
+      wgbMint,
       treasury,
       totalSupply,
       totalBurned,
@@ -154,7 +154,7 @@ export async function fetchProtocolStateRaw(): Promise<ProtocolStateData | null>
       provenReserves,
       lastRootUpdate,
       lastProofTimestamp,
-      w3bPriceLamports,
+      wgbPriceLamports,
       solReceiver,
       yieldApyBps,
       totalYieldDistributed,

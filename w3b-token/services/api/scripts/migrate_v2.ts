@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node
 /**
- * Migrate W3B Protocol to V2
+ * Migrate WGB Protocol to V2
  * 
  * Calls:
  *   1. migrate_v2  — resizes ProtocolState PDA from V1 to V2 (512 bytes)
@@ -20,10 +20,10 @@ import dotenv from "dotenv";
 dotenv.config({ path: path.join(__dirname, "../../../.env") });
 
 // Paths
-const IDL_PATH = path.join(__dirname, "../../../programs/w3b_protocol/target/idl/w3b_protocol.json");
+const IDL_PATH = path.join(__dirname, "../../../programs/w3b_protocol/target/idl/wgb_protocol.json");
 
 const PROGRAM_ID = new PublicKey(
-  process.env.W3B_PROGRAM_ID || "9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6"
+  process.env.WGB_PROGRAM_ID || "9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6"
 );
 const RPC_URL = process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
 
@@ -42,7 +42,7 @@ function loadKeypair(): Keypair {
 }
 
 async function main() {
-  console.log("\n  W3B PROTOCOL — MIGRATE TO V2");
+  console.log("\n  WGB PROTOCOL — MIGRATE TO V2");
   console.log("  ================================\n");
 
   // Safety check
@@ -163,7 +163,7 @@ async function main() {
     const state = await (program.account as any)["protocolState"].fetch(protocolStatePda);
     console.log(`  Authority:    ${state.authority?.toBase58()}`);
     console.log(`  Operator:     ${state.operator?.toBase58()}`);
-    console.log(`  W3B Mint:     ${state.w3bMint?.toBase58()}`);
+    console.log(`  WGB Mint:     ${state.wgbMint?.toBase58()}`);
     console.log(`  Treasury:     ${state.treasury?.toBase58()}`);
     console.log(`  Total Supply: ${state.totalSupply?.toString()}`);
     console.log(`  Total Burned: ${state.totalBurned?.toString()}`);

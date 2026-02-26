@@ -14,10 +14,10 @@
         "EXPO_PUBLIC_API_BASE_URL": "http://10.0.2.2:3000",
         "EXPO_PUBLIC_SOLANA_NETWORK": "devnet",
         "EXPO_PUBLIC_RPC_ENDPOINT": "https://api.devnet.solana.com",
-        "EXPO_PUBLIC_W3B_PROGRAM_ID": "9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6",
-        "EXPO_PUBLIC_W3B_MINT": "5gw6McYxM3gCCiamCMCms9t6q2ytjPTD5P15ocjtVTVQ",
-        "EXPO_PUBLIC_W3B_TREASURY_ACCOUNT": "FfADSgooHXMW4jHjF4KpBUJdmbsx3Nnw3PAbcemt8Ark",
-        "EXPO_PUBLIC_W3B_PROTOCOL_STATE_PDA": "CWYNiviNYPEApbGjjhDPZ8vmxRTMJiHsJto8JRZNPG8s"
+        "EXPO_PUBLIC_WGB_PROGRAM_ID": "9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6",
+        "EXPO_PUBLIC_WGB_MINT": "5gw6McYxM3gCCiamCMCms9t6q2ytjPTD5P15ocjtVTVQ",
+        "EXPO_PUBLIC_WGB_TREASURY_ACCOUNT": "FfADSgooHXMW4jHjF4KpBUJdmbsx3Nnw3PAbcemt8Ark",
+        "EXPO_PUBLIC_WGB_PROTOCOL_STATE_PDA": "CWYNiviNYPEApbGjjhDPZ8vmxRTMJiHsJto8JRZNPG8s"
       }
     },
     "preview": {
@@ -27,13 +27,13 @@
       },
       "env": {
         "EXPO_PUBLIC_ENV": "staging",
-        "EXPO_PUBLIC_API_BASE_URL": "https://staging-api.w3bs.fun",
+        "EXPO_PUBLIC_API_BASE_URL": "https://staging-api.wgbs.fun",
         "EXPO_PUBLIC_SOLANA_NETWORK": "devnet",
         "EXPO_PUBLIC_RPC_ENDPOINT": "https://api.devnet.solana.com",
-        "EXPO_PUBLIC_W3B_PROGRAM_ID": "9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6",
-        "EXPO_PUBLIC_W3B_MINT": "5gw6McYxM3gCCiamCMCms9t6q2ytjPTD5P15ocjtVTVQ",
-        "EXPO_PUBLIC_W3B_TREASURY_ACCOUNT": "FfADSgooHXMW4jHjF4KpBUJdmbsx3Nnw3PAbcemt8Ark",
-        "EXPO_PUBLIC_W3B_PROTOCOL_STATE_PDA": "CWYNiviNYPEApbGjjhDPZ8vmxRTMJiHsJto8JRZNPG8s"
+        "EXPO_PUBLIC_WGB_PROGRAM_ID": "9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6",
+        "EXPO_PUBLIC_WGB_MINT": "5gw6McYxM3gCCiamCMCms9t6q2ytjPTD5P15ocjtVTVQ",
+        "EXPO_PUBLIC_WGB_TREASURY_ACCOUNT": "FfADSgooHXMW4jHjF4KpBUJdmbsx3Nnw3PAbcemt8Ark",
+        "EXPO_PUBLIC_WGB_PROTOCOL_STATE_PDA": "CWYNiviNYPEApbGjjhDPZ8vmxRTMJiHsJto8JRZNPG8s"
       }
     },
     "production": {
@@ -43,13 +43,13 @@
       },
       "env": {
         "EXPO_PUBLIC_ENV": "production",
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.w3bs.fun",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.wgbs.fun",
         "EXPO_PUBLIC_SOLANA_NETWORK": "mainnet-beta",
         "EXPO_PUBLIC_RPC_ENDPOINT": "https://api.mainnet-beta.solana.com",
-        "EXPO_PUBLIC_W3B_PROGRAM_ID": "9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6",
-        "EXPO_PUBLIC_W3B_MINT": "5gw6McYxM3gCCiamCMCms9t6q2ytjPTD5P15ocjtVTVQ",
-        "EXPO_PUBLIC_W3B_TREASURY_ACCOUNT": "FfADSgooHXMW4jHjF4KpBUJdmbsx3Nnw3PAbcemt8Ark",
-        "EXPO_PUBLIC_W3B_PROTOCOL_STATE_PDA": "CWYNiviNYPEApbGjjhDPZ8vmxRTMJiHsJto8JRZNPG8s"
+        "EXPO_PUBLIC_WGB_PROGRAM_ID": "9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6",
+        "EXPO_PUBLIC_WGB_MINT": "5gw6McYxM3gCCiamCMCms9t6q2ytjPTD5P15ocjtVTVQ",
+        "EXPO_PUBLIC_WGB_TREASURY_ACCOUNT": "FfADSgooHXMW4jHjF4KpBUJdmbsx3Nnw3PAbcemt8Ark",
+        "EXPO_PUBLIC_WGB_PROTOCOL_STATE_PDA": "CWYNiviNYPEApbGjjhDPZ8vmxRTMJiHsJto8JRZNPG8s"
       }
     }
   }

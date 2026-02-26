@@ -1,7 +1,7 @@
 [package]
 name = "reserve_proof"
 type = "bin"
-authors = ["W3B Team"]
+authors = ["WGB Team"]
 compiler_version = ">=0.30.0"
 
 [dependencies]

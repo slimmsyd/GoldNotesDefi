@@ -21,7 +21,7 @@ export function TransparencyHeader() {
                 </h1>
             </div>
             <p className="text-lg text-gray-400 font-light max-w-3xl leading-relaxed mt-4">
-                Every W3B token is 1:1 backed by physical Goldbacks held in our secure vaults.
+                Every WGB token is 1:1 backed by physical Goldbacks held in our secure vaults.
                 Below is the real-time, cryptographic proof of our solvency and the live ledger of all vault operations.
             </p>
         </motion.div>

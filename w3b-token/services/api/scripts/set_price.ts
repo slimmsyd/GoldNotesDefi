@@ -1,11 +1,11 @@
 #!/usr/bin/env ts-node
 /**
- * Set W3B Price Script
+ * Set WGB Price Script
  * 
- * Sets the W3B token price in lamports.
+ * Sets the WGB token price in lamports.
  * 
  * Example: If 1 Goldback = $9.18 and SOL = $200
- * Then 1 W3B = 9.18/200 = 0.0459 SOL = 45,900,000 lamports
+ * Then 1 WGB = 9.18/200 = 0.0459 SOL = 45,900,000 lamports
  * 
  * Usage: npx ts-node scripts/set_price.ts [price_in_lamports]
  */
@@ -18,20 +18,20 @@ import * as path from "path";
 import dotenv from "dotenv";
 
 // Import IDL
-const idlJson = require("../../../programs/w3b_protocol/target/idl/w3b_protocol.json");
-import { W3bProtocol } from "../../../programs/w3b_protocol/target/types/w3b_protocol";
+const idlJson = require("../../../programs/w3b_protocol/target/idl/wgb_protocol.json");
+import { WgbProtocol } from "../../../programs/w3b_protocol/target/types/wgb_protocol";
 
 // Load env
 dotenv.config({ path: path.join(__dirname, "../../../.env") });
 
 // Default price calculation:
 // 1 Goldback ≈ $9.18 USD
-// If SOL ≈ $200, then 1 W3B = 9.18/200 = 0.0459 SOL
+// If SOL ≈ $200, then 1 WGB = 9.18/200 = 0.0459 SOL
 // 0.0459 * 1e9 = 45,900,000 lamports
 const DEFAULT_PRICE_LAMPORTS = 45_900_000;
 
 async function main() {
-    console.log("💰 Setting W3B Token Price\n");
+    console.log("💰 Setting WGB Token Price\n");
     console.log("=".repeat(60));
 
     // Get price from command line or use default
@@ -64,7 +64,7 @@ async function main() {
     anchor.setProvider(provider);
 
     const programId = new PublicKey(idlJson.address);
-    const program = new Program<W3bProtocol>(idlJson as any, provider);
+    const program = new Program<WgbProtocol>(idlJson as any, provider);
     console.log(`📜 Program ID: ${programId.toBase58()}`);
 
     // 4. Find ProtocolState PDA
@@ -75,11 +75,11 @@ async function main() {
     console.log(`🔐 Protocol State PDA: ${protocolStatePda.toBase58()}`);
 
     // 5. Set the price
-    console.log("\n📤 Setting W3B price...");
+    console.log("\n📤 Setting WGB price...");
     
     try {
         const tx = await (program.methods as any)
-            .setW3BPrice(new anchor.BN(priceLamports))
+            .setWgbPrice(new anchor.BN(priceLamports))
             .accountsPartial({
                 protocolState: protocolStatePda,
                 authority: authority.publicKey,
@@ -93,7 +93,7 @@ async function main() {
         // 6. Verify by fetching state
         const state = await program.account.protocolState.fetch(protocolStatePda);
         console.log(`\n📊 Verified Protocol State:`);
-        console.log(`   W3B Price: ${state.w3bPriceLamports?.toString() || 'N/A'} lamports`);
+        console.log(`   WGB Price: ${state.wgbPriceLamports?.toString() || 'N/A'} lamports`);
         console.log(`   SOL Receiver: ${state.solReceiver?.toBase58() || 'N/A'}`);
         
     } catch (error: any) {
@@ -106,7 +106,7 @@ async function main() {
     }
 
     console.log("\n" + "=".repeat(60));
-    console.log("🎉 W3B price configuration complete!");
+    console.log("🎉 WGB price configuration complete!");
 }
 
 main().catch(console.error);

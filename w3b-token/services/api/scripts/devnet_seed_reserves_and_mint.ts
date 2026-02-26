@@ -21,8 +21,8 @@ import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 
-const idlJson = require("../../../programs/w3b_protocol/target/idl/w3b_protocol.json");
-import { W3bProtocol } from "../../../programs/w3b_protocol/target/types/w3b_protocol";
+const idlJson = require("../../../programs/w3b_protocol/target/idl/wgb_protocol.json");
+import { WgbProtocol } from "../../../programs/w3b_protocol/target/types/wgb_protocol";
 
 dotenv.config({ path: path.join(__dirname, "../../../.env") });
 
@@ -33,7 +33,7 @@ type Args = {
 };
 
 type ProtocolStateSnapshot = {
-  w3bMint: PublicKey;
+  wgbMint: PublicKey;
   treasury: PublicKey;
   totalSupply: number;
   provenReserves: number;
@@ -106,14 +106,14 @@ async function fetchProtocolStateSnapshot(
     throw new Error(`Protocol state account too small (${data.length})`);
   }
 
-  const w3bMint = new PublicKey(data.slice(72, 104));
+  const wgbMint = new PublicKey(data.slice(72, 104));
   const treasury = new PublicKey(data.slice(104, 136));
   const totalSupply = Number(new anchor.BN(data.subarray(136, 144), "le").toString());
   const provenReserves = Number(new anchor.BN(data.subarray(184, 192), "le").toString());
   const lastProofTimestamp = Number(new anchor.BN(data.subarray(200, 208), "le").toString());
   const w3bPriceLamports = Number(new anchor.BN(data.subarray(208, 216), "le").toString());
 
-  return { w3bMint, treasury, totalSupply, provenReserves, lastProofTimestamp, w3bPriceLamports };
+  return { wgbMint, treasury, totalSupply, provenReserves, lastProofTimestamp, w3bPriceLamports };
 }
 
 function getDeterministicRoot(targetReserves: number): string {
@@ -139,7 +139,7 @@ async function main() {
   const provider = new AnchorProvider(connection, wallet, { commitment: "confirmed" });
   anchor.setProvider(provider);
 
-  const program = new Program<W3bProtocol>(idlJson as any, provider);
+  const program = new Program<WgbProtocol>(idlJson as any, provider);
   const programId = new PublicKey(idlJson.address);
   const [protocolStatePda] = PublicKey.findProgramAddressSync([Buffer.from("protocol_state")], programId);
 
@@ -204,10 +204,10 @@ async function main() {
   if (mintAmount > 0) {
     const { TOKEN_2022_PROGRAM_ID } = require("@solana/spl-token");
     txMint = await (program.methods as any)
-      .mintW3B(new anchor.BN(mintAmount))
+      .mintWgb(new anchor.BN(mintAmount))
       .accountsPartial({
         protocolState: protocolStatePda,
-        w3bMint: pre.w3bMint,
+        wgbMint: pre.wgbMint,
         treasury: pre.treasury,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         operator: operator.publicKey,

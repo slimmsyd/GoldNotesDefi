@@ -21,6 +21,7 @@ export default function Home() {
           <Hero />
         </section>
         <section id="backed-by">
+
           <BackedBy />
         </section>
         <section id="features">

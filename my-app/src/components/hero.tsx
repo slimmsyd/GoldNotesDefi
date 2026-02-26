@@ -151,7 +151,7 @@ export function Hero() {
           >
             <Image
               src="/logos/BlackWebLogo_v3.png"
-              alt="Black W3B Logo"
+              alt="Black WGB Logo"
               width={200}
               height={200}
               className="object-contain"

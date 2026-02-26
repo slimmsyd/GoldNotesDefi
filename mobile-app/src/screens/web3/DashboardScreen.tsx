@@ -75,7 +75,7 @@ export function DashboardScreen({ navigation }: Props) {
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Supply</Text>
           <Text style={styles.cardValue}>{payload?.onChain.totalSupply ?? 0}</Text>
-          <Text style={styles.cardMeta}>W3B issued</Text>
+          <Text style={styles.cardMeta}>WGB issued</Text>
         </View>
 
         <View style={styles.card}>

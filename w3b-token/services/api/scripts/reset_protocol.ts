@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node
 /**
- * Reset W3B Protocol to Ground Zero
+ * Reset WGB Protocol to Ground Zero
  *
  * This script performs a FULL reset:
  * 1. Wipes Supabase tables (goldback_serials, merkle_roots)
@@ -27,9 +27,12 @@ import {
 import {
   TOKEN_2022_PROGRAM_ID,
   createInitializeMintInstruction,
+  createInitializeTransferFeeConfigInstruction,
   createAssociatedTokenAccountInstruction,
   getAssociatedTokenAddressSync,
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  getMintLen,
+  ExtensionType,
 } from "@solana/spl-token";
 import { createClient } from "@supabase/supabase-js";
 import { execSync } from "child_process";
@@ -42,7 +45,8 @@ dotenv.config({ path: path.join(__dirname, "../../../.env") });
 
 // Paths
 const ANCHOR_PROJECT_DIR = path.join(__dirname, "../../../programs/w3b_protocol");
-const IDL_PATH = path.join(ANCHOR_PROJECT_DIR, "target/idl/w3b_protocol.json");
+// IDL file name matches the Cargo.toml package name (renamed from w3b_protocol → wgb_protocol)
+const IDL_PATH = path.join(ANCHOR_PROJECT_DIR, "target/idl/wgb_protocol.json");
 
 // Supabase client (service role for destructive operations)
 const supabase = createClient(
@@ -280,23 +284,37 @@ async function freshTokenSetup(programIdStr: string) {
     }
   }
 
-  // Create new mint
-  console.log("\n  Creating Token-2022 Mint...");
+  // Create new mint WITH Transfer Fee Extension
+  // Fee: 10 bps = 0.1% on all transfers. Authority = ProtocolState PDA.
+  const TRANSFER_FEE_BASIS_POINTS = 0;
+  const MAX_FEE = BigInt(0);
+
+  console.log("\n  Creating Token-2022 Mint with Transfer Fee Extension...");
+  console.log(`  Transfer fee: ${TRANSFER_FEE_BASIS_POINTS} bps (${TRANSFER_FEE_BASIS_POINTS / 100}%)`);
   const mintKeypair = Keypair.generate();
-  const MINT_SIZE = 82;
-  const mintRent = await connection.getMinimumBalanceForRentExemption(MINT_SIZE);
+  const mintSize = getMintLen([ExtensionType.TransferFeeConfig]);
+  const mintRent = await connection.getMinimumBalanceForRentExemption(mintSize);
 
   const createMintTx = new Transaction().add(
     SystemProgram.createAccount({
       fromPubkey: authority.publicKey,
       newAccountPubkey: mintKeypair.publicKey,
-      space: MINT_SIZE,
+      space: mintSize,
       lamports: mintRent,
       programId: TOKEN_2022_PROGRAM_ID,
     }),
+    // Extension instruction MUST come before createInitializeMintInstruction
+    createInitializeTransferFeeConfigInstruction(
+      mintKeypair.publicKey,
+      protocolStatePda,          // transferFeeConfigAuthority = Protocol PDA
+      protocolStatePda,          // withdrawWithheldAuthority = Protocol PDA
+      TRANSFER_FEE_BASIS_POINTS,
+      MAX_FEE,
+      TOKEN_2022_PROGRAM_ID
+    ),
     createInitializeMintInstruction(
       mintKeypair.publicKey,
-      0, // 0 decimals: 1 W3B = 1 Goldback
+      0, // 0 decimals: 1 WGB = 1 Goldback
       protocolStatePda, // Mint authority = Program PDA
       null, // No freeze authority
       TOKEN_2022_PROGRAM_ID
@@ -310,7 +328,7 @@ async function freshTokenSetup(programIdStr: string) {
   console.log(`  Mint created: ${mintKeypair.publicKey.toBase58()}`);
   console.log(`  Tx: ${mintSig}`);
 
-  // Create Treasury ATA — owner = protocolStatePda (required by buy_w3b constraint)
+  // Create Treasury ATA — owner = protocolStatePda (required by buy_wgb constraint)
   const treasuryAta = getAssociatedTokenAddressSync(
     mintKeypair.publicKey,
     protocolStatePda,
@@ -324,7 +342,7 @@ async function freshTokenSetup(programIdStr: string) {
     createAssociatedTokenAccountInstruction(
       authority.publicKey,    // payer
       treasuryAta,           // ata address
-      protocolStatePda,      // owner = PDA (so buy_w3b can transfer from it)
+      protocolStatePda,      // owner = PDA (so buy_wgb can transfer from it)
       mintKeypair.publicKey, // mint
       TOKEN_2022_PROGRAM_ID,
       ASSOCIATED_TOKEN_PROGRAM_ID
@@ -337,10 +355,10 @@ async function freshTokenSetup(programIdStr: string) {
   // Initialize ProtocolState (V2 — requires token_program account)
   console.log("\n  Initializing ProtocolState (V2)...");
   try {
-    // Note: Anchor converts w3b_mint -> w3BMint (capitalizes B after digit)
+    // Note: Anchor converts wgb_mint -> wgbMint (capitalizes B after digit)
     const accounts = {
       protocolState: protocolStatePda,
-      w3BMint: mintKeypair.publicKey,
+      wgbMint: mintKeypair.publicKey,
       treasury: treasuryAta,
       authority: authority.publicKey,
       systemProgram: SystemProgram.programId,
@@ -380,14 +398,14 @@ function printConfiguration(addresses: {
   separator("Phase 1D: New Configuration");
 
   console.log("\n  Update these in my-app/.env.local:\n");
-  console.log(`  NEXT_PUBLIC_W3B_PROGRAM_ID=${addresses.programId}`);
-  console.log(`  NEXT_PUBLIC_W3B_MINT=${addresses.mint}`);
-  console.log(`  NEXT_PUBLIC_W3B_TREASURY_ACCOUNT=${addresses.treasury}`);
-  console.log(`  NEXT_PUBLIC_W3B_PROTOCOL_STATE_PDA=${addresses.protocolState}`);
+  console.log(`  NEXT_PUBLIC_WGB_PROGRAM_ID=${addresses.programId}`);
+  console.log(`  NEXT_PUBLIC_WGB_MINT=${addresses.mint}`);
+  console.log(`  NEXT_PUBLIC_WGB_TREASURY_ACCOUNT=${addresses.treasury}`);
+  console.log(`  NEXT_PUBLIC_WGB_PROTOCOL_STATE_PDA=${addresses.protocolState}`);
 
   console.log("\n  And in protocol-constants.ts (fallback values):\n");
   console.log(`  programId: '${addresses.programId}'`);
-  console.log(`  w3bMint: '${addresses.mint}'`);
+  console.log(`  wgbMint: '${addresses.mint}'`);
   console.log(`  treasury: '${addresses.treasury}'`);
   console.log(`  protocolState: '${addresses.protocolState}'`);
 
@@ -411,7 +429,7 @@ function printConfiguration(addresses: {
 
 async function main() {
   console.log("\n");
-  console.log("  W3B PROTOCOL - FULL RESET TO GROUND ZERO");
+  console.log("  WGB PROTOCOL - FULL RESET TO GROUND ZERO");
   console.log("  ==========================================");
   console.log("  WARNING: This will destroy ALL data.");
   console.log("  Network: DEVNET ONLY\n");

@@ -1,9 +1,9 @@
 #!/usr/bin/env ts-node
 /**
- * Setup W3B Token-2022 Mint and Treasury
+ * Setup WGB Token-2022 Mint and Treasury
  * 
  * This script:
- * 1. Creates a Token-2022 mint for W3B (0 decimals = 1 token = 1 Goldback)
+ * 1. Creates a Token-2022 mint for WGB (0 decimals = 1 token = 1 Goldback)
  * 2. Creates a treasury token account
  * 3. Initializes the ProtocolState with these addresses
  * 
@@ -23,6 +23,7 @@ import {
 import {
     TOKEN_2022_PROGRAM_ID,
     createInitializeMintInstruction,
+    createInitializeTransferFeeConfigInstruction,
     createAssociatedTokenAccountInstruction,
     getAssociatedTokenAddressSync,
     ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -34,14 +35,14 @@ import * as path from "path";
 import dotenv from "dotenv";
 
 // Import IDL
-const idlJson = require("../../../programs/w3b_protocol/target/idl/w3b_protocol.json");
-import { W3bProtocol } from "../../../programs/w3b_protocol/target/types/w3b_protocol";
+const idlJson = require("../../../programs/w3b_protocol/target/idl/wgb_protocol.json");
+import { WgbProtocol } from "../../../programs/w3b_protocol/target/types/wgb_protocol";
 
 // Load env
 dotenv.config({ path: path.join(__dirname, "../../../.env") });
 
 async function main() {
-    console.log("🏗️  Setting up W3B Token-2022 Mint and Treasury\n");
+    console.log("🏗️  Setting up WGB Token-2022 Mint and Treasury\n");
     console.log("=".repeat(60));
 
     // 1. Setup connection
@@ -62,7 +63,7 @@ async function main() {
     anchor.setProvider(provider);
 
     const programId = new PublicKey(idlJson.address);
-    const program = new Program<W3bProtocol>(idlJson as any, provider);
+    const program = new Program<WgbProtocol>(idlJson as any, provider);
     console.log(`📜 Program ID: ${programId.toBase58()}`);
 
     // 4. Find ProtocolState PDA
@@ -74,28 +75,42 @@ async function main() {
 
     // 5. Create Mint Keypair
     const mintKeypair = Keypair.generate();
-    console.log(`\n🪙 W3B Mint Address: ${mintKeypair.publicKey.toBase58()}`);
+    console.log(`\n🪙 WGB Mint Address: ${mintKeypair.publicKey.toBase58()}`);
 
-    // 6. Calculate rent for basic Token-2022 mint (82 bytes for a basic mint)
-    const MINT_SIZE = 82;  // Basic Token-2022 mint without extensions
-    const mintRent = await connection.getMinimumBalanceForRentExemption(MINT_SIZE);
+    // 6. Transfer Fee Extension configuration
+    const TRANSFER_FEE_BASIS_POINTS = 0;    // No transfer fee (0 decimals makes fees impractical)
+    const MAX_FEE = BigInt(0);
 
-    // 7. Create mint account
-    console.log("\n📤 Creating Token-2022 Mint...");
+    // 7. Calculate rent for Token-2022 mint WITH Transfer Fee Extension
+    const mintSize = getMintLen([ExtensionType.TransferFeeConfig]);
+    const mintRent = await connection.getMinimumBalanceForRentExemption(mintSize);
+
+    console.log(`   Mint size with Transfer Fee Extension: ${mintSize} bytes`);
+    console.log(`   Transfer fee: ${TRANSFER_FEE_BASIS_POINTS} bps (${TRANSFER_FEE_BASIS_POINTS / 100}%)`);
+
+    // 8. Create mint account with Transfer Fee Extension
+    // Extension instructions MUST come before createInitializeMintInstruction
+    console.log("\n📤 Creating Token-2022 Mint with Transfer Fee Extension...");
     
     const createMintTx = new Transaction().add(
-        // Create account with correct size
         SystemProgram.createAccount({
             fromPubkey: authority.publicKey,
             newAccountPubkey: mintKeypair.publicKey,
-            space: MINT_SIZE,
+            space: mintSize,
             lamports: mintRent,
             programId: TOKEN_2022_PROGRAM_ID,
         }),
-        // Initialize mint (0 decimals = integer tokens)
+        createInitializeTransferFeeConfigInstruction(
+            mintKeypair.publicKey,
+            protocolStatePda,          // transferFeeConfigAuthority (can update fee params)
+            protocolStatePda,          // withdrawWithheldAuthority (can harvest withheld fees)
+            TRANSFER_FEE_BASIS_POINTS,
+            MAX_FEE,
+            TOKEN_2022_PROGRAM_ID
+        ),
         createInitializeMintInstruction(
             mintKeypair.publicKey,
-            0,  // 0 decimals: 1 W3B = 1 Goldback (integer)
+            0,  // 0 decimals: 1 WGB = 1 Goldback (integer)
             protocolStatePda,  // Mint authority = Program PDA
             null,  // No freeze authority
             TOKEN_2022_PROGRAM_ID
@@ -142,8 +157,8 @@ async function main() {
         // Try with multiple account name formats to handle SDK casing quirks
         const accounts = {
             protocolState: protocolStatePda,
-            w3bMint: mintKeypair.publicKey,
-            w3BMint: mintKeypair.publicKey,  // Try both casings
+            wgbMint: mintKeypair.publicKey,
+            wgbMint: mintKeypair.publicKey,  // Try both casings
             treasury: treasuryAta,
             authority: authority.publicKey,
             systemProgram: SystemProgram.programId,
@@ -165,15 +180,17 @@ async function main() {
 
     // 10. Summary
     console.log("\n" + "=".repeat(60));
-    console.log("🎉 W3B Token Setup Complete!\n");
+    console.log("🎉 WGB Token Setup Complete!\n");
     console.log("📋 Save these addresses:\n");
-    console.log(`   W3B Mint:      ${mintKeypair.publicKey.toBase58()}`);
+    console.log(`   WGB Mint:      ${mintKeypair.publicKey.toBase58()}`);
     console.log(`   Treasury:      ${treasuryAta.toBase58()}`);
     console.log(`   Protocol PDA:  ${protocolStatePda.toBase58()}`);
     console.log(`   Program ID:    ${programId.toBase58()}`);
     console.log("\n📊 Current State:");
-    console.log(`   Total Supply:     0 W3B`);
+    console.log(`   Total Supply:     0 WGB`);
     console.log(`   Proven Reserves:  0 Goldbacks`);
+    console.log(`   Transfer Fee:     ${TRANSFER_FEE_BASIS_POINTS} bps (${TRANSFER_FEE_BASIS_POINTS / 100}%)`);
+    console.log(`   Max Fee:          ${MAX_FEE.toString()} tokens`);
     console.log("\n🔜 Next: Run simulate → prove → mint flow");
 }
 

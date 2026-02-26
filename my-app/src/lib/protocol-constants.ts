@@ -1,5 +1,5 @@
 /**
- * W3B Protocol Constants
+ * WGB Protocol Constants
  * Deployed Infrastructure on Solana
  * 
  * Network configuration is read from environment variables:
@@ -105,31 +105,31 @@ const requirePublicEnv = (
   return trimmedValue;
 };
 
-const PUBLIC_W3B_PROGRAM_ID = process.env.NEXT_PUBLIC_W3B_PROGRAM_ID;
-const PUBLIC_W3B_MINT = process.env.NEXT_PUBLIC_W3B_MINT;
-const PUBLIC_W3B_TREASURY_ACCOUNT = process.env.NEXT_PUBLIC_W3B_TREASURY_ACCOUNT;
-const PUBLIC_W3B_PROTOCOL_STATE_PDA = process.env.NEXT_PUBLIC_W3B_PROTOCOL_STATE_PDA;
+const PUBLIC_WGB_PROGRAM_ID = process.env.NEXT_PUBLIC_WGB_PROGRAM_ID;
+const PUBLIC_WGB_MINT = process.env.NEXT_PUBLIC_WGB_MINT;
+const PUBLIC_WGB_TREASURY_ACCOUNT = process.env.NEXT_PUBLIC_WGB_TREASURY_ACCOUNT;
+const PUBLIC_WGB_PROTOCOL_STATE_PDA = process.env.NEXT_PUBLIC_WGB_PROTOCOL_STATE_PDA;
 
 // Program and Account Addresses
 // NOTE: These must match what's stored in the ProtocolState PDA on-chain
 export const PROTOCOL_CONFIG = {
-  // The W3B Protocol Program ID
-  programId: requirePublicEnv(PUBLIC_W3B_PROGRAM_ID, 'NEXT_PUBLIC_W3B_PROGRAM_ID', 'Program ID'),
+  // The WGB Protocol Program ID
+  programId: requirePublicEnv(PUBLIC_WGB_PROGRAM_ID, 'NEXT_PUBLIC_WGB_PROGRAM_ID', 'Program ID'),
   
   // Token Mint (SPL Token-2022) - stored in ProtocolState
-  w3bMint: requirePublicEnv(PUBLIC_W3B_MINT, 'NEXT_PUBLIC_W3B_MINT', 'W3B Mint'),
+  wgbMint: requirePublicEnv(PUBLIC_WGB_MINT, 'NEXT_PUBLIC_WGB_MINT', 'WGB Mint'),
   
   // Treasury Token Account - PDA-controlled (owner = protocolState PDA)
   treasury: requirePublicEnv(
-    PUBLIC_W3B_TREASURY_ACCOUNT,
-    'NEXT_PUBLIC_W3B_TREASURY_ACCOUNT',
+    PUBLIC_WGB_TREASURY_ACCOUNT,
+    'NEXT_PUBLIC_WGB_TREASURY_ACCOUNT',
     'Treasury Account'
   ),
   
   // Protocol State PDA
   protocolState: requirePublicEnv(
-    PUBLIC_W3B_PROTOCOL_STATE_PDA,
-    'NEXT_PUBLIC_W3B_PROTOCOL_STATE_PDA',
+    PUBLIC_WGB_PROTOCOL_STATE_PDA,
+    'NEXT_PUBLIC_WGB_PROTOCOL_STATE_PDA',
     'Protocol State PDA'
   ),
   
@@ -154,7 +154,7 @@ export const PROTOCOL_CONFIG = {
 
 // Supabase Configuration (Blockchain project)
 export const SUPABASE_CONFIG = {
-  url: process.env.NEXT_PUBLIC_W3B_SUPABASE_URL || 'https://jbsasakwyxjbetdezifj.supabase.co',
+  url: process.env.NEXT_PUBLIC_WGB_SUPABASE_URL || 'https://jbsasakwyxjbetdezifj.supabase.co',
   // Note: anon key should be in .env, this is just a fallback reference
   anonKeyEnvVar: 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
 } as const;
@@ -167,10 +167,10 @@ export interface ProtocolStateData {
   operator: string;            // Operator (hot wallet) — routine ops
 
   // Token
-  w3bMint: string;
+  wgbMint: string;
   treasury: string;
-  totalSupply: number;         // Minted W3B token count
-  totalBurned: number;         // Burned W3B count
+  totalSupply: number;         // Minted WGB token count
+  totalBurned: number;         // Burned WGB count
 
   // Reserve Proof
   currentMerkleRoot: Uint8Array;
@@ -179,7 +179,7 @@ export interface ProtocolStateData {
   lastProofTimestamp: number;   // Unix timestamp (seconds)
 
   // Pricing
-  w3bPriceLamports: number;    // Price of 1 W3B in lamports
+  wgbPriceLamports: number;    // Price of 1 WGB in lamports
   solReceiver: string;         // Where SOL payments are sent
 
   // Yield
@@ -220,7 +220,7 @@ export interface ProtocolData {
   lastProofTimestamp: Date | null;
   currentMerkleRoot: string;
   isPaused: boolean;
-  treasuryBalance: number; // W3B tokens available in treasury
+  treasuryBalance: number; // WGB tokens available in treasury
 
   // Derived
   isSolvent: boolean;
@@ -230,8 +230,8 @@ export interface ProtocolData {
   lastAuditRecord: MerkleRootRecord | null;
   totalBatches: number;
 
-  // Goldback/W3B Price Data
-  goldbackPrice: number | null;           // Current Goldback rate (W3B is 1:1)
+  // Goldback/WGB Price Data
+  goldbackPrice: number | null;           // Current Goldback rate (WGB is 1:1)
   goldbackPriceUpdatedAt: Date | null;    // When the price was last updated
   goldbackPrice24hChange: number | null;  // 24h price change percentage
   isGoldbackPriceStale: boolean;          // True if price is >30 min old

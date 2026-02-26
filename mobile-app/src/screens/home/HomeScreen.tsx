@@ -12,13 +12,13 @@ type Props = BottomTabScreenProps<MainTabParamList, 'Home'>;
 const EMPTY_SUMMARY: PortfolioSummaryResponse = {
   success: true,
   walletAddress: '',
-  w3bBalance: 0,
+  wgbBalance: 0,
   goldbackRateUsd: 10.14,
   portfolioUsd: 0,
   loyaltyPoints: 0,
   lastUpdated: '',
   dataHealth: {
-    w3bSource: 'fallback',
+    wgbSource: 'fallback',
     loyaltySource: 'fallback',
   },
 };
@@ -92,7 +92,7 @@ export function HomeScreen({ navigation }: Props) {
 
         {/* Hero Pricing */}
         <View style={styles.heroSection}>
-          <Text style={styles.heroLabel}>W3B ASSET PRICE</Text>
+          <Text style={styles.heroLabel}>WGB ASSET PRICE</Text>
           <Text style={styles.heroPrice}>{priceFormatted}</Text>
           <View style={styles.priceChangeRow}>
             <View style={styles.priceChangePill}>
@@ -191,11 +191,11 @@ export function HomeScreen({ navigation }: Props) {
             <Text style={styles.cardMainValue}>{supply}</Text>
           </View>
 
-          {/* Card 4: W3B Price */}
+          {/* Card 4: WGB Price */}
           <View style={styles.infoCard}>
             <Text style={styles.watermark}>10</Text>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>W3B Price</Text>
+              <Text style={styles.cardTitle}>WGB Price</Text>
               <View style={styles.badgeEmerald}>
                 <Text style={styles.badgeEmeraldText}>↑ 0%</Text>
               </View>

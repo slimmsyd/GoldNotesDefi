@@ -123,7 +123,7 @@ export function ChatModal({
               }`}>
               <div className="flex flex-col">
                 <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Chat Assistant</h3>
-                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ask anything about GoldBack and W3B</p>
+                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Ask anything about GoldBack and WGB</p>
               </div>
               <div className="flex items-center gap-2">
                 {onToggleDarkMode && (

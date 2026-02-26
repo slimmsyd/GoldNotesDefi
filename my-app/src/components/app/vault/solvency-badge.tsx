@@ -139,7 +139,7 @@ export function SolvencyBadge() {
                         </div>
                         <div className="relative z-10 flex flex-col items-start">
                             <h4 className="text-[32px] font-bold text-white tracking-tighter leading-none mb-1">{onChain.totalSupply.toLocaleString()}</h4>
-                            <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Minted W3B</p>
+                            <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Minted WGB</p>
                         </div>
                     </div>
 

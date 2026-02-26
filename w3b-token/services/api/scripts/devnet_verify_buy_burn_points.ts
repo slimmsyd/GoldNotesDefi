@@ -20,8 +20,8 @@ import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 
-const idlJson = require("../../../programs/w3b_protocol/target/idl/w3b_protocol.json");
-import { W3bProtocol } from "../../../programs/w3b_protocol/target/types/w3b_protocol";
+const idlJson = require("../../../programs/w3b_protocol/target/idl/wgb_protocol.json");
+import { WgbProtocol } from "../../../programs/w3b_protocol/target/types/wgb_protocol";
 
 dotenv.config({ path: path.join(__dirname, "../../../.env") });
 
@@ -40,7 +40,7 @@ type Args = {
 };
 
 type ProtocolStateSnapshot = {
-  w3bMint: PublicKey;
+  wgbMint: PublicKey;
   treasury: PublicKey;
   solReceiver: PublicKey;
   totalSupply: number;
@@ -96,14 +96,14 @@ async function fetchProtocolStateSnapshot(
   const d = info.data;
   if (d.length < 248) throw new Error(`ProtocolState too small: ${d.length}`);
 
-  const w3bMint = new PublicKey(d.slice(72, 104));
+  const wgbMint = new PublicKey(d.slice(72, 104));
   const treasury = new PublicKey(d.slice(104, 136));
   const totalSupply = Number(new anchor.BN(d.subarray(136, 144), "le").toString());
   const provenReserves = Number(new anchor.BN(d.subarray(184, 192), "le").toString());
   const w3bPriceLamports = Number(new anchor.BN(d.subarray(208, 216), "le").toString());
   const solReceiver = new PublicKey(d.slice(216, 248));
 
-  return { w3bMint, treasury, solReceiver, totalSupply, provenReserves, w3bPriceLamports };
+  return { wgbMint, treasury, solReceiver, totalSupply, provenReserves, w3bPriceLamports };
 }
 
 async function ensureAta(
@@ -168,7 +168,7 @@ async function main() {
   const provider = new AnchorProvider(connection, new Wallet(operator), { commitment: "confirmed" });
   anchor.setProvider(provider);
 
-  const program = new Program<W3bProtocol>(idlJson as any, provider);
+  const program = new Program<WgbProtocol>(idlJson as any, provider);
   const programId = new PublicKey(idlJson.address);
   const [protocolStatePda] = PublicKey.findProgramAddressSync([Buffer.from("protocol_state")], programId);
   const state = await fetchProtocolStateSnapshot(connection, protocolStatePda);
@@ -191,8 +191,8 @@ async function main() {
   await fundUser(connection, operator, userWithProfile.publicKey, args.fundSol);
   await fundUser(connection, operator, wrongProfileOwner.publicKey, args.fundSol);
 
-  const ataNoProfile = await ensureAta(connection, operator, userNoProfile.publicKey, state.w3bMint);
-  const ataWithProfile = await ensureAta(connection, operator, userWithProfile.publicKey, state.w3bMint);
+  const ataNoProfile = await ensureAta(connection, operator, userNoProfile.publicKey, state.wgbMint);
+  const ataWithProfile = await ensureAta(connection, operator, userWithProfile.publicKey, state.wgbMint);
 
   const [userWithProfilePda] = PublicKey.findProgramAddressSync(
     [Buffer.from("user_profile"), userWithProfile.publicKey.toBuffer()],
@@ -227,7 +227,7 @@ async function main() {
   // 1) buy succeeds with userProfile null
   try {
     const sig = await (program.methods as any)
-      .buyW3B(new anchor.BN(args.amount))
+      .buyWgb(new anchor.BN(args.amount))
       .accountsPartial({
         protocolState: protocolStatePda,
         buyer: userNoProfile.publicKey,
@@ -262,12 +262,12 @@ async function main() {
       programId
     );
     const sig = await (program.methods as any)
-      .burnW3B(new anchor.BN(args.amount), new anchor.BN(requestId.toString()))
+      .burnWgb(new anchor.BN(args.amount), new anchor.BN(requestId.toString()))
       .accountsPartial({
         protocolState: protocolStatePda,
         user: userNoProfile.publicKey,
         userTokenAccount: ataNoProfile,
-        w3BMint: state.w3bMint,
+        wgbMint: state.wgbMint,
         redemptionRequest: redemptionPda,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
@@ -295,7 +295,7 @@ async function main() {
   // 3) wrong profile should fail
   try {
     await (program.methods as any)
-      .buyW3B(new anchor.BN(0))
+      .buyWgb(new anchor.BN(0))
       .accountsPartial({
         protocolState: protocolStatePda,
         buyer: userWithProfile.publicKey,
@@ -334,7 +334,7 @@ async function main() {
     const beforeRedeemed = Number(before.totalRedeemed?.toString?.() ?? before.totalRedeemed ?? 0);
 
     const buySig = await (program.methods as any)
-      .buyW3B(new anchor.BN(args.amount))
+      .buyWgb(new anchor.BN(args.amount))
       .accountsPartial({
         protocolState: protocolStatePda,
         buyer: userWithProfile.publicKey,
@@ -355,12 +355,12 @@ async function main() {
     );
 
     const burnSig = await (program.methods as any)
-      .burnW3B(new anchor.BN(args.amount), new anchor.BN(requestId.toString()))
+      .burnWgb(new anchor.BN(args.amount), new anchor.BN(requestId.toString()))
       .accountsPartial({
         protocolState: protocolStatePda,
         user: userWithProfile.publicKey,
         userTokenAccount: ataWithProfile,
-        w3BMint: state.w3bMint,
+        wgbMint: state.wgbMint,
         redemptionRequest: redemptionPda,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_2022_PROGRAM_ID,

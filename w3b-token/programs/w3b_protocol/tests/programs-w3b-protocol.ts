@@ -9,8 +9,8 @@ import {
   sendAndConfirmTransaction,
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
-import { W3bProtocol } from "../target/types/w3b_protocol";
-import IDL from "../target/idl/w3b_protocol.json";
+import { WgbProtocol } from "../target/types/wgb_protocol";
+import IDL from "../target/idl/wgb_protocol.json";
 
 const {
   TOKEN_2022_PROGRAM_ID,
@@ -21,16 +21,16 @@ const {
   MINT_SIZE,
 } = require("../../../services/api/node_modules/@solana/spl-token");
 
-describe("programs-w3b-protocol step3 optional profile", () => {
+describe("programs-wgb-protocol step3 optional profile", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  const program = new Program<W3bProtocol>(IDL as W3bProtocol, provider);
+  const program = new Program<WgbProtocol>(IDL as WgbProtocol, provider);
   const connection = provider.connection;
   const payer = (provider.wallet as any).payer as Keypair;
 
   let protocolStatePda: PublicKey;
-  let w3bMint: PublicKey;
+  let wgbMint: PublicKey;
   let treasuryAta: PublicKey;
 
   let testUser: Keypair;
@@ -38,14 +38,14 @@ describe("programs-w3b-protocol step3 optional profile", () => {
   let wrongProfileUser: Keypair;
   let wrongProfilePda: PublicKey;
 
-  function parseProtocolStateV2(data: Buffer): { w3bMint: PublicKey; treasury: PublicKey; w3bPriceLamports: BN } {
-    const w3bMint = new PublicKey(data.slice(72, 104));
+  function parseProtocolStateV2(data: Buffer): { wgbMint: PublicKey; treasury: PublicKey; wgbPriceLamports: BN } {
+    const wgbMint = new PublicKey(data.slice(72, 104));
     const treasury = new PublicKey(data.slice(104, 136));
-    const w3bPriceLamports = new BN(data.subarray(208, 216), "le");
-    return { w3bMint, treasury, w3bPriceLamports };
+    const wgbPriceLamports = new BN(data.subarray(208, 216), "le");
+    return { wgbMint, treasury, wgbPriceLamports };
   }
 
-  async function readProtocolState(): Promise<{ w3bMint: PublicKey; treasury: PublicKey; w3bPriceLamports: BN } | null> {
+  async function readProtocolState(): Promise<{ wgbMint: PublicKey; treasury: PublicKey; wgbPriceLamports: BN } | null> {
     const info = await connection.getAccountInfo(protocolStatePda);
     if (!info || info.data.length < 216) return null;
     return parseProtocolStateV2(info.data);
@@ -110,7 +110,7 @@ describe("programs-w3b-protocol step3 optional profile", () => {
 
   async function ensureUserTokenAccount(user: PublicKey): Promise<PublicKey> {
     const userTokenAccount = getAssociatedTokenAddressSync(
-      w3bMint,
+      wgbMint,
       user,
       false,
       TOKEN_2022_PROGRAM_ID,
@@ -124,7 +124,7 @@ describe("programs-w3b-protocol step3 optional profile", () => {
           payer.publicKey,
           userTokenAccount,
           user,
-          w3bMint,
+          wgbMint,
           TOKEN_2022_PROGRAM_ID,
           ASSOCIATED_TOKEN_PROGRAM_ID
         )
@@ -166,18 +166,18 @@ describe("programs-w3b-protocol step3 optional profile", () => {
     const existingState = await readProtocolState();
 
     if (existingState) {
-      w3bMint = existingState.w3bMint;
+      wgbMint = existingState.wgbMint;
       treasuryAta = existingState.treasury;
     } else {
       const created = await createMintAndTreasury(protocolStatePda);
-      w3bMint = created.mint;
+      wgbMint = created.mint;
       treasuryAta = created.treasury;
 
       await program.methods
         .initializeV2()
         .accountsPartial({
           protocolState: protocolStatePda,
-          w3BMint: w3bMint,
+          wgbMint: wgbMint,
           treasury: treasuryAta,
           authority: payer.publicKey,
           systemProgram: SystemProgram.programId,
@@ -189,9 +189,9 @@ describe("programs-w3b-protocol step3 optional profile", () => {
     const afterState = await readProtocolState();
     if (!afterState) throw new Error("ProtocolState not found after setup");
 
-    if (afterState.w3bPriceLamports.eqn(0)) {
+    if (afterState.wgbPriceLamports.eqn(0)) {
       await program.methods
-        .setW3BPriceAdmin(new BN(1))
+        .setWgbPriceAdmin(new BN(1))
         .accountsPartial({
           protocolState: protocolStatePda,
           authority: payer.publicKey,
@@ -208,9 +208,9 @@ describe("programs-w3b-protocol step3 optional profile", () => {
     wrongProfilePda = await createUserProfile(wrongProfileUser);
   });
 
-  it("buy_w3b succeeds when user_profile is omitted", async () => {
+  it("buy_wgb succeeds when user_profile is omitted", async () => {
     await program.methods
-      .buyW3B(new BN(0))
+      .buyWgb(new BN(0))
       .accountsPartial({
         protocolState: protocolStatePda,
         buyer: testUser.publicKey,
@@ -225,7 +225,7 @@ describe("programs-w3b-protocol step3 optional profile", () => {
       .rpc({ commitment: "confirmed" });
   });
 
-  it("burn_w3b succeeds when user_profile is omitted", async () => {
+  it("burn_wgb succeeds when user_profile is omitted", async () => {
     const requestId = new BN(Date.now());
     const requestIdLe = requestId.toArrayLike(Buffer, "le", 8);
     const [redemptionRequestPda] = PublicKey.findProgramAddressSync(
@@ -234,12 +234,12 @@ describe("programs-w3b-protocol step3 optional profile", () => {
     );
 
     await program.methods
-      .burnW3B(new BN(0), requestId)
+      .burnWgb(new BN(0), requestId)
       .accountsPartial({
         protocolState: protocolStatePda,
         user: testUser.publicKey,
         userTokenAccount: testUserTokenAccount,
-        w3BMint: w3bMint,
+        wgbMint: wgbMint,
         redemptionRequest: redemptionRequestPda,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
@@ -249,10 +249,10 @@ describe("programs-w3b-protocol step3 optional profile", () => {
       .rpc({ commitment: "confirmed" });
   });
 
-  it("buy_w3b fails with InvalidUserProfileAccount when a wrong profile is provided", async () => {
+  it("buy_wgb fails with InvalidUserProfileAccount when a wrong profile is provided", async () => {
     try {
       await program.methods
-        .buyW3B(new BN(0))
+        .buyWgb(new BN(0))
         .accountsPartial({
           protocolState: protocolStatePda,
           buyer: testUser.publicKey,
@@ -266,7 +266,7 @@ describe("programs-w3b-protocol step3 optional profile", () => {
         .signers([testUser])
         .rpc({ commitment: "confirmed" });
 
-      expect.fail("Expected buy_w3b to fail for invalid user_profile account");
+      expect.fail("Expected buy_wgb to fail for invalid user_profile account");
     } catch (err) {
       const message = String(err);
       const maybeCode = (err as any)?.error?.errorCode?.code;
@@ -283,7 +283,7 @@ describe("programs-w3b-protocol step3 optional profile", () => {
     }
   });
 
-  it("burn_w3b fails with InvalidUserProfileAccount when a wrong profile is provided", async () => {
+  it("burn_wgb fails with InvalidUserProfileAccount when a wrong profile is provided", async () => {
     const requestId = new BN(Date.now() + 1);
     const requestIdLe = requestId.toArrayLike(Buffer, "le", 8);
     const [redemptionRequestPda] = PublicKey.findProgramAddressSync(
@@ -293,12 +293,12 @@ describe("programs-w3b-protocol step3 optional profile", () => {
 
     try {
       await program.methods
-        .burnW3B(new BN(0), requestId)
+        .burnWgb(new BN(0), requestId)
         .accountsPartial({
           protocolState: protocolStatePda,
           user: testUser.publicKey,
           userTokenAccount: testUserTokenAccount,
-          w3BMint: w3bMint,
+          wgbMint: wgbMint,
           redemptionRequest: redemptionRequestPda,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
@@ -307,7 +307,7 @@ describe("programs-w3b-protocol step3 optional profile", () => {
         .signers([testUser])
         .rpc({ commitment: "confirmed" });
 
-      expect.fail("Expected burn_w3b to fail for invalid user_profile account");
+      expect.fail("Expected burn_wgb to fail for invalid user_profile account");
     } catch (err) {
       const message = String(err);
       const maybeCode = (err as any)?.error?.errorCode?.code;

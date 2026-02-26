@@ -9,7 +9,7 @@
  * 2. Fetch all serials from Supabase goldback_serials table
  * 3. Compute merkle root from serial hashes (pure JS, no nargo)
  * 4. Submit update_merkle_root to Solana (sets proven_reserves = serial count)
- * 5. Auto-mint W3B tokens if proven_reserves > total_supply
+ * 5. Auto-mint WGB tokens if proven_reserves > total_supply
  * 6. Log audit trail to merkle_roots table
  *
  * Triggers:
@@ -62,10 +62,10 @@ class NodeWallet {
 
 /* ─── IDL (minimal for the instructions we need) ─── */
 
-const W3B_IDL = {
+const WGB_IDL = {
   address: PROTOCOL_CONFIG.programId,
   metadata: {
-    name: "w3b_protocol",
+    name: "wgb_protocol",
     version: "0.1.0",
     spec: "0.1.0",
   },
@@ -95,11 +95,11 @@ const W3B_IDL = {
       ],
     },
     {
-      name: "mint_w3b",
-      discriminator: [248, 247, 23, 67, 218, 96, 151, 122],
+      name: "mint_wgb",
+      discriminator: [66, 195, 247, 214, 65, 210, 53, 64],
       accounts: [
         { name: "protocol_state", writable: true },
-        { name: "w3b_mint", writable: true },
+        { name: "wgb_mint", writable: true },
         { name: "treasury", writable: true },
         { name: "token_program" },
         { name: "operator", signer: true },
@@ -113,12 +113,12 @@ const W3B_IDL = {
 
 function getSupabaseAdmin() {
   const url =
-    process.env.NEXT_PUBLIC_W3B_SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_WGB_SUPABASE_URL ||
     "https://jbsasakwyxjbetdezifj.supabase.co";
   // Prefer service role key for admin operations, fallback to anon
   const key =
-    process.env.W3B_SUPABASE_SERVICE_KEY ||
-    process.env.NEXT_PUBLIC_W3B_SUPABASE_ANON_KEY!;
+    process.env.WGB_SUPABASE_SERVICE_KEY ||
+    process.env.NEXT_PUBLIC_WGB_SUPABASE_ANON_KEY!;
   return createClient(url, key);
 }
 
@@ -145,7 +145,7 @@ function hashSerial(serial: string): Buffer {
 }
 
 interface ProtocolStateSnapshot {
-  w3bMint: PublicKey;
+  wgbMint: PublicKey;
   treasury: PublicKey;
   totalSupply: number;
   provenReserves: number;
@@ -157,14 +157,14 @@ function parseProtocolStateV2(data: Buffer): ProtocolStateSnapshot {
     throw new Error(`ProtocolState account too small: ${data.length}`);
   }
 
-  const w3bMint = new PublicKey(data.slice(72, 104));
+  const wgbMint = new PublicKey(data.slice(72, 104));
   const treasury = new PublicKey(data.slice(104, 136));
   const totalSupply = Number(new BN(data.subarray(136, 144), "le").toString());
   const provenReserves = Number(new BN(data.subarray(184, 192), "le").toString());
   const lastRootUpdate = Number(new BN(data.subarray(192, 200), "le").toString());
 
   return {
-    w3bMint,
+    wgbMint,
     treasury,
     totalSupply,
     provenReserves,
@@ -302,7 +302,7 @@ export async function POST(request: Request) {
     });
     setProvider(provider);
 
-    const program = new Program(W3B_IDL as any, provider);
+    const program = new Program(WGB_IDL as any, provider);
 
     // Find PDA
     const [protocolStatePda] = PublicKey.findProgramAddressSync(
@@ -313,7 +313,7 @@ export async function POST(request: Request) {
     // Fetch current state before update
     let currentSupply = 0;
     let currentReserves = 0;
-    let w3bMintPubkey: PublicKey | null = null;
+    let wgbMintPubkey: PublicKey | null = null;
     let treasuryPubkey: PublicKey | null = null;
     let preStateFetched = false;
 
@@ -323,7 +323,7 @@ export async function POST(request: Request) {
         preStateFetched = true;
         currentSupply = preState.totalSupply;
         currentReserves = preState.provenReserves;
-        w3bMintPubkey = preState.w3bMint;
+        wgbMintPubkey = preState.wgbMint;
         treasuryPubkey = preState.treasury;
         log(
           `Pre-state: supply=${currentSupply}, reserves=${currentReserves}`
@@ -370,7 +370,7 @@ export async function POST(request: Request) {
 
     log(`Merkle root updated! Tx: ${updateTx}`);
 
-    // 6.5 Submit proof hash (required for mint_w3b staleness check).
+    // 6.5 Submit proof hash (required for mint_wgb staleness check).
     // Note: current protocol records the hash and enforces reserve-count logic.
     const proofHash = crypto
       .createHash("sha256")
@@ -394,20 +394,20 @@ export async function POST(request: Request) {
     const autoMintEnabled =
       process.env.AUTO_MINT_ENABLED !== "false"; // Enabled by default
 
-    if (autoMintEnabled && w3bMintPubkey && treasuryPubkey) {
+    if (autoMintEnabled && wgbMintPubkey && treasuryPubkey) {
       // Mint ONLY when reserves increased (new ingestion), never to fill gaps caused by burns.
       // Using currentReserves (pre-state proven reserves) ensures a burn does not trigger minting.
       const amountToMint = Math.max(0, serials.length - currentReserves);
       if (amountToMint > 0) {
         log(
-          `Auto-minting ${amountToMint} W3B tokens due to reserve increase (newSerials=${serials.length - currentReserves})...`
+          `Auto-minting ${amountToMint} WGB tokens due to reserve increase (newSerials=${serials.length - currentReserves})...`
         );
         mintTx = await (program.methods as any)
-          .mintW3B(new BN(amountToMint))
+          .mintWgb(new BN(amountToMint))
           .accountsPartial({
             protocolState: protocolStatePda,
-            w3BMint: w3bMintPubkey,
-            w3bMint: w3bMintPubkey,
+            wgbMint: wgbMintPubkey,
+            wgbMint: wgbMintPubkey,
             treasury: treasuryPubkey,
             tokenProgram: TOKEN_2022_PROGRAM_ID,
             operator: authority.publicKey,

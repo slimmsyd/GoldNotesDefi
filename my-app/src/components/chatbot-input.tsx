@@ -45,7 +45,7 @@ export function ChatbotInput() {
   useEffect(() => {
     // Stable per-browser identity for the upstream chat API.
     try {
-      const key = 'w3b_chat_user_id';
+      const key = 'wgb_chat_user_id';
       const existing = window.localStorage.getItem(key);
       if (existing) {
         setUserId(existing);

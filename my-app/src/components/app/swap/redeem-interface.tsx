@@ -8,12 +8,12 @@ import { Transaction } from '@solana/web3.js';
 import { PROTOCOL_CONFIG } from '@/lib/protocol-constants';
 import { getExplorerUrl } from '@/lib/network-utils';
 import {
-  createBurnW3bInstruction,
-  getUserW3bTokenAccount,
-  fetchUserW3bBalance,
+  createBurnWgbInstruction,
+  getUserWgbTokenAccount,
+  fetchUserWgbBalance,
   generateRequestId,
   maybeCreateInitUserProfileInstruction,
-} from '@/lib/w3b-program';
+} from '@/lib/wgb-program';
 import {
   fetchUserRedemptions,
   getRedemptionStatusLabel,
@@ -25,7 +25,7 @@ const WalletMultiButton = dynamic(
   { ssr: false }
 );
 
-const DEFAULT_W3B_PRICE_USD = 9.02;
+const DEFAULT_WGB_PRICE_USD = 9.02;
 
 type RedeemStep = 'input' | 'shipping' | 'confirm' | 'processing' | 'success';
 
@@ -48,8 +48,8 @@ export function RedeemInterface() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [txSignature, setTxSignature] = useState<string | null>(null);
-  const [w3bBalance, setW3bBalance] = useState<bigint>(BigInt(0));
-  const [w3bPriceUsd, setW3bPriceUsd] = useState<number>(DEFAULT_W3B_PRICE_USD);
+  const [wgbBalance, setWgbBalance] = useState<bigint>(BigInt(0));
+  const [wgbPriceUsd, setWgbPriceUsd] = useState<number>(DEFAULT_WGB_PRICE_USD);
 
   // Shipping info
   const [shipping, setShipping] = useState<ShippingInfo>({
@@ -65,22 +65,22 @@ export function RedeemInterface() {
   const [redemptions, setRedemptions] = useState<RedemptionRecord[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
-  // Fetch W3B price
+  // Fetch WGB price
   useEffect(() => {
     fetch('/api/goldback-rate')
       .then(res => res.json())
       .then(data => {
-        if (data.success && data.rate) setW3bPriceUsd(data.rate);
+        if (data.success && data.rate) setWgbPriceUsd(data.rate);
       })
       .catch(() => { });
   }, []);
 
-  // Fetch W3B balance when wallet connects
+  // Fetch WGB balance when wallet connects
   useEffect(() => {
     if (!publicKey || !connection) return;
-    fetchUserW3bBalance(connection, publicKey)
-      .then(setW3bBalance)
-      .catch(() => setW3bBalance(BigInt(0)));
+    fetchUserWgbBalance(connection, publicKey)
+      .then(setWgbBalance)
+      .catch(() => setWgbBalance(BigInt(0)));
   }, [publicKey, connection]);
 
   // Fetch redemption history
@@ -116,7 +116,7 @@ export function RedeemInterface() {
       return;
     }
 
-    if (BigInt(amount) > w3bBalance) {
+    if (BigInt(amount) > wgbBalance) {
       setError('Insufficient WGB balance');
       return;
     }
@@ -126,7 +126,7 @@ export function RedeemInterface() {
     setStep('processing');
 
     try {
-      const userTokenAccount = await getUserW3bTokenAccount(publicKey);
+      const userTokenAccount = await getUserWgbTokenAccount(publicKey);
       const requestId = generateRequestId();
 
       const transaction = new Transaction();
@@ -140,8 +140,8 @@ export function RedeemInterface() {
         transaction.add(initProfileIx);
       }
 
-      // Build burn_w3b instruction
-      const burnIx = createBurnW3bInstruction(
+      // Build burn_wgb instruction
+      const burnIx = createBurnWgbInstruction(
         publicKey,
         userTokenAccount,
         BigInt(amount),
@@ -225,7 +225,7 @@ export function RedeemInterface() {
 
   const currentStepIndex = PROGRESS_STEPS.findIndex(s => s.key === step);
 
-  const usdValue = parseFloat(redeemAmount || '0') * w3bPriceUsd;
+  const usdValue = parseFloat(redeemAmount || '0') * wgbPriceUsd;
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -318,7 +318,7 @@ export function RedeemInterface() {
                 <div className="flex justify-between ml-1">
                   <div className="text-gray-500 text-sm mb-1">You burn</div>
                   <div className="text-gray-600 text-xs">
-                    Balance: {w3bBalance.toString()} WGB
+                    Balance: {wgbBalance.toString()} WGB
                   </div>
                 </div>
                 <div className="bg-black/60 p-5 rounded-[24px] flex flex-col justify-between min-h-[140px] mb-1 border border-transparent hover:border-white/5 transition-colors">
@@ -353,12 +353,12 @@ export function RedeemInterface() {
               </div>
 
               {/* Max button */}
-              {w3bBalance > BigInt(0) && (
+              {wgbBalance > BigInt(0) && (
                 <button
-                  onClick={() => setRedeemAmount(w3bBalance.toString())}
+                  onClick={() => setRedeemAmount(wgbBalance.toString())}
                   className="text-xs text-[#c9a84c] hover:text-[#e8d48b] transition-colors"
                 >
-                  Redeem Max ({w3bBalance.toString()} WGB)
+                  Redeem Max ({wgbBalance.toString()} WGB)
                 </button>
               )}
 

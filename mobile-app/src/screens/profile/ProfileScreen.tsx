@@ -6,7 +6,7 @@ import { env } from '../../config/env';
 import { getUserProfile, loginWithDevSigner, loginWithWalletSignature } from '../../lib/auth/auth-client';
 import { clearAuth, getAuth } from '../../state/auth';
 import { clearWalletSession, loadWalletSession, markWalletConnected } from '../../state/wallet';
-import { fetchUserW3bBalance } from '../../lib/solana/w3b-program';
+import { fetchUserWgbBalance } from '../../lib/solana/wgb-program';
 import { tokens } from '../../theme/tokens';
 
 export function ProfileScreen() {
@@ -15,7 +15,7 @@ export function ProfileScreen() {
   const [status, setStatus] = useState('Connect wallet to start');
   const [profileJson, setProfileJson] = useState('');
   const [solBalance, setSolBalance] = useState<number | null>(null);
-  const [w3bBalance, setW3bBalance] = useState<number | null>(null);
+  const [wgbBalance, setWgbBalance] = useState<number | null>(null);
 
   const refreshState = useCallback(async () => {
     const [auth, session] = await Promise.all([getAuth(), loadWalletSession()]);
@@ -26,22 +26,22 @@ export function ProfileScreen() {
     if (!walletAddress) {
       setStatus('Connect wallet to start');
       setSolBalance(null);
-      setW3bBalance(null);
+      setWgbBalance(null);
       return;
     }
 
     try {
       const connection = new Connection(env.rpcEndpoint, 'confirmed');
       const publicKey = new PublicKey(walletAddress);
-      const [solLamports, w3bRaw] = await Promise.all([
+      const [solLamports, wgbRaw] = await Promise.all([
         connection.getBalance(publicKey, 'confirmed'),
-        fetchUserW3bBalance(connection, publicKey),
+        fetchUserWgbBalance(connection, publicKey),
       ]);
       setSolBalance(solLamports / 1_000_000_000);
-      setW3bBalance(Number(w3bRaw));
+      setWgbBalance(Number(wgbRaw));
     } catch {
       setSolBalance(null);
-      setW3bBalance(null);
+      setWgbBalance(null);
     }
 
     if (auth?.token) {
@@ -73,7 +73,7 @@ export function ProfileScreen() {
           placeholder="Connect to auto-fill"
         />
         <Text style={styles.balance}>SOL: {solBalance === null ? '—' : solBalance.toFixed(4)}</Text>
-        <Text style={styles.balance}>W3B: {w3bBalance === null ? '—' : w3bBalance.toLocaleString()}</Text>
+        <Text style={styles.balance}>WGB: {wgbBalance === null ? '—' : wgbBalance.toLocaleString()}</Text>
         <Text style={styles.balance}>Network: {env.solanaNetwork}</Text>
       </View>
 

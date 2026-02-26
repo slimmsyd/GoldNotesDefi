@@ -58,14 +58,14 @@ export interface CartClearResponse {
 }
 
 export interface PortfolioDataHealth {
-  w3bSource: 'onchain' | 'fallback';
+  wgbSource: 'onchain' | 'fallback';
   loyaltySource: 'db' | 'fallback';
 }
 
 export interface PortfolioSummaryResponse {
   success: boolean;
   walletAddress: string;
-  w3bBalance: number;
+  wgbBalance: number;
   goldbackRateUsd: number;
   portfolioUsd: number;
   loyaltyPoints: number;
@@ -213,14 +213,14 @@ export interface SwapQuoteView {
   payAmountSol: number;
   solPriceUsd: number;
   goldbackRateUsd: number;
-  estimatedW3b: number;
+  estimatedWgb: number;
   verifiedAt: string;
 }
 
 export interface SwapExecutionResult {
   txSignature: string;
   explorerUrl: string;
-  purchasedW3b: number;
+  purchasedWgb: number;
 }
 
 export interface RedemptionStatusItem {

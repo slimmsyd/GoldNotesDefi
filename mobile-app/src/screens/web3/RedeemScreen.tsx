@@ -10,12 +10,12 @@ import {
   savePendingRedemption,
 } from '../../state/redemption';
 import {
-  createBurnW3bInstruction,
-  fetchUserW3bBalance,
+  createBurnWgbInstruction,
+  fetchUserWgbBalance,
   generateRequestId,
-  getUserW3bTokenAccount,
+  getUserWgbTokenAccount,
   maybeCreateInitUserProfileInstruction,
-} from '../../lib/solana/w3b-program';
+} from '../../lib/solana/wgb-program';
 import { signAndSendTransaction } from '../../lib/wallet/mwa';
 import { createRedemption, getRedemptionStatus } from '../../lib/redemption/redemption-client';
 import { RedemptionStatusItem } from '../../lib/api/types';
@@ -34,7 +34,7 @@ export function RedeemScreen() {
   const [step, setStep] = useState<RedeemStep>('input');
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [amount, setAmount] = useState('1');
-  const [w3bBalance, setW3bBalance] = useState<bigint>(BigInt(0));
+  const [wgbBalance, setWgbBalance] = useState<bigint>(BigInt(0));
   const [status, setStatus] = useState('Connect wallet to start redeem.');
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<RedemptionStatusItem[]>([]);
@@ -55,7 +55,7 @@ export function RedeemScreen() {
         setWalletAddress(null);
         setStatus('Connect wallet to start redeem.');
         setHistory([]);
-        setW3bBalance(BigInt(0));
+        setWgbBalance(BigInt(0));
         return;
       }
 
@@ -63,11 +63,11 @@ export function RedeemScreen() {
       const connection = new Connection(env.rpcEndpoint, 'confirmed');
       const owner = new PublicKey(session.walletAddress);
       const [balance, redemption] = await Promise.all([
-        fetchUserW3bBalance(connection, owner),
+        fetchUserWgbBalance(connection, owner),
         getRedemptionStatus(session.walletAddress),
       ]);
 
-      setW3bBalance(balance);
+      setWgbBalance(balance);
       setHistory(redemption.requests || []);
       setStatus('Redeem status synced');
     } catch (error) {
@@ -122,8 +122,8 @@ export function RedeemScreen() {
 
   const canContinueShipping = useMemo(() => {
     const amountInt = Number.parseInt(amount, 10);
-    return amountInt > 0 && BigInt(amountInt) <= w3bBalance;
-  }, [amount, w3bBalance]);
+    return amountInt > 0 && BigInt(amountInt) <= wgbBalance;
+  }, [amount, wgbBalance]);
 
   const canSubmitShipping = useMemo(() => {
     return Boolean(
@@ -154,7 +154,7 @@ export function RedeemScreen() {
       const requestId = generateRequestId();
       const connection = new Connection(env.rpcEndpoint, 'confirmed');
       const [tokenAccount, blockhashInfo] = await Promise.all([
-        getUserW3bTokenAccount(owner),
+        getUserWgbTokenAccount(owner),
         connection.getLatestBlockhash('confirmed'),
       ]);
 
@@ -167,7 +167,7 @@ export function RedeemScreen() {
         tx.add(initProfileIx);
       }
 
-      tx.add(createBurnW3bInstruction(owner, tokenAccount, BigInt(redeemAmount), requestId));
+      tx.add(createBurnWgbInstruction(owner, tokenAccount, BigInt(redeemAmount), requestId));
       const simulation = await connection.simulateTransaction(tx);
       if (simulation.value.err) {
         throw new Error(`Simulation failed: ${JSON.stringify(simulation.value.err)}`);
@@ -211,17 +211,17 @@ export function RedeemScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} contentInsetAdjustmentBehavior="automatic">
-      <Text style={styles.title}>Redeem W3B</Text>
+      <Text style={styles.title}>Redeem WGB</Text>
       <Text style={styles.subtitle}>Burn tokens to request physical GoldBack fulfillment.</Text>
 
       <View style={styles.card}>
         <Text style={styles.meta}>Wallet: {shortAddress(walletAddress)}</Text>
-        <Text style={styles.meta}>Balance: {w3bBalance.toString()} W3B</Text>
+        <Text style={styles.meta}>Balance: {wgbBalance.toString()} WGB</Text>
       </View>
 
       {step === 'input' ? (
         <View style={styles.card}>
-          <Text style={styles.label}>Amount to Redeem (W3B)</Text>
+          <Text style={styles.label}>Amount to Redeem (WGB)</Text>
           <TextInput
             style={styles.input}
             keyboardType="number-pad"
@@ -290,7 +290,7 @@ export function RedeemScreen() {
           history.slice(0, 5).map((item) => (
             <View key={item.id} style={styles.historyRow}>
               <Text style={styles.historyPrimary}>
-                {item.amount} W3B • status {item.status}
+                {item.amount} WGB • status {item.status}
               </Text>
               <Text style={styles.historyMeta}>{new Date(item.created_at).toLocaleString()}</Text>
             </View>

@@ -26,8 +26,8 @@ import { execSync } from "child_process";
 import dotenv from "dotenv";
 
 // Import IDL - using require for JSON
-const idlJson = require("../../../programs/w3b_protocol/target/idl/w3b_protocol.json");
-import { W3bProtocol } from "../../../programs/w3b_protocol/target/types/w3b_protocol";
+const idlJson = require("../../../programs/w3b_protocol/target/idl/wgb_protocol.json");
+import { WgbProtocol } from "../../../programs/w3b_protocol/target/types/wgb_protocol";
 
 // Load env
 dotenv.config({ path: path.join(__dirname, "../../../.env") });
@@ -72,7 +72,7 @@ interface ProofSubmission {
 }
 
 interface ProtocolStateSnapshot {
-  w3bMint: PublicKey;
+  wgbMint: PublicKey;
   treasury: PublicKey;
   totalSupply: number;
   provenReserves: number;
@@ -139,14 +139,14 @@ async function fetchProtocolStateSnapshot(
     throw new Error(`Protocol state data too small: ${data.length}`);
   }
 
-  const w3bMint = new PublicKey(data.slice(72, 104));
+  const wgbMint = new PublicKey(data.slice(72, 104));
   const treasury = new PublicKey(data.slice(104, 136));
   const totalSupply = Number(new anchor.BN(data.subarray(136, 144), "le").toString());
   const provenReserves = Number(new anchor.BN(data.subarray(184, 192), "le").toString());
   const lastProofTimestamp = Number(new anchor.BN(data.subarray(200, 208), "le").toString());
 
   return {
-    w3bMint,
+    wgbMint,
     treasury,
     totalSupply,
     provenReserves,
@@ -356,7 +356,7 @@ async function main() {
   anchor.setProvider(provider);
 
   const programId = new PublicKey(idlJson.address);
-  const program = new Program<W3bProtocol>(idlJson as any, provider);
+  const program = new Program<WgbProtocol>(idlJson as any, provider);
   console.log(`   Program: ${programId.toBase58()}`);
 
   // Find PDA
@@ -425,15 +425,15 @@ async function main() {
 
     // Mint tokens (if applicable)
     if (amountToMint > 0) {
-      console.log(`\n🔹 Minting ${amountToMint} W3B tokens to Treasury...`);
+      console.log(`\n🔹 Minting ${amountToMint} WGB tokens to Treasury...`);
 
       const { TOKEN_2022_PROGRAM_ID } = require("@solana/spl-token");
 
       const txMint = await (program.methods as any)
-        .mintW3B(new anchor.BN(amountToMint))
+        .mintWgb(new anchor.BN(amountToMint))
         .accountsPartial({
           protocolState: protocolStatePda,
-          w3bMint: preState.w3bMint,
+          wgbMint: preState.wgbMint,
           treasury: preState.treasury,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
           operator: keypair.publicKey,

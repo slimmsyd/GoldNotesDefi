@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Use the service role key if available, otherwise anon key
-    const supabaseUrl = process.env.NEXT_PUBLIC_W3B_SUPABASE_URL || SUPABASE_CONFIG.url;
-    const supabaseKey = process.env.W3B_SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_W3B_SUPABASE_ANON_KEY;
+    const supabaseUrl = process.env.NEXT_PUBLIC_WGB_SUPABASE_URL || SUPABASE_CONFIG.url;
+    const supabaseKey = process.env.WGB_SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_WGB_SUPABASE_ANON_KEY;
 
     if (!supabaseKey) {
       return NextResponse.json(
