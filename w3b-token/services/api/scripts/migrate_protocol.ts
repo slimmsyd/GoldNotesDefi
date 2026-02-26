@@ -14,8 +14,8 @@ import * as path from "path";
 import dotenv from "dotenv";
 
 // Import IDL
-const idlJson = require("../../../programs/w3b_protocol/target/idl/w3b_protocol.json");
-import { W3bProtocol } from "../../../programs/w3b_protocol/target/types/w3b_protocol";
+const idlJson = require("../../../programs/w3b_protocol/target/idl/wgb_protocol.json");
+import { WgbProtocol } from "../../../programs/w3b_protocol/target/types/wgb_protocol";
 
 // Load env
 dotenv.config({ path: path.join(__dirname, "../../../.env") });
@@ -42,7 +42,7 @@ async function main() {
     anchor.setProvider(provider);
 
     const programId = new PublicKey(idlJson.address);
-    const program = new Program<W3bProtocol>(idlJson as any, provider);
+    const program = new Program<WgbProtocol>(idlJson as any, provider);
     console.log(`📜 Program ID: ${programId.toBase58()}`);
 
     // 4. Find ProtocolState PDA
@@ -91,9 +91,9 @@ async function main() {
         const state = await program.account.protocolState.fetch(protocolStatePda);
         console.log(`\n📋 Protocol State after migration:`);
         console.log(`   Authority: ${state.authority.toBase58()}`);
-        console.log(`   W3B Mint: ${state.w3bMint.toBase58()}`);
+        console.log(`   WGB Mint: ${state.wgbMint.toBase58()}`);
         console.log(`   Treasury: ${state.treasury.toBase58()}`);
-        console.log(`   W3B Price: ${state.w3bPriceLamports?.toString() || 'N/A'} lamports`);
+        console.log(`   WGB Price: ${state.w3bPriceLamports?.toString() || 'N/A'} lamports`);
         console.log(`   SOL Receiver: ${state.solReceiver?.toBase58() || 'N/A'}`);
         
     } catch (error: any) {
@@ -106,7 +106,7 @@ async function main() {
     }
 
     console.log("\n" + "=".repeat(60));
-    console.log("🎉 Migration complete! Now run set_price.ts to set W3B price.");
+    console.log("🎉 Migration complete! Now run set_price.ts to set WGB price.");
 }
 
 main().catch(console.error);

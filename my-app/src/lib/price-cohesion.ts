@@ -85,12 +85,12 @@ type GlobalState = {
 };
 
 const globalForPricing = globalThis as unknown as {
-  __w3bPricingState?: GlobalState;
+  __wgbPricingState?: GlobalState;
 };
 
 function getState(): GlobalState {
-  if (!globalForPricing.__w3bPricingState) {
-    globalForPricing.__w3bPricingState = {
+  if (!globalForPricing.__wgbPricingState) {
+    globalForPricing.__wgbPricingState = {
       metrics: {
         successCount: 0,
         failureCount: 0,
@@ -106,7 +106,7 @@ function getState(): GlobalState {
       lastAutoSyncAttemptAt: null,
     };
   }
-  return globalForPricing.__w3bPricingState;
+  return globalForPricing.__wgbPricingState;
 }
 
 function parsePositiveNumber(value: string | undefined, fallback: number): number {

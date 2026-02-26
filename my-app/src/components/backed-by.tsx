@@ -12,6 +12,10 @@ interface Partner {
   height: number;
   external?: boolean;
   invert?: boolean;
+  bgSrc?: string;
+  bgWidth?: number;
+  bgHeight?: number;
+  bgClassName?: string;
 }
 
 const partners: Partner[] = [
@@ -39,7 +43,7 @@ const partners: Partner[] = [
     external: true,
 
 
-    
+
   },
   {
     href: "#",
@@ -48,6 +52,17 @@ const partners: Partner[] = [
     width: 120,
     height: 30,
     invert: true,
+  },
+  {
+    href: "#",
+    src: "/logos/mtndao wordmark.svg",
+    bgSrc: "/logos/Artboard 3.svg",
+    alt: "mtndao",
+    width: 120,
+    height: 30,
+    bgWidth: 80,
+    bgHeight: 80,
+    bgClassName: "translate-x-4 space-x-2",
   },
 ];
 
@@ -58,16 +73,26 @@ function LogoItem({ partner }: { partner: Partner }) {
       {...(partner.external
         ? { target: "_blank", rel: "noopener noreferrer" }
         : {})}
-      className="group shrink-0 transition-all duration-300 opacity-30 hover:opacity-70 hover:scale-105"
+      className="group shrink-0 transition-all duration-300 opacity-60 hover:opacity-100 hover:scale-105 relative flex items-center justify-center p-2"
     >
+      {partner.bgSrc && (
+        <div className={`absolute inset-0 flex items-center justify-center -z-10 group-hover:scale-110 transition-transform duration-300 ${partner.bgClassName || ""}`}>
+          <Image
+            src={partner.bgSrc}
+            alt={`${partner.alt} background`}
+            width={partner.bgWidth || partner.width}
+            height={partner.bgHeight || partner.height}
+            className="object-contain opacity-40 group-hover:opacity-80 transition-opacity duration-300"
+          />
+        </div>
+      )}
       <Image
         src={partner.src}
         alt={partner.alt}
         width={partner.width}
         height={partner.height}
-        className={`object-contain max-h-8 w-auto grayscale group-hover:grayscale-0 transition-all duration-300 ${
-          partner.invert ? "invert" : ""
-        }`}
+        className={`object-contain max-h-8 w-auto grayscale group-hover:grayscale-0 transition-all duration-300 relative z-10 ${partner.invert ? "invert" : ""
+          }`}
       />
     </Link>
   );

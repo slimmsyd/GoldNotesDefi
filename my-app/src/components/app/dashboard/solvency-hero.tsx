@@ -107,7 +107,7 @@ export function SolvencyHero({ data, isLoading }: SolvencyHeroProps) {
             </div>
             <p className="text-gray-400 text-sm">
               <span className="text-white font-semibold">{provenReserves.toLocaleString()}</span> reserves backing{' '}
-              <span className="text-white font-semibold">{totalSupply.toLocaleString()}</span> W3B tokens
+              <span className="text-white font-semibold">{totalSupply.toLocaleString()}</span> WGB tokens
             </p>
           </div>
         </div>

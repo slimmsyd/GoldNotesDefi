@@ -7,7 +7,7 @@ import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { PROTOCOL_CONFIG } from '@/lib/protocol-constants';
 
-const WGB_MINT = new PublicKey(PROTOCOL_CONFIG.w3bMint);
+const WGB_MINT = new PublicKey(PROTOCOL_CONFIG.wgbMint);
 
 export default function ProfilePage() {
     const { publicKey, connected } = useWallet();

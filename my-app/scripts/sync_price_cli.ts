@@ -41,7 +41,7 @@ class NodeWallet {
 
 const PRICE_IDL = {
   version: "0.1.0",
-  name: "w3b_protocol",
+  name: "wgb_protocol",
   instructions: [
     {
       name: "set_w3b_price",

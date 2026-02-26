@@ -12,13 +12,13 @@ import path from "path";
 dotenv.config({ path: path.join(__dirname, "../../../.env") });
 
 // Load IDL
-const IDL_PATH = path.join(__dirname, "../../../programs/w3b_protocol/target/idl/w3b_protocol.json");
+const IDL_PATH = path.join(__dirname, "../../../programs/w3b_protocol/target/idl/wgb_protocol.json");
 const IDL = JSON.parse(fs.readFileSync(IDL_PATH, "utf8"));
 
 // Constants — read from env first, then fall back to canonical program ID
-// IMPORTANT: Must match the declare_id!() in programs/w3b_protocol/src/lib.rs
+// IMPORTANT: Must match the declare_id!() in programs/wgb_protocol/src/lib.rs
 const PROGRAM_ID = new PublicKey(
-    process.env.W3B_PROGRAM_ID || "9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6"
+    process.env.WGB_PROGRAM_ID || "9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6"
 );
 const RPC_URL = process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
 

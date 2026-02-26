@@ -26,10 +26,10 @@ class NodeWallet {
 const PRICE_IDL_FALLBACK = {
   address: PROTOCOL_CONFIG.programId,
   version: '0.1.0',
-  name: 'w3b_protocol',
+  name: 'wgb_protocol',
   instructions: [
     {
-      name: 'set_w3b_price',
+      name: 'set_wgb_price',
       accounts: [
         { name: 'protocol_state', isMut: true, isSigner: false },
         { name: 'operator', isMut: false, isSigner: true },
@@ -37,7 +37,7 @@ const PRICE_IDL_FALLBACK = {
       args: [{ name: 'price_lamports', type: 'u64' }],
     },
     {
-      name: 'set_w3b_price_admin',
+      name: 'set_wgb_price_admin',
       accounts: [
         { name: 'protocol_state', isMut: true, isSigner: false },
         { name: 'authority', isMut: false, isSigner: true },
@@ -46,7 +46,7 @@ const PRICE_IDL_FALLBACK = {
     },
   ],
   metadata: {
-    name: 'w3b_protocol',
+    name: 'wgb_protocol',
     version: '0.1.0',
     address: PROTOCOL_CONFIG.programId,
   },
@@ -137,9 +137,9 @@ function loadProtocolIdl(programId: PublicKey): any {
   const idlAddress = programId.toBase58();
   const cwd = process.cwd();
   const candidates = [
-    path.resolve(cwd, '../w3b-token/programs/w3b_protocol/target/idl/w3b_protocol.json'),
-    path.resolve(cwd, 'w3b-token/programs/w3b_protocol/target/idl/w3b_protocol.json'),
-    path.resolve(cwd, '../../w3b-token/programs/w3b_protocol/target/idl/w3b_protocol.json'),
+    path.resolve(cwd, '../w3b-token/programs/w3b_protocol/target/idl/wgb_protocol.json'),
+    path.resolve(cwd, 'w3b-token/programs/w3b_protocol/target/idl/wgb_protocol.json'),
+    path.resolve(cwd, '../../w3b-token/programs/w3b_protocol/target/idl/wgb_protocol.json'),
   ];
 
   for (const candidate of candidates) {
@@ -199,7 +199,7 @@ export async function syncOnChainPrice(
   let currentPriceLamports = 0;
   try {
     const state = await (program.account as any).protocolState.fetch(protocolStatePda);
-    currentPriceLamports = Number((state as any).w3bPriceLamports?.toString?.() ?? 0);
+    currentPriceLamports = Number((state as any).wgbPriceLamports?.toString?.() ?? 0);
   } catch (err) {
     const message = getPriceSyncErrorContext(err).message;
     throw new PriceSyncError('STATE_READ_FAILED', `STATE_READ_FAILED: ${message}`);
@@ -218,14 +218,14 @@ export async function syncOnChainPrice(
   }
 
   const setOperatorBuilder =
-    methods.setW3bPrice?.(new BN(newLamportsPrice)) ??
-    methods.setW3BPrice?.(new BN(newLamportsPrice)) ??
-    methods.set_w3b_price?.(new BN(newLamportsPrice));
+    methods.setWgbPrice?.(new BN(newLamportsPrice)) ??
+    methods.setWgbPrice?.(new BN(newLamportsPrice)) ??
+    methods.set_wgb_price?.(new BN(newLamportsPrice));
 
   if (!setOperatorBuilder) {
     throw new PriceSyncError(
       'SET_PRICE_FAILED',
-      'SET_PRICE_FAILED: set_w3b_price method not found in program IDL'
+      'SET_PRICE_FAILED: set_wgb_price method not found in program IDL'
     );
   }
 
@@ -250,14 +250,14 @@ export async function syncOnChainPrice(
     }
 
     const setAdminBuilder =
-      methods.setW3bPriceAdmin?.(new BN(newLamportsPrice)) ??
-      methods.setW3BPriceAdmin?.(new BN(newLamportsPrice)) ??
-      methods.set_w3b_price_admin?.(new BN(newLamportsPrice));
+      methods.setWgbPriceAdmin?.(new BN(newLamportsPrice)) ??
+      methods.setWgbPriceAdmin?.(new BN(newLamportsPrice)) ??
+      methods.set_wgb_price_admin?.(new BN(newLamportsPrice));
 
     if (!setAdminBuilder) {
       throw new PriceSyncError(
         'ADMIN_OVERRIDE_FAILED',
-        'ADMIN_OVERRIDE_FAILED: Price guard exceeded and set_w3b_price_admin method not found'
+        'ADMIN_OVERRIDE_FAILED: Price guard exceeded and set_wgb_price_admin method not found'
       );
     }
 
@@ -287,7 +287,7 @@ export async function syncOnChainPrice(
 }
 
 /**
- * Read current on-chain W3B price in lamports (offset 208 in V2 ProtocolState).
+ * Read current on-chain WGB price in lamports (offset 208 in V2 ProtocolState).
  */
 export async function getOnChainPriceLamports(): Promise<number | null> {
   try {

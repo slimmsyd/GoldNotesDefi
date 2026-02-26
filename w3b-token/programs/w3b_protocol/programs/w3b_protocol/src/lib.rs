@@ -1,14 +1,16 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program;
 use anchor_lang::solana_program::program::invoke;
+use anchor_lang::solana_program::program::invoke_signed;
 use anchor_lang::solana_program::rent::Rent;
-use anchor_spl::token_2022::{self, MintTo, Transfer, Burn, Token2022};
+use anchor_spl::token_2022::{self, MintTo, Transfer, TransferChecked, Burn, Token2022};
 use anchor_spl::token_interface::{Mint, TokenAccount};
+use anchor_spl::token_2022::spl_token_2022::extension::transfer_fee::instruction::set_transfer_fee;
 
 declare_id!("9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6");
 
 #[program]
-pub mod w3b_protocol {
+pub mod wgb_protocol {
     use super::*;
 
     // ==================== ADMIN / MIGRATION ====================
@@ -18,7 +20,7 @@ pub mod w3b_protocol {
         let state = &mut ctx.accounts.protocol_state;
         state.authority = ctx.accounts.authority.key();
         state.operator = ctx.accounts.authority.key(); // Default operator = admin
-        state.w3b_mint = ctx.accounts.w3b_mint.key();
+        state.wgb_mint = ctx.accounts.wgb_mint.key();
         state.treasury = ctx.accounts.treasury.key();
         state.sol_receiver = ctx.accounts.authority.key();
 
@@ -33,7 +35,7 @@ pub mod w3b_protocol {
         state.is_paused = false;
         state.bump = ctx.bumps.protocol_state;
 
-        msg!("W3B Protocol V2 Initialized");
+        msg!("WGB Protocol V2 Initialized");
         Ok(())
     }
 
@@ -52,10 +54,10 @@ pub mod w3b_protocol {
         // 0. Validate authority by reading raw bytes (authority = first Pubkey after 8-byte discriminator)
         {
             let data = protocol_state.try_borrow_data()?;
-            require!(data.len() >= 40, W3BError::Unauthorized);
+            require!(data.len() >= 40, WGBError::Unauthorized);
             let stored_authority = Pubkey::try_from(&data[8..40])
-                .map_err(|_| error!(W3BError::Unauthorized))?;
-            require!(stored_authority == authority.key(), W3BError::Unauthorized);
+                .map_err(|_| error!(WGBError::Unauthorized))?;
+            require!(stored_authority == authority.key(), WGBError::Unauthorized);
         }
 
         // 1. Resize account
@@ -99,7 +101,7 @@ pub mod w3b_protocol {
     }
 
     /// Fix V2 Layout: Remap V1 field offsets to V2 positions (Admin only, one-time)
-    /// V1 inserted `operator` between authority and w3b_mint, shifting all offsets.
+    /// V1 inserted `operator` between authority and wgb_mint, shifting all offsets.
     /// This reads V1 data and writes it to V2 positions in the same buffer.
     pub fn fix_v2_layout(ctx: Context<MigrateV2>) -> Result<()> {
         let protocol_state = &ctx.accounts.protocol_state;
@@ -107,7 +109,7 @@ pub mod w3b_protocol {
 
         // Validate authority (first 32 bytes after 8-byte discriminator)
         let authority_key;
-        let w3b_mint;
+        let wgb_mint;
         let treasury;
         let merkle_root: [u8; 32];
         let last_root_update: [u8; 8];
@@ -116,20 +118,20 @@ pub mod w3b_protocol {
         let total_supply: [u8; 8];
         let is_paused: u8;
         let bump: u8;
-        let w3b_price_lamports: [u8; 8];
+        let wgb_price_lamports: [u8; 8];
         let sol_receiver;
 
         {
             let data = protocol_state.try_borrow_data()?;
-            require!(data.len() >= 218, W3BError::Unauthorized);
+            require!(data.len() >= 218, WGBError::Unauthorized);
 
             // Read authority and validate
             authority_key = Pubkey::try_from(&data[8..40])
-                .map_err(|_| error!(W3BError::Unauthorized))?;
-            require!(authority_key == authority.key(), W3BError::Unauthorized);
+                .map_err(|_| error!(WGBError::Unauthorized))?;
+            require!(authority_key == authority.key(), WGBError::Unauthorized);
 
             // Read all V1 fields at V1 offsets
-            w3b_mint = Pubkey::try_from(&data[40..72]).unwrap();
+            wgb_mint = Pubkey::try_from(&data[40..72]).unwrap();
             treasury = Pubkey::try_from(&data[72..104]).unwrap();
 
             let mut mr = [0u8; 32];
@@ -153,7 +155,7 @@ pub mod w3b_protocol {
             bump = data[169];
 
             buf8.copy_from_slice(&data[170..178]);
-            w3b_price_lamports = buf8;
+            wgb_price_lamports = buf8;
 
             sol_receiver = Pubkey::try_from(&data[178..210]).unwrap();
         }
@@ -172,8 +174,8 @@ pub mod w3b_protocol {
             data[8..40].copy_from_slice(&authority_key.to_bytes());
             // [40..72]   operator = authority (will be overridden by set_operator later)
             data[40..72].copy_from_slice(&authority_key.to_bytes());
-            // [72..104]  w3b_mint
-            data[72..104].copy_from_slice(&w3b_mint.to_bytes());
+            // [72..104]  wgb_mint
+            data[72..104].copy_from_slice(&wgb_mint.to_bytes());
             // [104..136] treasury
             data[104..136].copy_from_slice(&treasury.to_bytes());
             // [136..144] total_supply
@@ -187,8 +189,8 @@ pub mod w3b_protocol {
             data[192..200].copy_from_slice(&last_root_update);
             // [200..208] last_proof_timestamp
             data[200..208].copy_from_slice(&last_proof_timestamp);
-            // [208..216] w3b_price_lamports
-            data[208..216].copy_from_slice(&w3b_price_lamports);
+            // [208..216] wgb_price_lamports
+            data[208..216].copy_from_slice(&wgb_price_lamports);
             // [216..248] sol_receiver
             data[216..248].copy_from_slice(&sol_receiver.to_bytes());
             // [248..250] yield_apy_bps = 0 (already zeroed)
@@ -213,7 +215,7 @@ pub mod w3b_protocol {
         new_root: [u8; 32],
         total_serials: u64,
     ) -> Result<()> {
-        require!(!ctx.accounts.protocol_state.is_paused, W3BError::ProtocolPaused);
+        require!(!ctx.accounts.protocol_state.is_paused, WGBError::ProtocolPaused);
 
         let state = &mut ctx.accounts.protocol_state;
         state.current_merkle_root = new_root;
@@ -240,7 +242,7 @@ pub mod w3b_protocol {
         // CRitICAL CHECK: Claim must match what we already know from the Merkle update
         require!(
             claimed_reserves == state.proven_reserves,
-            W3BError::ReserveCountMismatch
+            WGBError::ReserveCountMismatch
         );
 
         state.last_proof_timestamp = Clock::get()?.unix_timestamp;
@@ -256,11 +258,11 @@ pub mod w3b_protocol {
     }
 
     /// Set Price with Bounds (Operator)
-    pub fn set_w3b_price(ctx: Context<OperatorOnly>, price_lamports: u64) -> Result<()> {
-        require!(price_lamports > 0, W3BError::InvalidPrice);
+    pub fn set_wgb_price(ctx: Context<OperatorOnly>, price_lamports: u64) -> Result<()> {
+        require!(price_lamports > 0, WGBError::InvalidPrice);
         
         let state = &mut ctx.accounts.protocol_state;
-        let current = state.w3b_price_lamports;
+        let current = state.wgb_price_lamports;
 
         // Bounds Check: Max 20% swing allowed automatically
         if current > 0 {
@@ -270,29 +272,29 @@ pub mod w3b_protocol {
             } else {
                 current - price_lamports
             };
-            require!(diff <= max_change, W3BError::PriceChangeExceedsLimit);
+            require!(diff <= max_change, WGBError::PriceChangeExceedsLimit);
         }
 
-        state.w3b_price_lamports = price_lamports;
+        state.wgb_price_lamports = price_lamports;
         msg!("Price set to {} (Operator)", price_lamports);
         Ok(())
     }
 
     /// Mint W3B (Operator) - Typed Accounts
-    pub fn mint_w3b(ctx: Context<MintW3B>, amount: u64) -> Result<()> {
+    pub fn mint_wgb(ctx: Context<MintWGB>, amount: u64) -> Result<()> {
         let state = &ctx.accounts.protocol_state;
-        require!(!state.is_paused, W3BError::ProtocolPaused);
+        require!(!state.is_paused, WGBError::ProtocolPaused);
         
         // 1. Staleness Check
         let now = Clock::get()?.unix_timestamp;
         require!(
             now - state.last_proof_timestamp < 48 * 3600,
-            W3BError::StaleMerkleRoot
+            WGBError::StaleMerkleRoot
         );
 
         // 2. Reserve Check
-        let new_supply = state.total_supply.checked_add(amount).ok_or(W3BError::MathOverflow)?;
-        require!(new_supply <= state.proven_reserves, W3BError::InsufficientReserves);
+        let new_supply = state.total_supply.checked_add(amount).ok_or(WGBError::MathOverflow)?;
+        require!(new_supply <= state.proven_reserves, WGBError::InsufficientReserves);
 
         // 3. CPI Mint
         let seeds = &[b"protocol_state".as_ref(), &[state.bump]];
@@ -302,7 +304,7 @@ pub mod w3b_protocol {
             CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(),
                 MintTo {
-                    mint: ctx.accounts.w3b_mint.to_account_info(),
+                    mint: ctx.accounts.wgb_mint.to_account_info(),
                     to: ctx.accounts.treasury.to_account_info(),
                     authority: ctx.accounts.protocol_state.to_account_info(),
                 },
@@ -334,17 +336,17 @@ pub mod w3b_protocol {
     }
 
     /// Buy W3B (Public) - Awards Points!
-    pub fn buy_w3b(ctx: Context<BuyW3B>, amount: u64) -> Result<()> {
+    pub fn buy_wgb(ctx: Context<BuyWGB>, amount: u64) -> Result<()> {
         let state = &ctx.accounts.protocol_state;
-        require!(!state.is_paused, W3BError::ProtocolPaused);
-        require!(state.w3b_price_lamports > 0, W3BError::PriceNotSet);
+        require!(!state.is_paused, WGBError::ProtocolPaused);
+        require!(state.wgb_price_lamports > 0, WGBError::PriceNotSet);
 
         // Rate limiting: max 1000 W3B per transaction
-        require!(amount <= 1000, W3BError::ExceedsTransactionCap);
+        require!(amount <= 1000, WGBError::ExceedsTransactionCap);
 
         validate_optional_user_profile(&ctx.accounts.user_profile, &ctx.accounts.buyer.key())?;
 
-        let cost = state.w3b_price_lamports.checked_mul(amount).ok_or(W3BError::MathOverflow)?;
+        let cost = state.wgb_price_lamports.checked_mul(amount).ok_or(WGBError::MathOverflow)?;
 
         // 1. Transfer SOL
         system_program::transfer(
@@ -358,21 +360,23 @@ pub mod w3b_protocol {
             cost,
         )?;
 
-        // 2. Transfer W3B
+        // 2. Transfer WGB (must use transfer_checked for Token-2022 Transfer Fee Extension)
         let seeds = &[b"protocol_state".as_ref(), &[state.bump]];
         let signer = &[&seeds[..]];
 
-        token_2022::transfer(
+        token_2022::transfer_checked(
             CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(),
-                Transfer {
+                TransferChecked {
                     from: ctx.accounts.treasury.to_account_info(),
                     to: ctx.accounts.buyer_token_account.to_account_info(),
+                    mint: ctx.accounts.wgb_mint.to_account_info(),
                     authority: ctx.accounts.protocol_state.to_account_info(),
                 },
                 signer,
             ),
             amount,
+            0, // WGB has 0 decimals
         )?;
 
         // 3. Award Points (Check if profile exists)
@@ -397,9 +401,9 @@ pub mod w3b_protocol {
     }
 
     /// Burn to Redeem (Public) - Starts Redemption Flow
-    pub fn burn_w3b(ctx: Context<BurnW3B>, amount: u64, request_id: u64) -> Result<()> {
+    pub fn burn_wgb(ctx: Context<BurnWGB>, amount: u64, request_id: u64) -> Result<()> {
         let state = &mut ctx.accounts.protocol_state;
-        require!(!state.is_paused, W3BError::ProtocolPaused);
+        require!(!state.is_paused, WGBError::ProtocolPaused);
 
         validate_optional_user_profile(&ctx.accounts.user_profile, &ctx.accounts.user.key())?;
 
@@ -408,7 +412,7 @@ pub mod w3b_protocol {
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
                 Burn {
-                    mint: ctx.accounts.w3b_mint.to_account_info(),
+                    mint: ctx.accounts.wgb_mint.to_account_info(),
                     from: ctx.accounts.user_token_account.to_account_info(),
                     authority: ctx.accounts.user.to_account_info(),
                 },
@@ -417,8 +421,8 @@ pub mod w3b_protocol {
         )?;
 
         // 2. Update Protocol Stats
-        state.total_supply = state.total_supply.checked_sub(amount).ok_or(W3BError::MathOverflow)?;
-        state.total_burned = state.total_burned.checked_add(amount).ok_or(W3BError::MathOverflow)?;
+        state.total_supply = state.total_supply.checked_sub(amount).ok_or(WGBError::MathOverflow)?;
+        state.total_burned = state.total_burned.checked_add(amount).ok_or(WGBError::MathOverflow)?;
 
         // 3. Create Redemption Request
         let req = &mut ctx.accounts.redemption_request;
@@ -444,7 +448,7 @@ pub mod w3b_protocol {
             timestamp: req.created_at,
         });
 
-        msg!("Redemption Request #{} created for {} W3B", request_id, amount);
+        msg!("Redemption Request #{} created for {} WGB", request_id, amount);
         Ok(())
     }
 
@@ -463,7 +467,7 @@ pub mod w3b_protocol {
         let req = &mut ctx.accounts.redemption_request;
 
         // Only pending orders can be claimed
-        require!(req.status == 0, W3BError::InvalidRedemptionStatus);
+        require!(req.status == 0, WGBError::InvalidRedemptionStatus);
 
         req.status = 1; // Claimed
         req.fulfiller = ctx.accounts.fulfiller.key();
@@ -488,7 +492,7 @@ pub mod w3b_protocol {
         let req = &mut ctx.accounts.redemption_request;
 
         // Only claimed orders can be confirmed
-        require!(req.status == 1, W3BError::InvalidRedemptionStatus);
+        require!(req.status == 1, WGBError::InvalidRedemptionStatus);
 
         req.status = 3; // Confirmed
         req.confirmed_at = Clock::get()?.unix_timestamp;
@@ -516,7 +520,7 @@ pub mod w3b_protocol {
         // Can only cancel Pending (0) or Claimed (1) orders
         require!(
             req.status == 0 || req.status == 1,
-            W3BError::InvalidRedemptionStatus
+            WGBError::InvalidRedemptionStatus
         );
 
         req.status = 4; // Cancelled
@@ -553,8 +557,8 @@ pub mod w3b_protocol {
         Ok(())
     }
     
-    pub fn set_w3b_price_admin(ctx: Context<AdminOnly>, price: u64) -> Result<()> {
-        ctx.accounts.protocol_state.w3b_price_lamports = price; // Unbounded override
+    pub fn set_wgb_price_admin(ctx: Context<AdminOnly>, price: u64) -> Result<()> {
+        ctx.accounts.protocol_state.wgb_price_lamports = price; // Unbounded override
         Ok(())
     }
 
@@ -580,7 +584,7 @@ pub mod w3b_protocol {
         state.total_yield_distributed = state
             .total_yield_distributed
             .checked_add(amount)
-            .ok_or(W3BError::MathOverflow)?;
+            .ok_or(WGBError::MathOverflow)?;
         state.last_yield_distribution = Clock::get()?.unix_timestamp;
 
         emit!(YieldDistributed {
@@ -589,7 +593,39 @@ pub mod w3b_protocol {
             timestamp: state.last_yield_distribution,
         });
 
-        msg!("Yield distribution recorded: {} W3B", amount);
+        msg!("Yield distribution recorded: {} WGB", amount);
+        Ok(())
+    }
+
+    /// Update the Transfer Fee Extension config on the WGB mint (Admin only)
+    pub fn update_transfer_fee(
+        ctx: Context<UpdateTransferFee>,
+        new_fee_bps: u16,
+        new_max_fee: u64,
+    ) -> Result<()> {
+        let state = &ctx.accounts.protocol_state;
+        let seeds = &[b"protocol_state".as_ref(), &[state.bump]];
+        let signer = &[&seeds[..]];
+
+        let ix = set_transfer_fee(
+            &ctx.accounts.token_program.key(),
+            &ctx.accounts.wgb_mint.key(),
+            &state.key(),
+            &[],
+            new_fee_bps,
+            new_max_fee,
+        )?;
+
+        invoke_signed(
+            &ix,
+            &[
+                ctx.accounts.wgb_mint.to_account_info(),
+                ctx.accounts.protocol_state.to_account_info(),
+            ],
+            signer,
+        )?;
+
+        msg!("Transfer fee updated: {} bps, max {}", new_fee_bps, new_max_fee);
         Ok(())
     }
 }
@@ -607,12 +643,12 @@ fn validate_optional_user_profile<'info>(
         require_keys_eq!(
             profile.key(),
             expected_profile_pda,
-            W3BError::InvalidUserProfileAccount
+            WGBError::InvalidUserProfileAccount
         );
         require_keys_eq!(
             profile.user,
             *expected_user,
-            W3BError::InvalidUserProfileAccount
+            WGBError::InvalidUserProfileAccount
         );
     }
 
@@ -625,7 +661,7 @@ fn validate_optional_user_profile<'info>(
 pub struct ProtocolState {
     pub authority: Pubkey,
     pub operator: Pubkey,       // NEW: Hot wallet for auto-ops
-    pub w3b_mint: Pubkey,
+    pub wgb_mint: Pubkey,
     pub treasury: Pubkey,
     pub total_supply: u64,
     pub total_burned: u64,      // NEW: Track burns
@@ -635,7 +671,7 @@ pub struct ProtocolState {
     pub last_root_update: i64,
     pub last_proof_timestamp: i64,
     
-    pub w3b_price_lamports: u64,
+    pub wgb_price_lamports: u64,
     pub sol_receiver: Pubkey,
     
     // Yield & Future
@@ -682,7 +718,7 @@ pub struct InitializeV2<'info> {
     #[account(init, payer = authority, space = 8 + 512, seeds = [b"protocol_state"], bump)]
     pub protocol_state: Account<'info, ProtocolState>,
     /// Token-2022 mint (validated as a real mint account)
-    pub w3b_mint: InterfaceAccount<'info, Mint>,
+    pub wgb_mint: InterfaceAccount<'info, Mint>,
     /// Treasury token account (validated as a real token account)
     pub treasury: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
@@ -709,7 +745,7 @@ pub struct OperatorOnly<'info> {
     #[account(
         constraint = operator.key() == protocol_state.operator 
                   || operator.key() == protocol_state.authority
-                  @ W3BError::Unauthorized
+                  @ WGBError::Unauthorized
     )]
     pub operator: Signer<'info>,
 }
@@ -719,6 +755,23 @@ pub struct AdminOnly<'info> {
     #[account(mut, seeds = [b"protocol_state"], bump = protocol_state.bump, has_one = authority)]
     pub protocol_state: Account<'info, ProtocolState>,
     pub authority: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateTransferFee<'info> {
+    #[account(
+        seeds = [b"protocol_state"],
+        bump = protocol_state.bump,
+        has_one = authority,
+    )]
+    pub protocol_state: Account<'info, ProtocolState>,
+    pub authority: Signer<'info>,
+    #[account(
+        mut,
+        constraint = wgb_mint.key() == protocol_state.wgb_mint
+    )]
+    pub wgb_mint: InterfaceAccount<'info, Mint>,
+    pub token_program: Program<'info, Token2022>,
 }
 
 #[derive(Accounts)]
@@ -736,22 +789,22 @@ pub struct CloseProtocolState<'info> {
 }
 
 #[derive(Accounts)]
-pub struct MintW3B<'info> {
+pub struct MintWGB<'info> {
     #[account(
         mut, 
         seeds = [b"protocol_state"], 
         bump = protocol_state.bump,
-        has_one = w3b_mint,
+        has_one = wgb_mint,
         has_one = treasury
     )]
     pub protocol_state: Account<'info, ProtocolState>,
     
     #[account(mut)] 
-    pub w3b_mint: InterfaceAccount<'info, Mint>,
+    pub wgb_mint: InterfaceAccount<'info, Mint>,
     
     #[account(
         mut,
-        token::mint = protocol_state.w3b_mint,
+        token::mint = protocol_state.wgb_mint,
         constraint = treasury.owner == protocol_state.key()
     )] 
     pub treasury: InterfaceAccount<'info, TokenAccount>,
@@ -762,13 +815,13 @@ pub struct MintW3B<'info> {
     #[account(
         constraint = operator.key() == protocol_state.operator
                   || operator.key() == protocol_state.authority
-                  @ W3BError::Unauthorized
+                  @ WGBError::Unauthorized
     )]
     pub operator: Signer<'info>,
 }
 
 #[derive(Accounts)]
-pub struct BuyW3B<'info> {
+pub struct BuyWGB<'info> {
     #[account(
         mut, 
         seeds = [b"protocol_state"], 
@@ -783,7 +836,7 @@ pub struct BuyW3B<'info> {
     
     #[account(
         mut,
-        token::mint = protocol_state.w3b_mint,
+        token::mint = protocol_state.wgb_mint,
         token::authority = buyer
     )]
     pub buyer_token_account: InterfaceAccount<'info, TokenAccount>,
@@ -791,13 +844,19 @@ pub struct BuyW3B<'info> {
     #[account(
         mut,
         constraint = treasury.owner == protocol_state.key(),
-        token::mint = protocol_state.w3b_mint
+        token::mint = protocol_state.wgb_mint
     )]
     pub treasury: InterfaceAccount<'info, TokenAccount>,
     
     /// CHECK: Validated via protocol_state.sol_receiver
     #[account(mut)]
     pub sol_receiver: AccountInfo<'info>,
+
+    #[account(
+        mut,
+        constraint = wgb_mint.key() == protocol_state.wgb_mint
+    )]
+    pub wgb_mint: InterfaceAccount<'info, Mint>,
     
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token2022>,
@@ -824,7 +883,7 @@ pub struct InitUserProfile<'info> {
 
 #[derive(Accounts)]
 #[instruction(amount: u64, request_id: u64)]
-pub struct BurnW3B<'info> {
+pub struct BurnWGB<'info> {
     #[account(mut, seeds = [b"protocol_state"], bump = protocol_state.bump)]
     pub protocol_state: Account<'info, ProtocolState>,
     
@@ -832,12 +891,12 @@ pub struct BurnW3B<'info> {
     pub user: Signer<'info>,
     #[account(
         mut,
-        token::mint = w3b_mint,
+        token::mint = wgb_mint,
         token::authority = user
     )]
     pub user_token_account: InterfaceAccount<'info, TokenAccount>,
-    #[account(mut, constraint = w3b_mint.key() == protocol_state.w3b_mint @ W3BError::Unauthorized)]
-    pub w3b_mint: InterfaceAccount<'info, Mint>,
+    #[account(mut, constraint = wgb_mint.key() == protocol_state.wgb_mint @ WGBError::Unauthorized)]
+    pub wgb_mint: InterfaceAccount<'info, Mint>,
     
     #[account(
         init,
@@ -883,7 +942,7 @@ pub struct ClaimRedemption<'info> {
         mut,
         seeds = [b"redemption", redemption_request.user.as_ref(), redemption_request.request_id.to_le_bytes().as_ref()],
         bump = redemption_request.bump,
-        constraint = redemption_request.status == 0 @ W3BError::InvalidRedemptionStatus
+        constraint = redemption_request.status == 0 @ WGBError::InvalidRedemptionStatus
     )]
     pub redemption_request: Account<'info, RedemptionRequest>,
 
@@ -904,7 +963,7 @@ pub struct ConfirmDelivery<'info> {
         mut,
         seeds = [b"redemption", redemption_request.user.as_ref(), redemption_request.request_id.to_le_bytes().as_ref()],
         bump = redemption_request.bump,
-        constraint = redemption_request.status == 1 @ W3BError::InvalidRedemptionStatus
+        constraint = redemption_request.status == 1 @ WGBError::InvalidRedemptionStatus
     )]
     pub redemption_request: Account<'info, RedemptionRequest>,
 
@@ -920,7 +979,7 @@ pub struct ConfirmDelivery<'info> {
     #[account(
         constraint = signer.key() == protocol_state.authority
                   || signer.key() == protocol_state.operator
-                  @ W3BError::Unauthorized
+                  @ WGBError::Unauthorized
     )]
     pub signer: Signer<'info>,
 }
@@ -1019,7 +1078,7 @@ pub struct YieldDistributed {
 }
 
 #[error_code]
-pub enum W3BError {
+pub enum WGBError {
     #[msg("Protocol is paused")]
     ProtocolPaused,
     #[msg("Proof is stale (>48 hours old)")]
@@ -1040,7 +1099,7 @@ pub enum W3BError {
     PriceNotSet,
     #[msg("Invalid redemption status for this operation")]
     InvalidRedemptionStatus,
-    #[msg("Purchase exceeds per-transaction cap of 1000 W3B")]
+    #[msg("Purchase exceeds per-transaction cap of 1000 WGB")]
     ExceedsTransactionCap,
     #[msg("Invalid user profile account supplied")]
     InvalidUserProfileAccount,

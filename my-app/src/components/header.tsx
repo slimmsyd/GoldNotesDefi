@@ -309,7 +309,7 @@ export function Header() {
             <Link href="/" className="flex items-center">
               <Image
                 src="/logos/BlackWebLogo_v3.png"
-                alt="BlackW3B"
+                alt="BlackWGB"
                 width={40}
                 height={32}
                 className={`object-contain transition-all duration-150 ${isInverted ? 'brightness-0' : ''}`}
@@ -392,7 +392,7 @@ export function Header() {
                 <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center">
                   <Image
                     src="/logos/BlackWebLogo_v3.png"
-                    alt="BlackW3B"
+                    alt="BlackWGB"
                     width={40}
                     height={32}
                     className="object-contain"

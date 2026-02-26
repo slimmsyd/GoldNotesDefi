@@ -4,7 +4,7 @@
  * Architecture Explainer Component
  * GoldBack Design System Implementation
  *
- * Collapsible "How W3B Works" section explaining the 4-layer trust system
+ * Collapsible "How WGB Works" section explaining the 4-layer trust system
  */
 
 import { useState } from 'react';
@@ -57,9 +57,9 @@ export function ArchitectureExplainer() {
       >
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-transparent flex items-center justify-center">
-            <img src="/AppAssets/PNG Renders/calculator_black.png" alt="How W3B Works" className="w-6 h-6 object-contain drop-shadow-md" />
+            <img src="/AppAssets/PNG Renders/calculator_black.png" alt="How WGB Works" className="w-6 h-6 object-contain drop-shadow-md" />
           </div>
-          <span className="text-lg font-bold text-white tracking-tight">How W3B Works</span>
+          <span className="text-lg font-bold text-white tracking-tight">How WGB Works</span>
           <span className="text-xs text-gray-400 bg-gray-800/50 px-2.5 py-1 rounded-[4.5px] font-medium border border-gray-700/50 hidden sm:inline-block">Trust Model</span>
         </div>
         <motion.svg
@@ -123,7 +123,7 @@ export function ArchitectureExplainer() {
                   <div>
                     <p className="text-xs font-semibold text-green-400 mb-0.5">Mathematical Certainty</p>
                     <p className="text-xs text-gray-400 leading-relaxed">
-                      Trust the math, not the issuer. W3B tokens can only be minted when cryptographic proofs verify that physical reserves exceed token supply.
+                      Trust the math, not the issuer. WGB tokens can only be minted when cryptographic proofs verify that physical reserves exceed token supply.
                     </p>
                   </div>
                 </div>

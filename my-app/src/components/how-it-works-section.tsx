@@ -136,7 +136,7 @@ export function HowItWorksSection() {
 
         {/* Core Components Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* $W3B Token */}
+          {/* $WGB Token */}
           <div className="bg-white rounded-[4.5px] p-10 border border-gray-200">
             <div className="mb-6">
               <div
@@ -160,11 +160,11 @@ export function HowItWorksSection() {
             </div>
 
             <h4 className="text-2xl font-medium text-gray-900 mb-4">
-              $W3B Token
+              $WGB Token
             </h4>
 
             <p className="text-gray-600 leading-relaxed mb-6">
-              $W3B is the primary digital currency representing physical Goldbacks. Think of it
+              $WGB is the primary digital currency representing physical Goldbacks. Think of it
               as digitized gold—instantly transferable, globally accessible, and backed 1:1 by
               authenticated physical notes in secure custody.
             </p>
@@ -172,7 +172,7 @@ export function HowItWorksSection() {
             {/* <button className="w-full py-4 px-6 rounded-[4.5px] text-white font-medium transition-all hover:opacity-90"
               style={{ background: 'linear-gradient(to right, #10B981, #059669)' }}
             >
-              Learn About $W3B
+              Learn About $WGB
             </button> */}
           </div>
 

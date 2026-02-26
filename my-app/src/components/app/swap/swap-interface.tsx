@@ -16,13 +16,13 @@ import { PROTOCOL_CONFIG } from '@/lib/protocol-constants';
 import { getExplorerUrl } from '@/lib/network-utils';
 import { buildUsdcToSolSwapTx, getUsdcToSolQuote } from '@/lib/jupiter-swap';
 import {
-  W3B_MINT,
-  createBuyW3bInstruction,
-  getUserW3bTokenAccount,
+  WGB_MINT,
+  createBuyWgbInstruction,
+  getUserWgbTokenAccount,
   fetchSolReceiver,
-  fetchW3bPriceLamports,
+  fetchWgbPriceLamports,
   maybeCreateInitUserProfileInstruction,
-} from '@/lib/w3b-program';
+} from '@/lib/wgb-program';
 import { TokenSelector, TokenInfo, POPULAR_TOKENS } from './token-selector';
 
 // Dynamic import to avoid SSR hydration issues
@@ -32,11 +32,11 @@ const WalletMultiButton = dynamic(
 );
 
 // Goldback price in USD (fetched from DB via API)
-const DEFAULT_W3B_PRICE_USD = 9.02;
+const DEFAULT_WGB_PRICE_USD = 9.02;
 
 // WGB Token info for the output
 const WGB_TOKEN: TokenInfo = {
-  address: PROTOCOL_CONFIG.w3bMint,
+  address: PROTOCOL_CONFIG.wgbMint,
   symbol: 'WGB',
   name: 'GoldBack Token',
   decimals: 9,
@@ -85,7 +85,7 @@ export function SwapInterface() {
   const [processingPhase, setProcessingPhase] = useState<string | null>(null);
   const [usdcRouteReady, setUsdcRouteReady] = useState(false);
   const [solPrice, setSolPrice] = useState<number | null>(null);
-  const [w3bPriceUsd, setW3bPriceUsd] = useState<number>(DEFAULT_W3B_PRICE_USD);
+  const [wgbPriceUsd, setWgbPriceUsd] = useState<number>(DEFAULT_WGB_PRICE_USD);
 
   // Price verification state
   const [priceVerifiedAt, setPriceVerifiedAt] = useState<Date | null>(null);
@@ -98,14 +98,14 @@ export function SwapInterface() {
   const [isPricingBypassed, setIsPricingBypassed] = useState(false);
   const [pricingBypassReason, setPricingBypassReason] = useState<string | null>(null);
 
-  // Fetch W3B/Goldback price from database
+  // Fetch WGB/Goldback price from database
   useEffect(() => {
     const fetchGoldbackRate = async () => {
       try {
         const res = await fetch('/api/goldback-rate');
         const data = await res.json();
         if (data.success && data.rate) {
-          setW3bPriceUsd(data.rate);
+          setWgbPriceUsd(data.rate);
           setPriceMinutesSinceUpdate(data.minutesSinceUpdate);
           setIsPriceFallback(data.source === 'fallback');
         }
@@ -190,7 +190,7 @@ export function SwapInterface() {
       setIsPriceFallback(isFallback);
 
       // Update state with verified price (fallback or fresh DB price)
-      setW3bPriceUsd(data.rate);
+      setWgbPriceUsd(data.rate);
       setPriceVerifiedAt(new Date());
       setPriceMinutesSinceUpdate(data.minutesSinceUpdate);
 
@@ -274,12 +274,12 @@ export function SwapInterface() {
     if (!isNaN(num)) {
       const usdValue = getUsdValue(num);
       if (usdValue > 0) {
-        setReceiveAmount((usdValue / w3bPriceUsd).toFixed(4));
+        setReceiveAmount((usdValue / wgbPriceUsd).toFixed(4));
       }
     }
   };
 
-  // Handle W3B output changes
+  // Handle WGB output changes
   const handleReceiveChange = (val: string) => {
     if (usdcRouteReady || swapSignature || buySignature || completedRail) {
       clearExecutionState();
@@ -291,7 +291,7 @@ export function SwapInterface() {
     }
     const num = parseFloat(val);
     if (!isNaN(num)) {
-      const usdNeeded = num * w3bPriceUsd;
+      const usdNeeded = num * wgbPriceUsd;
       if (isSameAddress(selectedPayToken.address, SOL_MINT_ADDRESS) && solPrice) {
         setPayAmount((usdNeeded / solPrice).toFixed(6));
       } else {
@@ -307,11 +307,11 @@ export function SwapInterface() {
       if (!isNaN(num)) {
         const usdValue = getUsdValue(num);
         if (usdValue > 0) {
-          setReceiveAmount((usdValue / w3bPriceUsd).toFixed(4));
+          setReceiveAmount((usdValue / wgbPriceUsd).toFixed(4));
         }
       }
     }
-  }, [selectedPayToken, solPrice, payAmount, w3bPriceUsd]);
+  }, [selectedPayToken, solPrice, payAmount, wgbPriceUsd]);
 
   const handleSwap = async () => {
     if (!publicKey) {
@@ -336,15 +336,15 @@ export function SwapInterface() {
       return;
     }
 
-    const w3bAmount = parseFloat(receiveAmount);
-    if (isNaN(w3bAmount) || w3bAmount <= 0) {
+    const wgbAmount = parseFloat(receiveAmount);
+    if (isNaN(wgbAmount) || wgbAmount <= 0) {
       setError('Invalid amount');
       return;
     }
 
-    // W3B has 0 decimals (1 token = 1 Goldback)
-    const w3bAmountInt = Math.floor(w3bAmount);
-    if (w3bAmountInt <= 0) {
+    // WGB has 0 decimals (1 token = 1 Goldback)
+    const wgbAmountInt = Math.floor(wgbAmount);
+    if (wgbAmountInt <= 0) {
       setError('Amount must be at least 1 WGB');
       return;
     }
@@ -361,7 +361,7 @@ export function SwapInterface() {
     setProcessingPhase(
       selectedRail === 'USDC_BRIDGED' && !usdcRouteReady
         ? 'Routing USDC -> SOL'
-        : 'Executing W3B purchase'
+        : 'Executing WGB purchase'
     );
 
     let didSwapThisAttempt = false;
@@ -378,7 +378,7 @@ export function SwapInterface() {
       // Fetch on-chain data
       const [solReceiver, priceLamports] = await Promise.all([
         fetchSolReceiver(connection),
-        fetchW3bPriceLamports(connection),
+        fetchWgbPriceLamports(connection),
       ]);
 
       if (priceLamports === BigInt(0)) {
@@ -388,7 +388,7 @@ export function SwapInterface() {
         return;
       }
 
-      const requiredBuyLamports = BigInt(w3bAmountInt) * priceLamports;
+      const requiredBuyLamports = BigInt(wgbAmountInt) * priceLamports;
       const requiredLamportsWithReserve = requiredBuyLamports + SOL_FEE_RESERVE_LAMPORTS;
 
       if (selectedRail === 'USDC_BRIDGED' && !usdcRouteReady) {
@@ -446,23 +446,23 @@ export function SwapInterface() {
         }
       }
 
-      setProcessingPhase('Executing W3B purchase');
+      setProcessingPhase('Executing WGB purchase');
 
       const transaction = new Transaction();
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
 
-      const userW3bAccount = await getUserW3bTokenAccount(publicKey);
-      const userW3bAccountInfo = await connection.getAccountInfo(userW3bAccount);
+      const userWgbAccount = await getUserWgbTokenAccount(publicKey);
+      const userWgbAccountInfo = await connection.getAccountInfo(userWgbAccount);
 
-      if (!userW3bAccountInfo) {
+      if (!userWgbAccountInfo) {
         transaction.add(
           createAssociatedTokenAccountInstruction(
             publicKey,
-            userW3bAccount,
+            userWgbAccount,
             publicKey,
-            W3B_MINT,
+            WGB_MINT,
             TOKEN_2022_PROGRAM_ID
           )
         );
@@ -473,11 +473,11 @@ export function SwapInterface() {
         transaction.add(initProfileIx);
       }
 
-      const buyInstruction = createBuyW3bInstruction(
+      const buyInstruction = createBuyWgbInstruction(
         publicKey,
-        userW3bAccount,
+        userWgbAccount,
         solReceiver,
-        BigInt(w3bAmountInt)
+        BigInt(wgbAmountInt)
       );
       transaction.add(buyInstruction);
 
@@ -493,14 +493,14 @@ export function SwapInterface() {
         throw simErr;
       }
 
-      const w3bBuySig = await sendTransaction(transaction, connection);
+      const wgbBuySig = await sendTransaction(transaction, connection);
       await connection.confirmTransaction({
         blockhash,
         lastValidBlockHeight,
-        signature: w3bBuySig
+        signature: wgbBuySig
       }, 'confirmed');
 
-      setBuySignature(w3bBuySig);
+      setBuySignature(wgbBuySig);
       didBuyThisAttempt = true;
       setCompletedRail(selectedRail);
       if (selectedRail === 'SOL_DIRECT') {
@@ -509,6 +509,7 @@ export function SwapInterface() {
       setUsdcRouteReady(false);
       setProcessingPhase(null);
       setStep('success');
+      window.dispatchEvent(new Event('wgb-balance-refresh'));
 
     } catch (err: any) {
       console.error('Swap failed:', err);
@@ -517,7 +518,7 @@ export function SwapInterface() {
       if (didSwapThisAttempt && !didBuyThisAttempt) {
         setUsdcRouteReady(true);
         setError(
-          'USDC swap completed, but W3B purchase failed. Retry to execute purchase without rerouting USDC.'
+          'USDC swap completed, but WGB purchase failed. Retry to execute purchase without rerouting USDC.'
         );
       } else if (err.message?.includes('Quote unavailable')) {
         setError('Quote unavailable. Try again in a few seconds.');
@@ -683,7 +684,7 @@ export function SwapInterface() {
                     Balance: 0.00
                   </div>
                   <div className="text-gray-400">
-                    Value: ${receiveAmount && !isNaN(parseFloat(receiveAmount)) ? (parseFloat(receiveAmount) * w3bPriceUsd).toFixed(2) : '0.00'}
+                    Value: ${receiveAmount && !isNaN(parseFloat(receiveAmount)) ? (parseFloat(receiveAmount) * wgbPriceUsd).toFixed(2) : '0.00'}
                   </div>
                 </div>
               </div>
@@ -694,8 +695,8 @@ export function SwapInterface() {
                   <span>Rate</span>
                   <span className="text-white">
                     {isSameAddress(selectedPayToken.address, SOL_MINT_ADDRESS) && solPrice
-                      ? `1 WGB ≈ ${(w3bPriceUsd / solPrice).toFixed(6)} SOL`
-                      : `1 WGB ≈ ${w3bPriceUsd} ${selectedPayToken.symbol}`
+                      ? `1 WGB ≈ ${(wgbPriceUsd / solPrice).toFixed(6)} SOL`
+                      : `1 WGB ≈ ${wgbPriceUsd} ${selectedPayToken.symbol}`
                     }
                   </span>
                 </div>
@@ -716,16 +717,19 @@ export function SwapInterface() {
 
               {isSameAddress(selectedPayToken.address, PROTOCOL_CONFIG.usdcMint) && (
                 <div className="bg-blue-900/20 border border-blue-800/60 p-3 text-blue-300 text-xs rounded-[4.5px]">
-                  USDC rail executes in two steps: USDC -&gt; SOL routing, then on-chain W3B purchase.
+                  USDC rail executes in two steps: USDC -&gt; SOL routing, then on-chain WGB purchase.
                 </div>
               )}
 
-              {isPricingBypassed && (
-                <div className="bg-amber-900/30 border border-amber-700 p-3 text-amber-300 text-xs rounded-[4.5px]">
+              {isPricingBypassed && (<>
+                {/* <div className="bg-amber-900/30 border border-amber-700 p-3 text-amber-300 text-xs rounded-[4.5px]">
                   Local pricing bypass active. Do not use in production.
                   {pricingBypassReason ? ` (${pricingBypassReason})` : ''}
-                </div>
+                </div> */}
+              </>
+
               )}
+              
 
               {/* Connect Wallet or Review Button */}
               {!connected ? (
@@ -770,7 +774,7 @@ export function SwapInterface() {
               <div className="bg-black/60 p-4 space-y-3 text-sm rounded-[16px] mb-4 border border-transparent hover:border-white/5 transition-colors">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Rate</span>
-                  <span className="text-white">1 WGB = {w3bPriceUsd} USD</span>
+                  <span className="text-white">1 WGB = {wgbPriceUsd} USD</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Price Age</span>
@@ -805,7 +809,7 @@ export function SwapInterface() {
               {isPriceFallback && (
                 <div className="bg-amber-900/30 border border-amber-700 p-3 text-amber-400 text-sm flex items-center gap-2 rounded-[4.5px]">
                   <img src="/AppAssets/PNG Renders/discount_black.png" alt="Rate Warning" className="w-6 h-6 flex-shrink-0 object-contain drop-shadow-md" />
-                  <span>Using default rate (${w3bPriceUsd.toFixed(2)}). Live pricing is currently unavailable.</span>
+                  <span>Using default rate (${wgbPriceUsd.toFixed(2)}). Live pricing is currently unavailable.</span>
                 </div>
               )}
 
@@ -830,17 +834,20 @@ export function SwapInterface() {
               )}
 
               {isPricingBypassed && (
-                <div className="bg-amber-900/30 border border-amber-700 p-3 text-amber-300 text-xs rounded-[4.5px]">
+                <>
+                    {/* <div className="bg-amber-900/30 border border-amber-700 p-3 text-amber-300 text-xs rounded-[4.5px]">
                   Local pricing bypass active. Do not use in production.
                   {pricingBypassReason ? ` (${pricingBypassReason})` : ''}
-                </div>
+                </div> */}
+                </>
+            
               )}
 
               {isSameAddress(selectedPayToken.address, PROTOCOL_CONFIG.usdcMint) && (
                 <div className="bg-blue-900/20 border border-blue-800/60 p-3 text-blue-300 text-xs rounded-[4.5px]">
                   {usdcRouteReady
-                    ? 'USDC routing already completed. Confirm now to execute only the W3B buy step.'
-                    : 'Confirm will route USDC -> SOL first, then execute the W3B purchase.'}
+                    ? 'USDC routing already completed. Confirm now to execute only the WGB buy step.'
+                    : 'Confirm will route USDC -> SOL first, then execute the WGB purchase.'}
                 </div>
               )}
 
@@ -972,7 +979,7 @@ export function SwapInterface() {
                     rel="noopener noreferrer"
                     className="text-[#e8d48b] hover:text-[#c9a84c] text-sm underline block"
                   >
-                    View W3B Purchase Tx →
+                    View WGB Purchase Tx →
                   </a>
                 )}
                 {completedRail === 'SOL_DIRECT' && buySignature && !swapSignature && (

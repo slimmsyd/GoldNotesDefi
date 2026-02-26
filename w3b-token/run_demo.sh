@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # ==============================================================================
-# W3B Token - Master Run Script
+# WGB Token - Master Run Script
 # ==============================================================================
-# This script automates the setup and execution of the entire $W3B stack.
+# This script automates the setup and execution of the entire $WGB stack.
 # It handles:
 # 1. Prerequisites Check
 # 2. Dependency Installation
@@ -22,7 +22,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 echo -e "${BLUE}======================================================${NC}"
-echo -e "${BLUE}   $W3B Token Standard - Master Run Sequence           ${NC}"
+echo -e "${BLUE}   $WGB Token Standard - Master Run Sequence           ${NC}"
 echo -e "${BLUE}======================================================${NC}"
 
 # --- 1. Prerequisites Check ---
@@ -61,7 +61,7 @@ cd ../..
 
 # --- 4. Build Smart Contract (Solana) ---
 echo -e "\n${GREEN}[4/6] Building Solana Program (The On-Chain Truth)...${NC}"
-cd programs/w3b_protocol
+cd programs/wgb_protocol
 
 echo ">> Building Anchor Program..."
 anchor build

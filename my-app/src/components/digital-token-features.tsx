@@ -58,7 +58,7 @@ export function DigitalTokenFeatures() {
 
             {/* Description */}
             <p className="text-gray-600 leading-relaxed">
-              $W3B is minted exclusively against locked, serialized Goldbacks. The system 
+              $WGB is minted exclusively against locked, serialized Goldbacks. The system 
               enforces non-rehypothecation to preserve the peg.
             </p>
           </div>
@@ -94,7 +94,7 @@ export function DigitalTokenFeatures() {
 
             {/* Description */}
             <p className="text-gray-600 leading-relaxed">
-              $W3B transforms Goldbacks into an instant, private, spend-anywhere digital currency 
+              $WGB transforms Goldbacks into an instant, private, spend-anywhere digital currency 
               with real-time settlement.
             </p>
           </div>

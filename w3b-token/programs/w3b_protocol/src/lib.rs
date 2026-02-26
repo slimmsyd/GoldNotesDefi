@@ -5,7 +5,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
-pub mod w3b_protocol {
+pub mod wgb_protocol {
     use super::*;
 
     /// Initialize the Protocol Brain
@@ -26,7 +26,7 @@ pub mod w3b_protocol {
 
     /// The "Sacred Issuance" Function
     /// Why? This is the Guard. We ONLY mint if the Oracle proves we have Gold in the Vault.
-    pub fn mint_w3b(
+    pub fn mint_wgb(
         ctx: Context<MintW3B>, 
         amount: u64, 
         custody_proven_by_oracle: u64, // The "Truth" from Chainlink
@@ -36,7 +36,7 @@ pub mod w3b_protocol {
 
         // 1. Pause Check
         // Why? In emergency (e.g. vault robbery), we pull the plug.
-        require!(!protocol_state.is_paused, W3BError::ProtocolPaused);
+        require!(!protocol_state.is_paused, WGBError::ProtocolPaused);
 
         // 2. The Circuit Breaker (The Zeroth Law)
         // Check current on-chain supply
@@ -44,13 +44,13 @@ pub mod w3b_protocol {
         
         // Calculate what supply WOULD be after this mint
         let required_coverage = current_supply.checked_add(amount)
-            .ok_or(W3BError::MathOverflow)?;
+            .ok_or(WGBError::MathOverflow)?;
 
         // The Sacred Check: proven_gold >= total_tokens
         // If we have 100 gold, we can't have 101 tokens.
         require!(
             custody_proven_by_oracle >= required_coverage,
-            W3BError::InsufficientReserves
+            WGBError::InsufficientReserves
         );
 
         // 3. Execute Mint (Token-2022)
@@ -69,7 +69,7 @@ pub mod w3b_protocol {
         // 4. Update Protocol Brain
         protocol_state.total_minted = protocol_state.total_minted
             .checked_add(amount)
-            .ok_or(W3BError::MathOverflow)?;
+            .ok_or(WGBError::MathOverflow)?;
 
         // 5. Emit Event (The Audit Trail)
         emit!(MintEvent {
@@ -130,7 +130,7 @@ pub struct Initialize<'info> {
 }
 
 #[derive(Accounts)]
-pub struct MintW3B<'info> {
+pub struct MintWGB<'info> {
     #[account(
         mut,
         seeds = [b"protocol_state"],
@@ -173,7 +173,7 @@ pub struct CommitmentAnchoredEvent {
 // --- ERRORS (The "Red Flags") ---
 
 #[error_code]
-pub enum W3BError {
+pub enum WGBError {
     #[msg("Insufficient reserves! The Vault has less gold than tokens.")]
     InsufficientReserves,
     #[msg("Protocol is paused due to emergency.")]

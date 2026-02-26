@@ -19,7 +19,7 @@ async function fetchOnChainW3bBalance(walletAddress: string): Promise<{ balance:
   try {
     const connection = new Connection(PROTOCOL_CONFIG.rpcEndpoint, 'confirmed');
     const owner = new PublicKey(walletAddress);
-    const mint = new PublicKey(PROTOCOL_CONFIG.w3bMint);
+    const mint = new PublicKey(PROTOCOL_CONFIG.wgbMint);
 
     const ata = await getAssociatedTokenAddress(
       mint,

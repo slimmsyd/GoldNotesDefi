@@ -37,7 +37,7 @@ export function TreasuryBalance({ treasuryBalance, isLoading, onRefresh }: Treas
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-transparent flex items-center justify-center">
-                                <img src="/AppAssets/BlackW3BCoin.jpg" alt="W3B" className="w-8 h-8 object-contain rounded-[4.5px] drop-shadow-md" />
+                                <img src="/AppAssets/BlackW3BCoin.jpg" alt="WGB" className="w-8 h-8 object-contain rounded-[4.5px] drop-shadow-md" />
                             </div>
                             <div>
                                 <h3 className="text-white font-semibold">Treasury Vault</h3>
@@ -59,7 +59,7 @@ export function TreasuryBalance({ treasuryBalance, isLoading, onRefresh }: Treas
                         <span className="text-4xl font-bold text-[#e8d48b]">
                             {treasuryBalance?.toLocaleString() ?? '—'}
                         </span>
-                        <span className="text-gray-400 text-lg">W3B</span>
+                        <span className="text-gray-400 text-lg">WGB</span>
                     </div>
                 </div>
 

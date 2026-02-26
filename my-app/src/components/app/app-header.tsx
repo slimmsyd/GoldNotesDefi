@@ -103,7 +103,7 @@ function CustomWalletButton() {
   const walletButtonRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [w3bUsdValue, setW3bUsdValue] = useState<number | null>(null);
+  const [wgbUsdValue, setWgbUsdValue] = useState<number | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -118,19 +118,19 @@ function CustomWalletButton() {
     }
   }, [isDropdownOpen]);
 
-  // Fetch W3B balance and compute USD value
+  // Fetch WGB balance and compute USD value
   useEffect(() => {
     if (!connected || !publicKey) {
-      setW3bUsdValue(null);
+      setWgbUsdValue(null);
       return;
     }
 
-    async function fetchW3bValue() {
+    async function fetchWgbValue() {
       try {
         const [rateRes, ata] = await Promise.all([
           fetch('/api/goldback-rate').then(r => r.json()),
           getAssociatedTokenAddress(
-            new PublicKey(PROTOCOL_CONFIG.w3bMint),
+            new PublicKey(PROTOCOL_CONFIG.wgbMint),
             publicKey!,
             false,
             TOKEN_2022_PROGRAM_ID
@@ -146,15 +146,22 @@ function CustomWalletButton() {
           balance = 0;
         }
 
-        setW3bUsdValue(balance * rate);
+        setWgbUsdValue(balance * rate);
       } catch {
-        setW3bUsdValue(null);
+        setWgbUsdValue(null);
       }
     }
 
-    void fetchW3bValue();
-    const interval = setInterval(fetchW3bValue, 30_000);
-    return () => clearInterval(interval);
+    void fetchWgbValue();
+    const interval = setInterval(fetchWgbValue, 30_000);
+
+    const onBalanceRefresh = () => void fetchWgbValue();
+    window.addEventListener('wgb-balance-refresh', onBalanceRefresh);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('wgb-balance-refresh', onBalanceRefresh);
+    };
   }, [connected, publicKey, connection]);
 
   const handleConnect = (e: React.MouseEvent) => {
@@ -195,9 +202,9 @@ function CustomWalletButton() {
 
           {/* Balance Seg */}
           <div className="flex items-center px-3.5 h-full bg-[#c9a84c]/10 text-[#c9a84c] text-xs font-semibold">
-            {w3bUsdValue === null
+            {wgbUsdValue === null
               ? '...'
-              : `$${w3bUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : `$${wgbUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
             }
           </div>
         </button>

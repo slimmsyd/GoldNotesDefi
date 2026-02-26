@@ -5,7 +5,7 @@ import { env } from '../../config/env';
 
 const APP_IDENTITY = {
   name: 'GoldBack Mobile',
-  uri: 'https://w3bs.fun',
+  uri: 'https://wgbs.fun',
 };
 
 let cachedWalletAddress: string | null = null;

@@ -170,7 +170,7 @@ export function StatsGrid({ data, isLoading }: StatsGridProps) {
 
       <StatCard
         title="Circulating Supply"
-        value={`${data.totalSupply.toLocaleString()} W3B`}
+        value={`${data.totalSupply.toLocaleString()} WGB`}
         subtitle="MINTED SUPPLY"
         color="amber"
         delay={0.2}
@@ -181,7 +181,7 @@ export function StatsGrid({ data, isLoading }: StatsGridProps) {
       />
 
       <StatCard
-        title="W3B Price"
+        title="WGB Price"
         value={data.goldbackPrice !== null ? `$${data.goldbackPrice.toFixed(2)}` : '—'}
         subtitle={data.isGoldbackPriceStale ? 'PRICE MAY BE OUTDATED' : '1:1 GOLDBACK PEG'}
         color="amber"

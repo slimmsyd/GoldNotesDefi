@@ -4,7 +4,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-w3b_protocol = "E9WraHCid6NuDX9gQacw87ZuZhBo8Sgu35eVMq8GBAS3"
+wgb_protocol = "9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6"
+
+[programs.devnet]
+wgb_protocol = "9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6"
 
 [registry]
 url = "https://api.apr.dev"

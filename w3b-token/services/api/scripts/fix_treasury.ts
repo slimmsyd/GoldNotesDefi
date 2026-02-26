@@ -29,7 +29,7 @@ import * as path from "path";
 import dotenv from "dotenv";
 
 // Import IDL
-const idlJson = require("../../../programs/w3b_protocol/target/idl/w3b_protocol.json");
+const idlJson = require("../../../programs/w3b_protocol/target/idl/wgb_protocol.json");
 
 // Load env
 dotenv.config({ path: path.join(__dirname, "../../../.env") });
@@ -73,21 +73,21 @@ async function main() {
         process.exit(1);
     }
     const data = accountInfo.data;
-    const w3bMint = new PublicKey(data.slice(40, 72));
+    const wgbMint = new PublicKey(data.slice(40, 72));
     const oldTreasury = new PublicKey(data.slice(72, 104));
     
     console.log(`\n📊 Current State:`);
-    console.log(`   W3B Mint: ${w3bMint.toBase58()}`);
+    console.log(`   WGB Mint: ${wgbMint.toBase58()}`);
     console.log(`   Old Treasury: ${oldTreasury.toBase58()}`);
 
     // 6. Get old treasury balance
     const oldTreasuryAccount = await getAccount(connection, oldTreasury, "confirmed", TOKEN_2022_PROGRAM_ID);
-    console.log(`   Old Treasury Balance: ${oldTreasuryAccount.amount} W3B`);
+    console.log(`   Old Treasury Balance: ${oldTreasuryAccount.amount} WGB`);
     console.log(`   Old Treasury Owner: ${oldTreasuryAccount.owner.toBase58()}`);
 
     // 7. Create new treasury ATA for the Protocol PDA
     const newTreasury = getAssociatedTokenAddressSync(
-        w3bMint,
+        wgbMint,
         protocolStatePda,
         true,  // allowOwnerOffCurve = true for PDAs
         TOKEN_2022_PROGRAM_ID,
@@ -104,7 +104,7 @@ async function main() {
                 authority.publicKey,  // Payer
                 newTreasury,          // ATA address
                 protocolStatePda,     // Owner = PDA
-                w3bMint,              // Mint
+                wgbMint,              // Mint
                 TOKEN_2022_PROGRAM_ID,
                 ASSOCIATED_TOKEN_PROGRAM_ID
             )
@@ -117,7 +117,7 @@ async function main() {
 
     // 8. Transfer tokens from old treasury to new treasury
     if (oldTreasuryAccount.amount > 0n) {
-        console.log(`\n📤 Transferring ${oldTreasuryAccount.amount} W3B from old to new treasury...`);
+        console.log(`\n📤 Transferring ${oldTreasuryAccount.amount} WGB from old to new treasury...`);
         const transferTx = new Transaction().add(
             createTransferInstruction(
                 oldTreasury,
@@ -134,7 +134,7 @@ async function main() {
 
     // 9. Verify new treasury balance
     const newTreasuryAccount = await getAccount(connection, newTreasury, "confirmed", TOKEN_2022_PROGRAM_ID);
-    console.log(`\n📊 New Treasury Balance: ${newTreasuryAccount.amount} W3B`);
+    console.log(`\n📊 New Treasury Balance: ${newTreasuryAccount.amount} WGB`);
     console.log(`   New Treasury Owner: ${newTreasuryAccount.owner.toBase58()}`);
 
     // 10. Update protocol-constants.ts

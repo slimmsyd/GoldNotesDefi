@@ -20,12 +20,12 @@ export function PortfolioHero({ data, isLoading }: PortfolioHeroProps) {
 
     // Determine user balance (For now we use treasuryBalance as a placeholder/example)
     // In a real Robinhood app, this would be the user's connected wallet balance.
-    // Since we want to show a large number, we'll display the W3B Price cleanly if no user balance is assumed, 
+    // Since we want to show a large number, we'll display the WGB Price cleanly if no user balance is assumed, 
     // or a mock user balance if we want to simulate the "Portfolio" feel.
 
-    // Here we'll display the W3B price as the primary highlight, as "1 W3B = $x.xx" 
-    // Since 1 W3B = 1 Goldback, we highlight the value of the asset.
-    const w3bPrice = data.goldbackPrice ?? 0;
+    // Here we'll display the WGB price as the primary highlight, as "1 WGB = $x.xx" 
+    // Since 1 WGB = 1 Goldback, we highlight the value of the asset.
+    const wgbPrice = data.goldbackPrice ?? 0;
     const isPositive = (data.goldbackPrice24hChange ?? 0) >= 0;
 
     return (
@@ -41,7 +41,7 @@ export function PortfolioHero({ data, isLoading }: PortfolioHeroProps) {
                 transition={{ delay: 0.1 }}
                 className="text-gray-400 font-medium mb-2 uppercase tracking-widest text-sm"
             >
-                W3B Asset Price
+                WGB Asset Price
             </motion.p>
 
             <motion.h1
@@ -50,7 +50,7 @@ export function PortfolioHero({ data, isLoading }: PortfolioHeroProps) {
                 transition={{ delay: 0.2 }}
                 className="text-6xl md:text-7xl font-bold text-white tracking-tighter mb-4"
             >
-                ${w3bPrice.toFixed(2)}
+                ${wgbPrice.toFixed(2)}
             </motion.h1>
 
             {data.goldbackPrice24hChange !== null && (
@@ -68,7 +68,7 @@ export function PortfolioHero({ data, isLoading }: PortfolioHeroProps) {
                         >
                             <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
                         </svg>
-                        ${Math.abs((w3bPrice * (data.goldbackPrice24hChange / 100))).toFixed(2)} ({Math.abs(data.goldbackPrice24hChange).toFixed(2)}%)
+                        ${Math.abs((wgbPrice * (data.goldbackPrice24hChange / 100))).toFixed(2)} ({Math.abs(data.goldbackPrice24hChange).toFixed(2)}%)
                     </span>
                     <span className="text-gray-500 text-sm">Today</span>
                 </motion.div>
