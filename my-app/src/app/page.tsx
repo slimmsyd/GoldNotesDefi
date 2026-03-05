@@ -39,9 +39,9 @@ export default function Home() {
         <section id="whitepaper">
           <WhitePaperSection />
         </section>
-        <section id="learn-more">
+        {/* <section id="learn-more">
           <LearnMoreSection />
-        </section>
+        </section> */}
         <section id="faq">
           <FAQSection />
         </section>
