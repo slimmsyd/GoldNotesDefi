@@ -2,12 +2,20 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, TextInput } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { apiClient } from '../../lib/api/client';
 import { getPortfolioSummary } from '../../lib/portfolio/summary-client';
 import { getVaultSummary } from '../../lib/protocol/status-client';
 import { PortfolioSummaryResponse, VaultSummaryResponse } from '../../lib/api/types';
 import type { MainTabParamList } from '../../navigation';
 
 type Props = BottomTabScreenProps<MainTabParamList, 'Home'>;
+
+interface GoldbackRateResponse {
+  success: boolean;
+  rate: number;
+  minutesSinceUpdate: number | null;
+}
 
 const EMPTY_SUMMARY: PortfolioSummaryResponse = {
   success: true,
@@ -24,9 +32,12 @@ const EMPTY_SUMMARY: PortfolioSummaryResponse = {
 };
 
 export function HomeScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const [summary, setSummary] = useState<PortfolioSummaryResponse>(EMPTY_SUMMARY);
   const [vaultInfo, setVaultInfo] = useState<VaultSummaryResponse | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [overlayLivePrice, setOverlayLivePrice] = useState<number | null>(null);
+  const [overlayLivePriceUpdatedAt, setOverlayLivePriceUpdatedAt] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [chatDraft, setChatDraft] = useState('');
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -35,9 +46,10 @@ export function HomeScreen({ navigation }: Props) {
   const loadData = useCallback(async () => {
     setRefreshing(true);
     try {
-      const [portRes, vaultRes] = await Promise.all([
+      const [portRes, vaultRes, goldbackRateRes] = await Promise.all([
         getPortfolioSummary().catch(() => null),
-        getVaultSummary().catch(() => null)
+        getVaultSummary().catch(() => null),
+        apiClient.get<GoldbackRateResponse>('/api/goldback-rate').catch(() => null),
       ]);
 
       if (portRes) {
@@ -52,9 +64,26 @@ export function HomeScreen({ navigation }: Props) {
         setVaultInfo(vaultRes);
       }
 
+      if (goldbackRateRes?.success && Number.isFinite(goldbackRateRes.rate)) {
+        setOverlayLivePrice(goldbackRateRes.rate);
+        const derivedUpdatedAt =
+          typeof goldbackRateRes.minutesSinceUpdate === 'number'
+            ? new Date(Date.now() - goldbackRateRes.minutesSinceUpdate * 60_000).toISOString()
+            : new Date().toISOString();
+        setOverlayLivePriceUpdatedAt(derivedUpdatedAt);
+      } else if (portRes && Number.isFinite(portRes.goldbackRateUsd)) {
+        setOverlayLivePrice(portRes.goldbackRateUsd);
+        setOverlayLivePriceUpdatedAt(portRes.lastUpdated || null);
+      } else {
+        setOverlayLivePrice(null);
+        setOverlayLivePriceUpdatedAt(null);
+      }
+
       setStatus('Synced');
     } catch (e) {
       setStatus('Failed to sync');
+      setOverlayLivePrice(null);
+      setOverlayLivePriceUpdatedAt(null);
     } finally {
       setRefreshing(false);
     }
@@ -66,7 +95,20 @@ export function HomeScreen({ navigation }: Props) {
     }, [loadData])
   );
 
-  const priceFormatted = useMemo(() => `$${summary.goldbackRateUsd.toFixed(2)}`, [summary.goldbackRateUsd]);
+  const priceFormatted = useMemo(() => {
+    const rate = overlayLivePrice !== null ? overlayLivePrice : summary.goldbackRateUsd;
+    return `$${rate.toFixed(2)}`;
+  }, [overlayLivePrice, summary.goldbackRateUsd]);
+  const overlayPrice = useMemo(
+    () => (overlayLivePrice === null ? '--' : `$${overlayLivePrice.toFixed(2)}`),
+    [overlayLivePrice]
+  );
+  const overlayPriceMeta = useMemo(() => {
+    if (overlayLivePrice === null) return 'Live price data unavailable';
+    if (!overlayLivePriceUpdatedAt) return 'Live market reference';
+    return `Updated ${new Date(overlayLivePriceUpdatedAt).toLocaleString()}`;
+  }, [overlayLivePrice, overlayLivePriceUpdatedAt]);
+  const overlayBottomInset = useMemo(() => Math.max(insets.bottom + 128, 136), [insets.bottom]);
   const reserves = vaultInfo?.provenReserves || 6;
   const supply = vaultInfo?.totalSupply || 6;
 
@@ -112,12 +154,12 @@ export function HomeScreen({ navigation }: Props) {
             <Text style={styles.quickActionLabel}>Buy</Text>
           </Pressable>
 
-          {/* Swap */}
-          <Pressable style={styles.quickActionItem} onPress={() => navigation.navigate('Web3', { screen: 'Swap' })}>
+          {/* Price */}
+          <Pressable style={styles.quickActionItem} onPress={() => navigation.navigate('Web3', { screen: 'Dashboard' })}>
             <View style={styles.quickActionButton}>
-              <Text style={styles.quickActionIcon}>⇄</Text>
+              <Text style={styles.quickActionIcon}>$</Text>
             </View>
-            <Text style={styles.quickActionLabel}>Swap</Text>
+            <Text style={styles.quickActionLabel}>Price</Text>
           </Pressable>
 
           {/* Vault */}
@@ -204,6 +246,22 @@ export function HomeScreen({ navigation }: Props) {
           </View>
         </View>
       </ScrollView>
+
+      <View style={[styles.comingSoonOverlay, { paddingBottom: overlayBottomInset }]}>
+        <View style={styles.comingSoonScrim} />
+        <View style={styles.comingSoonCard}>
+          <Text style={styles.comingSoonTitle}>Coming Soon</Text>
+          <Text style={styles.comingSoonBody}>Mobile WGB trading is not live yet.</Text>
+
+          <View style={styles.comingSoonPriceCard}>
+            <Text style={styles.comingSoonPriceLabel}>WGB Price</Text>
+            <Text style={styles.comingSoonPriceValue}>{overlayPrice}</Text>
+            <Text style={styles.comingSoonPriceMeta}>{overlayPriceMeta}</Text>
+          </View>
+
+          <Text style={styles.comingSoonNote}>Use Gold Collection for physical GoldBack purchases.</Text>
+        </View>
+      </View>
 
       {/* Floating Chat Input */}
       {/* <View style={styles.chatFloatingContainer}>
@@ -438,6 +496,71 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0a0a0a',
   },
+  comingSoonOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 32,
+  },
+  comingSoonScrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,10,10,0.78)',
+  },
+  comingSoonCard: {
+    backgroundColor: 'rgba(17,17,17,0.94)',
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.28)',
+    borderRadius: 32,
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    gap: 10,
+  },
+  comingSoonTitle: {
+    color: '#ffffff',
+    fontSize: 34,
+    fontWeight: '800',
+    letterSpacing: -1,
+  },
+  comingSoonBody: {
+    color: '#d1d5db',
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 4,
+  },
+  comingSoonPriceCard: {
+    marginTop: 8,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 24,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    gap: 4,
+  },
+  comingSoonPriceLabel: {
+    color: '#9ca3af',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  comingSoonPriceValue: {
+    color: '#c9a84c',
+    fontSize: 44,
+    fontWeight: '800',
+    letterSpacing: -2,
+  },
+  comingSoonPriceMeta: {
+    color: '#9ca3af',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  comingSoonNote: {
+    color: '#e8d48b',
+    fontSize: 13,
+    lineHeight: 20,
+    marginTop: 4,
+  },
   chatFloatingContainer: {
     position: 'absolute',
     bottom: 100, // Float right above the absolute nav bar (bottom: 24, height: 64)
@@ -501,4 +624,3 @@ const styles = StyleSheet.create({
     color: '#0a0a0a',
   },
 });
-

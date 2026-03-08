@@ -89,64 +89,99 @@ const checkNetworkWarnings = (): string | null => {
 };
 
 // Fail fast for critical protocol addresses to prevent silent stale fallbacks.
-// IMPORTANT: pass explicit process.env.NEXT_PUBLIC_* values so Next can inline them in client bundles.
 const requirePublicEnv = (
-  value: string | undefined,
-  envVar: string,
+  values: Array<string | undefined>,
+  envVars: string[],
   label: string
 ): string => {
-  const trimmedValue = value?.trim();
-  if (!trimmedValue) {
-    throw new Error(
-      `Missing required env var: ${envVar} (${label}). ` +
-      "Set it in .env.local before starting the app."
-    );
+  for (const value of values) {
+    const trimmedValue = value?.trim();
+    if (trimmedValue) {
+      return trimmedValue;
+    }
   }
-  return trimmedValue;
+
+  const envLabel = envVars.join(' or ');
+  throw new Error(
+    `Missing required env var: ${envLabel} (${label}). ` +
+    "Set it in .env.local before starting the app."
+  );
 };
 
-const PUBLIC_WGB_PROGRAM_ID = process.env.NEXT_PUBLIC_WGB_PROGRAM_ID;
-const PUBLIC_WGB_MINT = process.env.NEXT_PUBLIC_WGB_MINT;
-const PUBLIC_WGB_TREASURY_ACCOUNT = process.env.NEXT_PUBLIC_WGB_TREASURY_ACCOUNT;
-const PUBLIC_WGB_PROTOCOL_STATE_PDA = process.env.NEXT_PUBLIC_WGB_PROTOCOL_STATE_PDA;
+const readPublicEnvAliases = (...names: string[]): string | undefined => {
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (value) return value;
+  }
+  return undefined;
+};
+
+const PUBLIC_WGB_PROGRAM_ID = readPublicEnvAliases(
+  'NEXT_PUBLIC_WGB_PROGRAM_ID',
+  'NEXT_PUBLIC_W3B_PROGRAM_ID'
+);
+const PUBLIC_WGB_MINT = readPublicEnvAliases(
+  'NEXT_PUBLIC_WGB_MINT',
+  'NEXT_PUBLIC_W3B_MINT'
+);
+const PUBLIC_WGB_TREASURY_ACCOUNT = readPublicEnvAliases(
+  'NEXT_PUBLIC_WGB_TREASURY_ACCOUNT',
+  'NEXT_PUBLIC_W3B_TREASURY_ACCOUNT'
+);
+const PUBLIC_WGB_PROTOCOL_STATE_PDA = readPublicEnvAliases(
+  'NEXT_PUBLIC_WGB_PROTOCOL_STATE_PDA',
+  'NEXT_PUBLIC_W3B_PROTOCOL_STATE_PDA'
+);
+const PUBLIC_WGB_SUPABASE_URL = readPublicEnvAliases(
+  'NEXT_PUBLIC_WGB_SUPABASE_URL',
+  'NEXT_PUBLIC_W3B_SUPABASE_URL'
+);
 
 // Program and Account Addresses
 // NOTE: These must match what's stored in the ProtocolState PDA on-chain
 export const PROTOCOL_CONFIG = {
   // The WGB Protocol Program ID
-  programId: requirePublicEnv(PUBLIC_WGB_PROGRAM_ID, 'NEXT_PUBLIC_WGB_PROGRAM_ID', 'Program ID'),
-  
+  programId: requirePublicEnv(
+    [PUBLIC_WGB_PROGRAM_ID],
+    ['NEXT_PUBLIC_WGB_PROGRAM_ID', 'NEXT_PUBLIC_W3B_PROGRAM_ID'],
+    'Program ID'
+  ),
+
   // Token Mint (SPL Token-2022) - stored in ProtocolState
-  wgbMint: requirePublicEnv(PUBLIC_WGB_MINT, 'NEXT_PUBLIC_WGB_MINT', 'WGB Mint'),
-  
+  wgbMint: requirePublicEnv(
+    [PUBLIC_WGB_MINT],
+    ['NEXT_PUBLIC_WGB_MINT', 'NEXT_PUBLIC_W3B_MINT'],
+    'WGB Mint'
+  ),
+
   // Treasury Token Account - PDA-controlled (owner = protocolState PDA)
   treasury: requirePublicEnv(
-    PUBLIC_WGB_TREASURY_ACCOUNT,
-    'NEXT_PUBLIC_WGB_TREASURY_ACCOUNT',
+    [PUBLIC_WGB_TREASURY_ACCOUNT],
+    ['NEXT_PUBLIC_WGB_TREASURY_ACCOUNT', 'NEXT_PUBLIC_W3B_TREASURY_ACCOUNT'],
     'Treasury Account'
   ),
-  
+
   // Protocol State PDA
   protocolState: requirePublicEnv(
-    PUBLIC_WGB_PROTOCOL_STATE_PDA,
-    'NEXT_PUBLIC_WGB_PROTOCOL_STATE_PDA',
+    [PUBLIC_WGB_PROTOCOL_STATE_PDA],
+    ['NEXT_PUBLIC_WGB_PROTOCOL_STATE_PDA', 'NEXT_PUBLIC_W3B_PROTOCOL_STATE_PDA'],
     'Protocol State PDA'
   ),
-  
+
   // Network (read from env)
   network: getNetwork(),
   rpcEndpoint: getRpcEndpoint(),
-  
+
   // UI display name for the network
   networkDisplay: getNetworkDisplay(),
-  
+
   // Network-specific token addresses
   usdcMint: getUsdcMint(),
   usdtMint: getUsdtMint(),
-  
+
   // Helper to check for network configuration issues
   networkWarning: checkNetworkWarnings(),
-  
+
   // Is this mainnet?
   isMainnet: getNetwork() === 'mainnet-beta',
   isDevnet: getNetwork() === 'devnet',
@@ -154,9 +189,9 @@ export const PROTOCOL_CONFIG = {
 
 // Supabase Configuration (Blockchain project)
 export const SUPABASE_CONFIG = {
-  url: process.env.NEXT_PUBLIC_WGB_SUPABASE_URL || 'https://jbsasakwyxjbetdezifj.supabase.co',
-  // Note: anon key should be in .env, this is just a fallback reference
-  anonKeyEnvVar: 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+  url: PUBLIC_WGB_SUPABASE_URL || 'https://jbsasakwyxjbetdezifj.supabase.co',
+  // Prefer the WGB key name, but support the legacy W3B name as an alias.
+  anonKeyEnvVar: 'NEXT_PUBLIC_WGB_SUPABASE_ANON_KEY',
 } as const;
 
 // V2 Protocol State Account Layout

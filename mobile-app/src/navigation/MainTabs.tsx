@@ -1,6 +1,6 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Pressable, StyleSheet, Text, View, Platform } from 'react-native';
+import { Image, ImageSourcePropType, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { HomeScreen } from '../screens/home/HomeScreen';
 import { ShopScreen } from '../screens/shop/ShopScreen';
 import { CheckoutScreen } from '../screens/checkout/CheckoutScreen';
@@ -22,11 +22,30 @@ interface MainTabsProps {
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-/** Simple icon component using Unicode glyphs */
-function TabIcon({ glyph, color, size, focused }: { glyph: string; color: string; size: number; focused: boolean }) {
+const TAB_ICON_SIZE = 22;
+
+const TAB_ICON_SOURCES: Record<keyof MainTabParamList, ImageSourcePropType> = {
+  Home: require('../../assets/PNG Renders/bar_chart_black.png'),
+  Web3: require('../../assets/PNG Renders/bank_black.png'),
+  Shop: require('../../assets/PNG Renders/goldbar_black.png'),
+  Checkout: require('../../assets/PNG Renders/credit_card_black.png'),
+  Orders: require('../../assets/PNG Renders/pen_black.png'),
+};
+
+function TabIcon({
+  icon,
+  focused,
+}: {
+  icon: keyof MainTabParamList;
+  focused: boolean;
+}) {
   return (
     <View style={[styles.iconContainer, focused && styles.iconContainerFocused]}>
-      <Text style={{ fontSize: size, color, textAlign: 'center', lineHeight: size + 4 }}>{glyph}</Text>
+      <Image
+        source={TAB_ICON_SOURCES[icon]}
+        style={[styles.iconImage, focused ? styles.iconImageFocused : styles.iconImageInactive]}
+        resizeMode="contain"
+      />
     </View>
   );
 }
@@ -42,7 +61,7 @@ function WalletButton({ onPress }: { onPress: () => void }) {
 export function MainTabs({ onOpenWallet }: MainTabsProps) {
   return (
     <Tab.Navigator
-      initialRouteName="Home"
+      initialRouteName="Shop"
       screenOptions={{
         headerShadowVisible: false,
         headerStyle: { backgroundColor: tokens.colors.bgBase },
@@ -85,15 +104,7 @@ export function MainTabs({ onOpenWallet }: MainTabsProps) {
         component={HomeScreen}
         options={{
           headerTitle: '',
-          tabBarIcon: ({ color, size, focused }) => <TabIcon glyph="⬡" color={color} size={22} focused={focused} />,
-        }}
-      />
-      <Tab.Screen
-        name="Shop"
-        component={ShopScreen}
-        options={{
-          title: 'Shop',
-          tabBarIcon: ({ color, size, focused }) => <TabIcon glyph="🛒" color={color} size={22} focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon icon="Home" focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -101,17 +112,25 @@ export function MainTabs({ onOpenWallet }: MainTabsProps) {
         options={{
           title: 'Web3',
           headerShown: false,
-          tabBarIcon: ({ color, size, focused }) => <TabIcon glyph="⛓" color={color} size={22} focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon icon="Web3" focused={focused} />,
         }}
       >
         {() => <Web3Stack onOpenWallet={onOpenWallet} />}
       </Tab.Screen>
       <Tab.Screen
+        name="Shop"
+        component={ShopScreen}
+        options={{
+          title: 'Shop',
+          tabBarIcon: ({ focused }) => <TabIcon icon="Shop" focused={focused} />,
+        }}
+      />
+      <Tab.Screen
         name="Checkout"
         component={CheckoutScreen}
         options={{
           title: 'Checkout',
-          tabBarIcon: ({ color, size, focused }) => <TabIcon glyph="💳" color={color} size={22} focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon icon="Checkout" focused={focused} />,
         }}
       />
       <Tab.Screen
@@ -119,7 +138,7 @@ export function MainTabs({ onOpenWallet }: MainTabsProps) {
         component={OrdersScreen}
         options={{
           title: 'Orders',
-          tabBarIcon: ({ color, size, focused }) => <TabIcon glyph="📋" color={color} size={22} focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon icon="Orders" focused={focused} />,
         }}
       />
     </Tab.Navigator>
@@ -137,6 +156,16 @@ const styles = StyleSheet.create({
   iconContainerFocused: {
     backgroundColor: 'rgba(201, 168, 76, 0.15)',
   },
+  iconImage: {
+    width: TAB_ICON_SIZE,
+    height: TAB_ICON_SIZE,
+  },
+  iconImageFocused: {
+    opacity: 1,
+  },
+  iconImageInactive: {
+    opacity: 0.72,
+  },
   walletButton: {
     paddingHorizontal: tokens.spacing.md,
     paddingVertical: tokens.spacing.sm - 1,
@@ -153,4 +182,3 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
 });
-

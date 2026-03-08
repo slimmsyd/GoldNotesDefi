@@ -13,6 +13,14 @@ function readEnv(name: string, fallback: string): string {
   return fallback;
 }
 
+function readEnvAliases(names: string[], fallback: string): string {
+  for (const name of names) {
+    const value = process.env[name];
+    if (value && value.trim().length > 0) return value;
+  }
+  return fallback;
+}
+
 const appEnv = resolveAppEnv();
 const apiBaseUrl = readEnv(
   'EXPO_PUBLIC_API_BASE_URL',
@@ -37,10 +45,22 @@ export const env = {
   apiBaseUrl,
   solanaNetwork,
   rpcEndpoint,
-  wgbProgramId: readEnv('EXPO_PUBLIC_WGB_PROGRAM_ID', '9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6'),
-  wgbMint: readEnv('EXPO_PUBLIC_WGB_MINT', '5gw6McYxM3gCCiamCMCms9t6q2ytjPTD5P15ocjtVTVQ'),
-  wgbTreasury: readEnv('EXPO_PUBLIC_WGB_TREASURY_ACCOUNT', 'FfADSgooHXMW4jHjF4KpBUJdmbsx3Nnw3PAbcemt8Ark'),
-  wgbProtocolState: readEnv('EXPO_PUBLIC_WGB_PROTOCOL_STATE_PDA', 'CWYNiviNYPEApbGjjhDPZ8vmxRTMJiHsJto8JRZNPG8s'),
+  wgbProgramId: readEnvAliases(
+    ['EXPO_PUBLIC_WGB_PROGRAM_ID', 'EXPO_PUBLIC_W3B_PROGRAM_ID'],
+    '9xZaf2jccNqsfStFKqcXS9ubKfcZcqNbCmgPuHDLLtd6'
+  ),
+  wgbMint: readEnvAliases(
+    ['EXPO_PUBLIC_WGB_MINT', 'EXPO_PUBLIC_W3B_MINT'],
+    '5gw6McYxM3gCCiamCMCms9t6q2ytjPTD5P15ocjtVTVQ'
+  ),
+  wgbTreasury: readEnvAliases(
+    ['EXPO_PUBLIC_WGB_TREASURY_ACCOUNT', 'EXPO_PUBLIC_W3B_TREASURY_ACCOUNT'],
+    'FfADSgooHXMW4jHjF4KpBUJdmbsx3Nnw3PAbcemt8Ark'
+  ),
+  wgbProtocolState: readEnvAliases(
+    ['EXPO_PUBLIC_WGB_PROTOCOL_STATE_PDA', 'EXPO_PUBLIC_W3B_PROTOCOL_STATE_PDA'],
+    'CWYNiviNYPEApbGjjhDPZ8vmxRTMJiHsJto8JRZNPG8s'
+  ),
   devSignerSecret: process.env.EXPO_PUBLIC_DEV_SIGNER_SECRET || '',
   isProduction: appEnv === 'production',
 } as const;

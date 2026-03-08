@@ -1,5 +1,5 @@
 /**
- * Supabase Data Fetching for W3B Protocol
+ * Supabase Data Fetching for WGB Protocol
  * Reads from merkle_roots and goldback_serials tables
  */
 
@@ -12,8 +12,13 @@ import { MerkleRootRecord, GoldbackSerialRecord, SUPABASE_CONFIG } from './proto
 // Create Supabase client for the Blockchain project
 
 function getSupabaseClient(): SupabaseClient {
-  const url = process.env.NEXT_PUBLIC_WGB_SUPABASE_URL || SUPABASE_CONFIG.url;
-  const anonKey = process.env.NEXT_PUBLIC_WGB_SUPABASE_ANON_KEY;
+  const url =
+    process.env.NEXT_PUBLIC_WGB_SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_W3B_SUPABASE_URL ||
+    SUPABASE_CONFIG.url;
+  const anonKey =
+    process.env.NEXT_PUBLIC_WGB_SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_W3B_SUPABASE_ANON_KEY;
   
   // Debug log for production issues
   if (typeof window !== 'undefined') {
@@ -26,7 +31,7 @@ function getSupabaseClient(): SupabaseClient {
   }
   
   if (!anonKey) {
-    throw new Error('NEXT_PUBLIC_WGB_SUPABASE_ANON_KEY is not set');
+    throw new Error('NEXT_PUBLIC_WGB_SUPABASE_ANON_KEY or NEXT_PUBLIC_W3B_SUPABASE_ANON_KEY is not set');
   }
   
   return createClient(url, anonKey);

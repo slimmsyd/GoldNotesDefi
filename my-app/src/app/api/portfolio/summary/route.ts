@@ -8,14 +8,14 @@ import { resolveAuthenticatedRequest } from '@/lib/mobile-auth';
 const DEFAULT_GOLDBACK_RATE = 9.02;
 const WEB_RATE_PARITY_OFFSET = 0.23;
 
-type W3bSource = 'onchain' | 'fallback';
+type WgbSource = 'onchain' | 'fallback';
 type LoyaltySource = 'db' | 'fallback';
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-async function fetchOnChainW3bBalance(walletAddress: string): Promise<{ balance: number; source: W3bSource }> {
+async function fetchOnChainWgbBalance(walletAddress: string): Promise<{ balance: number; source: WgbSource }> {
   try {
     const connection = new Connection(PROTOCOL_CONFIG.rpcEndpoint, 'confirmed');
     const owner = new PublicKey(walletAddress);
@@ -50,7 +50,7 @@ async function fetchOnChainW3bBalance(walletAddress: string): Promise<{ balance:
 
     return { balance: Math.floor(numeric), source: 'onchain' };
   } catch (error) {
-    console.warn('[api/portfolio/summary] on-chain W3B lookup failed:', error);
+    console.warn('[api/portfolio/summary] on-chain WGB lookup failed:', error);
     return { balance: 0, source: 'fallback' };
   }
 }
@@ -96,24 +96,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const [w3b, loyalty, goldbackRateUsd] = await Promise.all([
-      fetchOnChainW3bBalance(walletAddress),
+    const [wgb, loyalty, goldbackRateUsd] = await Promise.all([
+      fetchOnChainWgbBalance(walletAddress),
       fetchLoyaltyBalance(walletAddress),
       fetchGoldbackRate(),
     ]);
 
-    const portfolioUsd = round2(w3b.balance * goldbackRateUsd);
+    const portfolioUsd = round2(wgb.balance * goldbackRateUsd);
 
     return NextResponse.json({
       success: true,
       walletAddress,
-      w3bBalance: w3b.balance,
+      wgbBalance: wgb.balance,
+      // Keep the legacy field during the naming transition.
+      w3bBalance: wgb.balance,
       goldbackRateUsd,
       portfolioUsd,
       loyaltyPoints: loyalty.points,
       lastUpdated: new Date().toISOString(),
       dataHealth: {
-        w3bSource: w3b.source,
+        wgbSource: wgb.source,
+        w3bSource: wgb.source,
         loyaltySource: loyalty.source,
       },
     });
