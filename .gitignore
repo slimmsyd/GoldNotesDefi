@@ -39,5 +39,14 @@ yarn-error.log*
 # Circuit inputs are generated during proving
 w3b-token/circuits/reserve_proof/Prover.toml
 
-# Large asset renders (130MB+) — keep local only
-mobile-app/assets/PNG Renders/
+# Local test ledger (validator data)
+test-ledger/
+
+# Cursor project state (optional: uncomment next line to track .cursor/rules)
+.cursor/
+# !.cursor/rules
+
+# Android local / build (machine-specific)
+local.properties
+**/debug.keystore
+**/*.apk
