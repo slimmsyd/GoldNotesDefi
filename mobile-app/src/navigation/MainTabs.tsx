@@ -25,11 +25,11 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 const TAB_ICON_SIZE = 22;
 
 const TAB_ICON_SOURCES: Record<keyof MainTabParamList, ImageSourcePropType> = {
-  Home: require('../../assets/PNG Renders/bar_chart_black.png'),
-  Web3: require('../../assets/PNG Renders/bank_black.png'),
-  Shop: require('../../assets/PNG Renders/goldbar_black.png'),
-  Checkout: require('../../assets/PNG Renders/credit_card_black.png'),
-  Orders: require('../../assets/PNG Renders/pen_black.png'),
+  Home: require('../../assets/icons/bar_chart_black.png'),
+  Web3: require('../../assets/icons/bank_black.png'),
+  Shop: require('../../assets/icons/goldbar_black.png'),
+  Checkout: require('../../assets/icons/credit_card_black.png'),
+  Orders: require('../../assets/icons/pen_black.png'),
 };
 
 function TabIcon({

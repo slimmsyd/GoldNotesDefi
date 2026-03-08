@@ -23,6 +23,11 @@ We leverage deep-tech integrations to solve the "Trilemma of RWAs" (Scalability,
 
 This monorepo contains the entire ecosystem:
 
+- **`mobile-app/`**: **The Android Submission**
+  - Native Expo/React Native mobile app with a checked-in `android/` project.
+  - Contains the Gold Collection commerce flow, mobile checkout, wallet entry, and mobile Web3 surfaces.
+  - *Use this folder for the hackathon Android APK deliverable.*
+
 - **`w3b-token/`**: **The Issuance Layer**
   - Contains the Solana Smart Contract (Anchor), Noir ZK Circuits, and the Serial Number Registry.
   - *Run here to mint tokens and generate reserve proofs.*
