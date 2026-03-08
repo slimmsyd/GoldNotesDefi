@@ -1,0 +1,168 @@
+/*
+ * Copyright (c) 2022 Solana Mobile Inc.
+ */
+
+plugins {
+    alias libs.plugins.android.application
+    alias libs.plugins.kotlin.android
+    alias libs.plugins.kotlin.serialization
+    alias libs.plugins.kotlin.compose
+    alias libs.plugins.koltin.ksp
+    id 'androidx.navigation.safeargs.kotlin'
+}
+
+android {
+    namespace = "com.solana.mwallet"
+
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId "com.solana.mwallet"
+        minSdk 23
+        targetSdk 36
+        versionCode 2
+        versionName "1.0.1"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        manifestPlaceholders = [ walletUriHost: "solanamobile.com", walletUriPath: "/mwallet/"]
+        buildConfigField "android.net.Uri",
+                "WALLET_URI_BASE", "android.net.Uri.parse(\"https://solanamobile.com/mwallet/\")"
+
+        Properties properties = new Properties()
+        properties.load(project.rootProject.file('local.properties').newDataInputStream())
+        def privateKey = properties.getProperty('privateKey')
+        def blowfishApiKey = properties.getProperty('blowfishApiKey')
+        buildConfigField "String", "PRIVATE_KEY", privateKey ? "\"$privateKey\"" : "null"
+        buildConfigField "String", "BLOWFISH_API_KEY", blowfishApiKey ? "\"$blowfishApiKey\"" : "null"
+    }
+
+    testOptions {
+        execution 'ANDROIDX_TEST_ORCHESTRATOR'
+    }
+
+    signingConfigs {
+        create("release") {
+            // APK signing keystore configuration provided by environment variables:
+            //  ORG_GRADLE_PROJECT_apkSigningKeystorePath
+            //  ORG_GRADLE_PROJECT_apkSigningKeystorePassword
+            //  ORG_GRADLE_PROJECT_apkSigningKeyAlias
+            //  ORG_GRADLE_PROJECT_apkSigningKeyPassword
+            final var storePath = findProperty("apkSigningKeystorePath")
+            if (storePath != null) {
+                storeFile = file(storePath)
+            }
+            storePassword = findProperty("apkSigningKeystorePassword")
+            keyAlias = findProperty("apkSigningKeyAlias")
+            keyPassword = findProperty("apkSigningKeyPassword")
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            final var releaseSigningConfig = signingConfigs["release"]
+            if (releaseSigningConfig.storeFile != null && releaseSigningConfig.storeFile.exists()) {
+                signingConfig = releaseSigningConfig
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    kotlinOptions {
+        jvmTarget = '11'
+    }
+
+    buildFeatures {
+        viewBinding true
+        buildConfig true
+        compose true
+    }
+    packagingOptions {
+        resources {
+            excludes += ['META-INF/versions/9/OSGI-INF/MANIFEST.MF']
+        }
+    }
+}
+
+dependencies {
+    debugImplementation libs.androidx.ui.tooling
+    debugImplementation libs.androidx.ui.test.manifest
+
+    // Android Test dependencies
+    androidTestUtil libs.androidx.test.orchestrator
+    androidTestImplementation libs.kotlin.stdlib
+    androidTestImplementation libs.androidx.test.core
+    androidTestImplementation libs.androidx.test.core.ktx
+    androidTestImplementation libs.androidx.test.ext.junit
+    androidTestImplementation libs.androidx.test.ext.junit.ktx
+    androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation libs.androidx.test.rules
+    androidTestImplementation libs.androidx.test.espresso.core
+    androidTestImplementation libs.androidx.ui.automator
+    androidTestImplementation libs.androidx.ui.test.junit4
+    androidTestImplementation platform(libs.androidx.compose.bom)
+
+    // Mobile Wallet Adapter Test dependencies
+    androidTestImplementation libs.mwa.clientlib
+    androidTestImplementation libs.mwa.walletlib
+
+    // Core Android dependencies
+    implementation libs.androidx.activity.ktx
+    implementation libs.androidx.appcompat
+    implementation libs.androidx.biometric
+    implementation libs.androidx.constraintlayout
+    implementation libs.androidx.core.ktx
+    implementation libs.androidx.lifecycle.runtime.ktx
+    implementation libs.androidx.lifecycle.viewmodel.ktx
+    implementation libs.androidx.navigation.fragment.ktx
+    implementation libs.androidx.room.runtime
+    implementation libs.androidx.room.ktx
+    implementation libs.material
+
+    // Compose
+    implementation libs.androidx.activity.compose
+    implementation platform(libs.androidx.compose.bom)
+    implementation libs.androidx.ui
+    implementation libs.androidx.ui.graphics
+    implementation libs.androidx.ui.tooling.preview
+    implementation libs.androidx.material3
+
+    // Camera
+    implementation libs.androidx.camera.camera2
+    implementation libs.androidx.camera.view
+    implementation libs.androidx.camera.lifecycle
+    implementation libs.androidx.camera.mlkit.vision
+
+    // Kotlin dependencies
+    implementation libs.kotlinx.coroutines.core
+    implementation libs.kotlinx.coroutines.android
+    implementation libs.kotlinx.serialization.json
+
+    // Annotation processor and kapt plugins
+    annotationProcessor libs.room.compiler
+    ksp libs.room.compiler
+
+    // Coil for image loading
+    implementation libs.coil
+    implementation libs.coilSvg
+
+    // Additional dependencies
+    implementation libs.bouncycastle
+    implementation libs.multimult
+    implementation libs.digitalAssetLinks
+    implementation libs.mwa.walletlib
+    implementation libs.rpc.core
+    implementation libs.rpc.okiodriver
+    implementation libs.web3.solana
+
+    // ML Kit barcode scanning
+    implementation libs.barcodeScanning
+
+    // Retrofit for networking
+    implementation libs.retrofit
+}

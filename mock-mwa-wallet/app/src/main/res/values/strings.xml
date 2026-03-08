@@ -1,0 +1,84 @@
+<!--
+  ~ Copyright (c) 2022 Solana Mobile Inc.
+  -->
+
+<resources>
+    <string name="app_name">Mock MWA Wallet</string>
+
+    <!-- Main activity strings -->
+    <string name="label_hello_world">I\'m a wallet!</string>
+    <string name="label_copy">Copy</string>
+    <string name="label_network">Network:</string>
+    <string name="label_balance">Balance:</string>
+    <string name="label_copied">Address copied</string>
+    <string name="label_balance_loading">…</string>
+    <string name="label_balance_error">—</string>
+    <string name="network_devnet">Devnet</string>
+    <string name="network_mainnet">Mainnet</string>
+    <string name="network_testnet">Testnet</string>
+
+    <!-- Authorize dapp fragment strings -->
+    <string name="label_authorize_dapp">Authorize dapp</string>
+    <string name="label_verification_state">Status:</string>
+    <string name="label_verification_scope">Scope:</string>
+    <string name="label_simulate_cluster_not_supported">Simulate cluster not supported</string>
+
+    <!-- Sign In fragment strings -->
+    <string name="label_sign_in">Sign In</string>
+    <string name="label_sign_in_subtitle">wants you to sign in with your Solana account</string>
+    <string name="label_message">message:</string>
+
+    <!-- Sign Payload fragment strings -->
+    <string name="label_sign_messages">Sign message(s)</string>
+    <string name="label_num_txns">Num payloads:</string>
+    <string name="label_simulate_authorization_failed">Simulate auth token invalid</string>
+    <string name="label_simulate_invalid_payloads">Simulate first payload invalid</string>
+    <string name="label_simulate_too_many_payloads">Simulate too many payloads</string>
+
+    <!-- Sign Transaction fragment strings -->
+    <string name="label_sign_transactions">is requesting a transaction</string>
+    <string name="label_expected_changes">Expected Changes</string>
+
+    <!-- Transaction scanning states -->
+    <string name="str_scanning_transaction">scanning transaction…</string>
+    <string name="str_no_state_change">no expected state changes</string>
+    <string name="str_scanning_not_available">\u26A0 transaction simulation not available</string>
+
+    <!-- Send Transaction fragment strings -->
+    <string name="label_requesting_transactions">is requesting transaction(s)</string>
+    <string name="label_send_transactions">Sending transaction(s)</string>
+    <string name="label_simulate_transactions_submitted">Simulate submitted</string>
+    <string name="label_simulate_transactions_not_submitted">Simulate submit failed</string>
+    <string name="label_send_transaction_to_cluster">Send transaction to cluster</string>
+
+    <!-- Common strings -->
+    <string name="label_wants_to_connect">wants to connect</string>
+    <string name="label_cancel">Cancel</string>
+    <string name="label_connect">Connect</string>
+    <string name="label_approve">Approve</string>
+    <string name="label_cluster">Cluster:</string>
+    <string name="label_authorize">Authorize</string>
+    <string name="label_decline">Decline</string>
+    <string name="label_simulate_internal_error">Simulate internal error</string>
+
+    <!-- Client verification states -->
+    <string name="str_verification_in_progress">Verification in progress</string>
+    <string name="str_verification_succeeded">Verification successful</string>
+    <string name="str_verification_failed">Verification failed</string>
+    <string name="str_verification_not_verifiable">Client not verifiable</string>
+
+    <!-- No connection due to low power warning strings-->
+    <string name="low_power_mode_warning_title">Low Power Mode</string>
+    <string name="str_low_power_mode_warning_dsc">
+        Your device is currently in power saving mode. Incoming wallet connections will not
+        work properly when the device battery save mode is active. Please turn off battery
+        saver or plug in your phone and try again.
+    </string>
+
+    <!-- Barcode Scanning -->
+    <string name="label_menu_qr_scan">Scan</string>
+    <string name="label_start_scanner">Start Scanner</string>
+    <string name="label_open_settings">Open Settings</string>
+    <string name="str_invalid_mwa_qr">Invalid QR!</string>
+    <string name="str_camera_permission_required">Camera permission is required!</string>
+</resources>
