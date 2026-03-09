@@ -88,11 +88,13 @@ const checkNetworkWarnings = (): string | null => {
   return null;
 };
 
-// Fail fast for critical protocol addresses to prevent silent stale fallbacks.
+// Read a public env var, returning the first non-empty value or a fallback.
+// In production (Vercel) the vars are always set; locally they may be absent.
 const requirePublicEnv = (
   values: Array<string | undefined>,
   envVars: string[],
-  label: string
+  label: string,
+  fallback = ''
 ): string => {
   for (const value of values) {
     const trimmedValue = value?.trim();
@@ -101,11 +103,15 @@ const requirePublicEnv = (
     }
   }
 
-  const envLabel = envVars.join(' or ');
-  throw new Error(
-    `Missing required env var: ${envLabel} (${label}). ` +
-    "Set it in .env.local before starting the app."
-  );
+  // Don't crash – just warn. The vars will be present on Vercel.
+  if (typeof console !== 'undefined') {
+    const envLabel = envVars.join(' or ');
+    console.warn(
+      `[protocol-constants] ${envLabel} (${label}) is not set. ` +
+      'Features depending on this value will be unavailable until it is configured.'
+    );
+  }
+  return fallback;
 };
 
 const readPublicEnvAliases = (...names: string[]): string | undefined => {

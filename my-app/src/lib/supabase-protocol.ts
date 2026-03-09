@@ -20,18 +20,19 @@ function getSupabaseClient(): SupabaseClient {
     process.env.NEXT_PUBLIC_WGB_SUPABASE_ANON_KEY ||
     process.env.NEXT_PUBLIC_W3B_SUPABASE_ANON_KEY;
   
-  // Debug log for production issues
-  if (typeof window !== 'undefined') {
-    console.log('Supabase Config Debug:', {
-      url,
-      anonKeyLength: anonKey?.length || 0,
-      anonKeyStart: anonKey ? anonKey.substring(0, 10) + '...' : 'undefined',
-      anonKeyEnd: anonKey ? '...' + anonKey.substring(anonKey.length - 10) : 'undefined'
-    });
-  }
-  
   if (!anonKey) {
-    throw new Error('NEXT_PUBLIC_WGB_SUPABASE_ANON_KEY or NEXT_PUBLIC_W3B_SUPABASE_ANON_KEY is not set');
+    console.warn(
+      '[supabase-protocol] NEXT_PUBLIC_WGB_SUPABASE_ANON_KEY is not set. ' +
+      'Protocol data features will be unavailable until it is configured.'
+    );
+    // Return a proxy that throws clear errors at call-time rather than at import-time
+    return new Proxy({} as SupabaseClient, {
+      get() {
+        throw new Error(
+          'Supabase protocol client not initialized – NEXT_PUBLIC_WGB_SUPABASE_ANON_KEY is not set.'
+        );
+      },
+    });
   }
   
   return createClient(url, anonKey);
