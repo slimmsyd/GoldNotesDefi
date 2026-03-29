@@ -17,11 +17,29 @@ import {
 } from '@solana/spl-token';
 import { PROTOCOL_CONFIG } from './protocol-constants';
 
-// Program addresses
-export const PROGRAM_ID = new PublicKey(PROTOCOL_CONFIG.programId);
-export const WGB_MINT = new PublicKey(PROTOCOL_CONFIG.wgbMint);
-export const TREASURY = new PublicKey(PROTOCOL_CONFIG.treasury);
-export const PROTOCOL_STATE_PDA = new PublicKey(PROTOCOL_CONFIG.protocolState);
+// Program addresses — lazily initialized to avoid crashing at module load
+// when env vars are not yet inlined by Turbopack.
+let _programId: PublicKey | null = null;
+let _wgbMint: PublicKey | null = null;
+let _treasury: PublicKey | null = null;
+let _protocolStatePda: PublicKey | null = null;
+
+export function PROGRAM_ID(): PublicKey {
+  if (!_programId) _programId = new PublicKey(PROTOCOL_CONFIG.programId);
+  return _programId;
+}
+export function WGB_MINT(): PublicKey {
+  if (!_wgbMint) _wgbMint = new PublicKey(PROTOCOL_CONFIG.wgbMint);
+  return _wgbMint;
+}
+export function TREASURY(): PublicKey {
+  if (!_treasury) _treasury = new PublicKey(PROTOCOL_CONFIG.treasury);
+  return _treasury;
+}
+export function PROTOCOL_STATE_PDA(): PublicKey {
+  if (!_protocolStatePda) _protocolStatePda = new PublicKey(PROTOCOL_CONFIG.protocolState);
+  return _protocolStatePda;
+}
 
 // Instruction discriminators (first 8 bytes of sha256 hash of instruction name)
 // These are computed from anchor's instruction naming convention: sha256("global:<name>")[0..8]
@@ -33,11 +51,11 @@ const INIT_USER_PROFILE_DISCRIMINATOR = new Uint8Array([148, 35, 126, 247, 28, 1
  * Fetch the current WGB price in lamports from on-chain state
  */
 export async function fetchWgbPriceLamports(connection: Connection): Promise<bigint> {
-  const accountInfo = await connection.getAccountInfo(PROTOCOL_STATE_PDA);
+  const accountInfo = await connection.getAccountInfo(PROTOCOL_STATE_PDA());
   if (!accountInfo) {
     throw new Error('Protocol state not found');
   }
-  
+
   // Read wgb_price_lamports at V2 offset 208
   // V2 Layout: 8 (disc) + 32 (authority) + 32 (operator) + 32 (wgbMint) + 32 (treasury)
   //   + 8 (totalSupply) + 8 (totalBurned) + 32 (merkleRoot) + 8 (provenReserves)
@@ -51,11 +69,11 @@ export async function fetchWgbPriceLamports(connection: Connection): Promise<big
  * Fetch the SOL receiver address from on-chain state
  */
 export async function fetchSolReceiver(connection: Connection): Promise<PublicKey> {
-  const accountInfo = await connection.getAccountInfo(PROTOCOL_STATE_PDA);
+  const accountInfo = await connection.getAccountInfo(PROTOCOL_STATE_PDA());
   if (!accountInfo) {
     throw new Error('Protocol state not found');
   }
-  
+
   // Read sol_receiver at V2 offset 216 (after wgb_price_lamports)
   const receiverOffset = 216;
   const receiverBytes = accountInfo.data.slice(receiverOffset, receiverOffset + 32);
@@ -96,19 +114,19 @@ export function createBuyWgbInstruction(
 
   // Account metas for buy_wgb instruction (must match on-chain BuyWGB struct order)
   const keys = [
-    { pubkey: PROTOCOL_STATE_PDA, isSigner: false, isWritable: true },
+    { pubkey: PROTOCOL_STATE_PDA(), isSigner: false, isWritable: true },
     { pubkey: buyer, isSigner: true, isWritable: true },
     { pubkey: buyerTokenAccount, isSigner: false, isWritable: true },
-    { pubkey: TREASURY, isSigner: false, isWritable: true },
+    { pubkey: TREASURY(), isSigner: false, isWritable: true },
     { pubkey: solReceiver, isSigner: false, isWritable: true },
-    { pubkey: WGB_MINT, isSigner: false, isWritable: true },
+    { pubkey: WGB_MINT(), isSigner: false, isWritable: true },
     { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     { pubkey: TOKEN_2022_PROGRAM_ID, isSigner: false, isWritable: false },
     { pubkey: userProfilePda, isSigner: false, isWritable: true },
   ];
 
   return new TransactionInstruction({
-    programId: PROGRAM_ID,
+    programId: PROGRAM_ID(),
     keys,
     data: Buffer.from(data),
   });
@@ -119,7 +137,7 @@ export function createBuyWgbInstruction(
  */
 export async function getUserWgbTokenAccount(userPubkey: PublicKey): Promise<PublicKey> {
   return getAssociatedTokenAddress(
-    WGB_MINT,
+    WGB_MINT(),
     userPubkey,
     false,
     TOKEN_2022_PROGRAM_ID,
@@ -140,7 +158,7 @@ export function calculateSolCost(amount: bigint, priceLamports: bigint): number 
 export function getUserProfilePDA(userPubkey: PublicKey): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
     [Buffer.from('user_profile'), userPubkey.toBuffer()],
-    PROGRAM_ID
+    PROGRAM_ID()
   );
 }
 
@@ -156,7 +174,7 @@ export function getRedemptionRequestPDA(
   writeU64LE(requestId, idBuffer, 0);
   return PublicKey.findProgramAddressSync(
     [Buffer.from('redemption'), userPubkey.toBuffer(), idBuffer],
-    PROGRAM_ID
+    PROGRAM_ID()
   );
 }
 
@@ -178,7 +196,7 @@ export function createInitUserProfileInstruction(
   ];
 
   return new TransactionInstruction({
-    programId: PROGRAM_ID,
+    programId: PROGRAM_ID(),
     keys,
     data: Buffer.from(data),
   });
@@ -227,10 +245,10 @@ export function createBurnWgbInstruction(
 
   // Account metas for burn_wgb instruction
   const keys = [
-    { pubkey: PROTOCOL_STATE_PDA, isSigner: false, isWritable: true },
+    { pubkey: PROTOCOL_STATE_PDA(), isSigner: false, isWritable: true },
     { pubkey: user, isSigner: true, isWritable: true },
     { pubkey: userTokenAccount, isSigner: false, isWritable: true },
-    { pubkey: WGB_MINT, isSigner: false, isWritable: true },
+    { pubkey: WGB_MINT(), isSigner: false, isWritable: true },
     { pubkey: redemptionPda, isSigner: false, isWritable: true },
     { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     { pubkey: TOKEN_2022_PROGRAM_ID, isSigner: false, isWritable: false },
@@ -238,7 +256,7 @@ export function createBurnWgbInstruction(
   ];
 
   return new TransactionInstruction({
-    programId: PROGRAM_ID,
+    programId: PROGRAM_ID(),
     keys,
     data: Buffer.from(data),
   });

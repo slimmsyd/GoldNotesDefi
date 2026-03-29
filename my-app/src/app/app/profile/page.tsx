@@ -7,7 +7,9 @@ import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import { PROTOCOL_CONFIG } from '@/lib/protocol-constants';
 
-const WGB_MINT = new PublicKey(PROTOCOL_CONFIG.wgbMint);
+function getWgbMint(): PublicKey {
+  return new PublicKey(PROTOCOL_CONFIG.wgbMint);
+}
 
 export default function ProfilePage() {
     const { publicKey, connected } = useWallet();
@@ -30,7 +32,7 @@ export default function ProfilePage() {
                 // Fetch WGB token balance (Token-2022)
                 try {
                     const ata = await getAssociatedTokenAddress(
-                        WGB_MINT,
+                        getWgbMint(),
                         publicKey,
                         false,
                         TOKEN_2022_PROGRAM_ID

@@ -43,6 +43,10 @@ const DEFAULT_OPTIONS: UseProtocolDataOptions = {
  */
 async function fetchTreasuryBalance(): Promise<number> {
   try {
+    if (!PROTOCOL_CONFIG.treasury || !PROTOCOL_CONFIG.rpcEndpoint) {
+      console.warn('Treasury or RPC endpoint not configured — skipping balance fetch');
+      return 0;
+    }
     const connection = new Connection(PROTOCOL_CONFIG.rpcEndpoint, 'confirmed');
     const treasury = new PublicKey(PROTOCOL_CONFIG.treasury);
     const accountInfo = await connection.getTokenAccountBalance(treasury);

@@ -53,6 +53,12 @@ export function getConnection(): Connection {
 
 // Get the Protocol State PDA
 export function getProtocolStatePDA(): PublicKey {
+  if (!PROTOCOL_CONFIG.protocolState) {
+    throw new Error(
+      'NEXT_PUBLIC_WGB_PROTOCOL_STATE_PDA is not configured. ' +
+      'Check your .env.local and restart the dev server.'
+    );
+  }
   return new PublicKey(PROTOCOL_CONFIG.protocolState);
 }
 

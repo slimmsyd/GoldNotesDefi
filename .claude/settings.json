@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/sydneysanders/Desktop/Code_Projects/GoldBackProject/w3b-token -name *keypair* -type f)",
+      "Bash(grep -r \"NEXT_PUBLIC_WGB\\\\|EXPO_PUBLIC_WGB\\\\|WGB_PROGRAM_ID\" /Users/sydneysanders/Desktop/Code_Projects/GoldBackProject/docs --include=*.md)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://jbsasakwyxjbetdezifj.supabase.co/rest/v1/)",
+      "Bash(anchor --version)",
+      "Bash(solana --version)",
+      "Bash(solana config:*)",
+      "Bash(node -e \":*)",
+      "Bash(ls -la /Users/sydneysanders/Desktop/Code_Projects/GoldBackProject/my-app/.env*)",
+      "Bash(node -e \"const d=require\\(''''fs''''\\).readFileSync\\(''''/dev/stdin'''',''''utf8''''\\);const p=JSON.parse\\(d\\);console.log\\(''''dev script:'''', p.scripts?.dev\\);console.log\\(''''next version:'''', p.dependencies?.next || p.devDependencies?.next\\);\")",
+      "Bash(npx next:*)",
+      "Bash(node_modules/.bin/next --version)"
+    ]
+  }
+}

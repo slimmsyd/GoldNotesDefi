@@ -114,34 +114,28 @@ const requirePublicEnv = (
   return fallback;
 };
 
-const readPublicEnvAliases = (...names: string[]): string | undefined => {
-  for (const name of names) {
-    const value = process.env[name]?.trim();
-    if (value) return value;
-  }
-  return undefined;
-};
+// Static access required — Next.js/Turbopack only inlines NEXT_PUBLIC_* env vars
+// into the client bundle when accessed as literal `process.env.NEXT_PUBLIC_X`.
+// Dynamic access like `process.env[varName]` is NOT detected by the compiler.
+const PUBLIC_WGB_PROGRAM_ID =
+  process.env.NEXT_PUBLIC_WGB_PROGRAM_ID?.trim() ||
+  process.env.NEXT_PUBLIC_W3B_PROGRAM_ID?.trim();
 
-const PUBLIC_WGB_PROGRAM_ID = readPublicEnvAliases(
-  'NEXT_PUBLIC_WGB_PROGRAM_ID',
-  'NEXT_PUBLIC_W3B_PROGRAM_ID'
-);
-const PUBLIC_WGB_MINT = readPublicEnvAliases(
-  'NEXT_PUBLIC_WGB_MINT',
-  'NEXT_PUBLIC_W3B_MINT'
-);
-const PUBLIC_WGB_TREASURY_ACCOUNT = readPublicEnvAliases(
-  'NEXT_PUBLIC_WGB_TREASURY_ACCOUNT',
-  'NEXT_PUBLIC_W3B_TREASURY_ACCOUNT'
-);
-const PUBLIC_WGB_PROTOCOL_STATE_PDA = readPublicEnvAliases(
-  'NEXT_PUBLIC_WGB_PROTOCOL_STATE_PDA',
-  'NEXT_PUBLIC_W3B_PROTOCOL_STATE_PDA'
-);
-const PUBLIC_WGB_SUPABASE_URL = readPublicEnvAliases(
-  'NEXT_PUBLIC_WGB_SUPABASE_URL',
-  'NEXT_PUBLIC_W3B_SUPABASE_URL'
-);
+const PUBLIC_WGB_MINT =
+  process.env.NEXT_PUBLIC_WGB_MINT?.trim() ||
+  process.env.NEXT_PUBLIC_W3B_MINT?.trim();
+
+const PUBLIC_WGB_TREASURY_ACCOUNT =
+  process.env.NEXT_PUBLIC_WGB_TREASURY_ACCOUNT?.trim() ||
+  process.env.NEXT_PUBLIC_W3B_TREASURY_ACCOUNT?.trim();
+
+const PUBLIC_WGB_PROTOCOL_STATE_PDA =
+  process.env.NEXT_PUBLIC_WGB_PROTOCOL_STATE_PDA?.trim() ||
+  process.env.NEXT_PUBLIC_W3B_PROTOCOL_STATE_PDA?.trim();
+
+const PUBLIC_WGB_SUPABASE_URL =
+  process.env.NEXT_PUBLIC_WGB_SUPABASE_URL?.trim() ||
+  process.env.NEXT_PUBLIC_W3B_SUPABASE_URL?.trim();
 
 // Program and Account Addresses
 // NOTE: These must match what's stored in the ProtocolState PDA on-chain

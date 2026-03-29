@@ -462,7 +462,7 @@ export function SwapInterface() {
             publicKey,
             userWgbAccount,
             publicKey,
-            WGB_MINT,
+            WGB_MINT(),
             TOKEN_2022_PROGRAM_ID
           )
         );

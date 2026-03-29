@@ -4,7 +4,9 @@ import { motion } from 'framer-motion';
 import { PROTOCOL_CONFIG } from '@/lib/protocol-constants';
 import { PublicKey } from '@solana/web3.js';
 
-const TREASURY = new PublicKey(PROTOCOL_CONFIG.treasury);
+function getTreasury(): PublicKey {
+  return new PublicKey(PROTOCOL_CONFIG.treasury);
+}
 
 interface TreasuryBalanceProps {
     treasuryBalance: number | null;
@@ -66,12 +68,12 @@ export function TreasuryBalance({ treasuryBalance, isLoading, onRefresh }: Treas
                 <div className="mt-4 pt-4 border-t border-gray-800 flex items-center justify-between text-xs">
                     <span className="text-gray-500">Treasury Address</span>
                     <a
-                        href={`https://solscan.io/account/${TREASURY.toBase58()}?cluster=devnet`}
+                        href={`https://solscan.io/account/${getTreasury().toBase58()}?cluster=devnet`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[#e8d48b] hover:text-[#c9a84c] font-mono flex items-center gap-1"
                     >
-                        {TREASURY.toBase58().slice(0, 4)}...{TREASURY.toBase58().slice(-4)}
+                        {getTreasury().toBase58().slice(0, 4)}...{getTreasury().toBase58().slice(-4)}
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
