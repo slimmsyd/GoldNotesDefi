@@ -2,13 +2,15 @@
 
 import { motion } from 'framer-motion';
 import { ProtocolData } from '@/lib/protocol-constants';
+import { UPMARatesData } from '@/hooks/useUPMARates';
 
 interface PortfolioHeroProps {
     data: ProtocolData | null;
     isLoading: boolean;
+    upmaRates?: UPMARatesData | null;
 }
 
-export function PortfolioHero({ data, isLoading }: PortfolioHeroProps) {
+export function PortfolioHero({ data, isLoading, upmaRates }: PortfolioHeroProps) {
     if (isLoading || !data) {
         return (
             <div className="py-8 animate-pulse text-center">
@@ -71,6 +73,29 @@ export function PortfolioHero({ data, isLoading }: PortfolioHeroProps) {
                         ${Math.abs((wgbPrice * (data.goldbackPrice24hChange / 100))).toFixed(2)} ({Math.abs(data.goldbackPrice24hChange).toFixed(2)}%)
                     </span>
                     <span className="text-gray-500 text-sm">Today</span>
+                </motion.div>
+            )}
+
+            {/* UPMA Spread & Source */}
+            {upmaRates && upmaRates.goldbackBuyBack !== null && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="flex flex-col items-center gap-1.5 mt-3"
+                >
+                    <div className="flex items-center gap-3 text-sm text-gray-500">
+                        <span>Buy <span className="text-gray-300 font-mono">${upmaRates.goldbackRate?.toFixed(2)}</span></span>
+                        <span className="text-gray-700">|</span>
+                        <span>Sell <span className="text-gray-300 font-mono">${upmaRates.goldbackBuyBack.toFixed(2)}</span></span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <span className={`w-1.5 h-1.5 rounded-full ${upmaRates.source === 'upma' ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                        <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+                            {upmaRates.source === 'upma' ? 'UPMA Live Rate' : 'Cached Rate'}
+                            {upmaRates.dayOfRate ? ` \u00B7 ${upmaRates.dayOfRate}` : ''}
+                        </span>
+                    </div>
                 </motion.div>
             )}
         </motion.div>

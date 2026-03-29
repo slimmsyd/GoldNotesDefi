@@ -1,6 +1,7 @@
 'use client';
 
 import { useProtocolData } from '@/hooks/useProtocolData';
+import { useUPMARates } from '@/hooks/useUPMARates';
 import { MempoolVisualizer } from '@/components/app/vault/mempool-visualizer';
 import { ReserveGrowthChart } from '@/components/app/vault/reserve-growth-chart';
 import { GoldbackBubbles } from '@/components/app/vault/goldback-bubbles';
@@ -12,6 +13,7 @@ import { AuditTrail } from '@/components/app/dashboard/audit-trail';
 
 export default function VaultPage() {
   const { data, isLoading, refresh } = useProtocolData({ refreshInterval: 30000 });
+  const upmaRates = useUPMARates(60_000);
 
   return (
     <div className="space-y-10">
@@ -20,7 +22,7 @@ export default function VaultPage() {
       {/* 1. The Guarantee: Top Level Solvency & Architecture */}
       <section className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <SolvencyBadge />
+          <SolvencyBadge upmaRates={upmaRates} />
         </div>
         {/* <div className="lg:col-span-1">
           <ArchitectureExplainer />

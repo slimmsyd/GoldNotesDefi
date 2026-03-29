@@ -4,6 +4,7 @@ import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddress, TOKEN_2022_PROG
 import prisma from '@/lib/prisma';
 import { PROTOCOL_CONFIG } from '@/lib/protocol-constants';
 import { resolveAuthenticatedRequest } from '@/lib/mobile-auth';
+import { fetchUPMARates } from '@/lib/upma-client';
 
 const DEFAULT_GOLDBACK_RATE = 9.02;
 const WEB_RATE_PARITY_OFFSET = 0.23;
@@ -96,10 +97,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const [wgb, loyalty, goldbackRateUsd] = await Promise.all([
+    const [wgb, loyalty, goldbackRateUsd, upmaRates] = await Promise.all([
       fetchOnChainWgbBalance(walletAddress),
       fetchLoyaltyBalance(walletAddress),
       fetchGoldbackRate(),
+      fetchUPMARates(),
     ]);
 
     const portfolioUsd = round2(wgb.balance * goldbackRateUsd);
@@ -119,6 +121,12 @@ export async function GET(request: NextRequest) {
         w3bSource: wgb.source,
         loyaltySource: loyalty.source,
       },
+      upma: upmaRates ? {
+        goldbackBuyBack: upmaRates.goldbackBuyBack,
+        buyBackValue: round2(wgb.balance * upmaRates.goldbackBuyBack),
+        goldSpot: upmaRates.goldSpot,
+        silverSpot: upmaRates.silverSpot,
+      } : null,
     });
   } catch (error) {
     console.error('[api/portfolio/summary] failed:', error);

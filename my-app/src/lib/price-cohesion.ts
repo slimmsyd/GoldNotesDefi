@@ -2,6 +2,7 @@ import 'server-only';
 
 import prisma from '@/lib/prisma';
 import { getCurrentGoldbackRate } from '@/lib/goldback-scraper';
+import { getUPMAGoldbackRate } from '@/lib/upma-client';
 import { calculateLamportsPrice, getSolPriceUsd } from '@/lib/sol-price';
 import { getOnChainPriceLamports, getPriceSyncErrorContext, syncOnChainPrice } from '@/lib/price-sync';
 
@@ -221,9 +222,11 @@ export async function runAuthoritativePriceSync(params: {
   const state = getState();
 
   try {
-    const scrape = await getCurrentGoldbackRate();
+    // UPMA is the authoritative source; fall back to scraper if unavailable
+    const upmaRate = await getUPMAGoldbackRate();
+    const scrape = upmaRate ?? await getCurrentGoldbackRate();
     if (!scrape?.rate || scrape.rate <= 0) {
-      throw new Error('Failed to fetch fresh Goldback USD rate');
+      throw new Error('Failed to fetch fresh Goldback USD rate (UPMA + scraper both failed)');
     }
 
     const solPriceUsd = await getSolPriceUsd();

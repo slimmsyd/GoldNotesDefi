@@ -104,6 +104,10 @@ function CustomWalletButton() {
   const [mounted, setMounted] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [wgbUsdValue, setWgbUsdValue] = useState<number | null>(null);
+  const [rateChange, setRateChange] = useState<number | null>(null);
+  const [wgbRate, setWgbRate] = useState<number | null>(null);
+  const [buyBackRate, setBuyBackRate] = useState<number | null>(null);
+  const [rateSource, setRateSource] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -138,6 +142,11 @@ function CustomWalletButton() {
         ]);
 
         const rate: number = rateRes?.rate ?? 0;
+        setWgbRate(rate);
+        setRateChange(rateRes?.upma?.goldbackRateChange ?? rateRes?.change24h ?? null);
+        setBuyBackRate(rateRes?.upma?.goldbackBuyBack ?? null);
+        setRateSource(rateRes?.upma ? 'upma' : rateRes?.source ?? null);
+
         let balance = 0;
         try {
           const tokenInfo = await connection.getTokenAccountBalance(ata);
@@ -201,11 +210,16 @@ function CustomWalletButton() {
           <div className="w-[1px] h-6 bg-white/10" />
 
           {/* Balance Seg */}
-          <div className="flex items-center px-3.5 h-full bg-[#c9a84c]/10 text-[#c9a84c] text-xs font-semibold">
+          <div className="flex items-center gap-1.5 px-3.5 h-full bg-[#c9a84c]/10 text-[#c9a84c] text-xs font-semibold">
             {wgbUsdValue === null
               ? '...'
               : `$${wgbUsdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
             }
+            {rateChange !== null && (
+              <span className={`text-[10px] font-medium ${rateChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {rateChange >= 0 ? '+' : ''}{rateChange.toFixed(1)}%
+              </span>
+            )}
           </div>
         </button>
 
@@ -223,6 +237,39 @@ function CustomWalletButton() {
                 <p className="text-xs text-gray-500 uppercase tracking-wider">Connected Wallet</p>
                 <p className="text-xs font-mono text-[#c9a84c] truncate">{address}</p>
               </div>
+
+              {/* UPMA Rate Info */}
+              {wgbRate !== null && (
+                <div className="px-4 py-3 border-b border-[#c9a84c]/20 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-gray-500 uppercase tracking-wider">WGB Rate</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-mono text-[#c9a84c]">${wgbRate.toFixed(2)}</span>
+                      {rateChange !== null && (
+                        <span className={`text-[10px] font-medium ${rateChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {rateChange >= 0 ? '+' : ''}{rateChange.toFixed(2)}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {buyBackRate !== null && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-gray-500 uppercase tracking-wider">Buy Back</span>
+                      <span className="text-xs font-mono text-gray-400">${buyBackRate.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-end gap-1">
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      rateSource === 'upma' ? 'bg-green-500' :
+                      rateSource === 'database' ? 'bg-yellow-500' : 'bg-red-500'
+                    }`} />
+                    <span className="text-[10px] text-gray-500">
+                      {rateSource === 'upma' ? 'UPMA Live' :
+                       rateSource === 'database' ? 'Cached' : 'Fallback'}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Menu Items */}
               <div className="py-1">

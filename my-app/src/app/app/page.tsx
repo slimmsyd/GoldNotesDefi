@@ -16,6 +16,7 @@
 
 import { motion } from 'framer-motion';
 import { useProtocolData } from '@/hooks/useProtocolData';
+import { useUPMARates } from '@/hooks/useUPMARates';
 import { MempoolBlocks } from '@/components/app/dashboard/mempool-blocks';
 import { StatsGrid } from '@/components/app/dashboard/stats-grid';
 import { PortfolioHero } from '@/components/app/dashboard/portfolio-hero';
@@ -43,6 +44,7 @@ export default function AppDashboard() {
   const { data, isLoading, error, refresh } = useProtocolData({
     refreshInterval: 30000,
   });
+  const upmaRates = useUPMARates(60_000);
 
   return (
     <motion.div
@@ -105,7 +107,7 @@ export default function AppDashboard() {
 
       {/* 1. PORTFOLIO HERO - Primary focal point */}
       <motion.div variants={fadeInUp}>
-        <PortfolioHero data={data} isLoading={isLoading} />
+        <PortfolioHero data={data} isLoading={isLoading} upmaRates={upmaRates} />
       </motion.div>
 
       {/* 2. QUICK ACTIONS */}
@@ -118,7 +120,7 @@ export default function AppDashboard() {
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-gray-400 text-sm font-medium uppercase tracking-wider">Asset Information</h3>
         </div>
-        <StatsGrid data={data} isLoading={isLoading} />
+        <StatsGrid data={data} isLoading={isLoading} upmaRates={upmaRates} />
       </motion.div>
 
       {/* 4. RECENT BATCHES - Incoming serial batches */}

@@ -9,11 +9,13 @@
 
 import { motion } from 'framer-motion';
 import { ProtocolData } from '@/lib/protocol-constants';
+import { UPMARatesData } from '@/hooks/useUPMARates';
 import Link from 'next/link';
 
 interface StatsGridProps {
   data: ProtocolData | null;
   isLoading: boolean;
+  upmaRates?: UPMARatesData | null;
 }
 
 interface StatCardProps {
@@ -127,11 +129,13 @@ function StatCard({ title, value, subtitle, icon, color, delay = 0, href, trend,
   return content;
 }
 
-export function StatsGrid({ data, isLoading }: StatsGridProps) {
+export function StatsGrid({ data, isLoading, upmaRates }: StatsGridProps) {
+  const hasMetals = upmaRates && (upmaRates.goldSpot !== null || upmaRates.silverSpot !== null);
+
   if (isLoading || !data) {
     return (
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        {[...Array(6)].map((_, i) => (
           <div key={i} className="bg-gray-900/50 border border-gray-800 p-5 rounded-[4.5px] animate-pulse">
             <div className="w-10 h-10 bg-gray-800 mb-3" />
             <div className="w-20 h-3 bg-gray-800 mb-2" />
@@ -142,8 +146,13 @@ export function StatsGrid({ data, isLoading }: StatsGridProps) {
     );
   }
 
+  // Build spread subtitle for WGB price card
+  const wgbSpreadSubtitle = upmaRates?.goldbackBuyBack != null
+    ? `BUY $${(upmaRates.goldbackRate ?? data.goldbackPrice ?? 0).toFixed(2)} / SELL $${upmaRates.goldbackBuyBack.toFixed(2)}`
+    : data.isGoldbackPriceStale ? 'PRICE MAY BE OUTDATED' : '1:1 GOLDBACK PEG';
+
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className={`grid grid-cols-2 ${hasMetals ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-4`}>
       <StatCard
         title="Asset Backing"
         value={data.provenReserves.toLocaleString()}
@@ -157,23 +166,11 @@ export function StatsGrid({ data, isLoading }: StatsGridProps) {
       />
 
       <StatCard
-        title="Reserves"
-        value={data.provenReserves.toLocaleString()}
-        subtitle="PHYSICALLY SECURED"
-        color="green"
-        delay={0.15}
-        actionLabel="AUDIT LIVE"
-        icon={
-          <img src="/AppAssets/PNG Renders/goldbar_black.png" alt="Reserves" className="w-6 h-6 object-contain drop-shadow-md" />
-        }
-      />
-
-      <StatCard
         title="Circulating Supply"
         value={`${data.totalSupply.toLocaleString()} WGB`}
         subtitle="MINTED SUPPLY"
         color="amber"
-        delay={0.2}
+        delay={0.15}
         actionLabel="ON-CHAIN"
         icon={
           <img src="/AppAssets/PNG Renders/cheque_black.png" alt="Batches" className="w-6 h-6 object-contain drop-shadow-md" />
@@ -183,9 +180,9 @@ export function StatsGrid({ data, isLoading }: StatsGridProps) {
       <StatCard
         title="WGB Price"
         value={data.goldbackPrice !== null ? `$${data.goldbackPrice.toFixed(2)}` : '—'}
-        subtitle={data.isGoldbackPriceStale ? 'PRICE MAY BE OUTDATED' : '1:1 GOLDBACK PEG'}
+        subtitle={wgbSpreadSubtitle}
         color="amber"
-        delay={0.25}
+        delay={0.2}
         href="/app/swap"
         actionLabel="SWAP NOW"
         trend={data.goldbackPrice24hChange !== null ? {
@@ -194,6 +191,60 @@ export function StatsGrid({ data, isLoading }: StatsGridProps) {
         } : undefined}
         icon={
           <img src="/AppAssets/PNG Renders/bar_chart_black.png" alt="Price" className="w-6 h-6 object-contain drop-shadow-md" />
+        }
+      />
+
+      {/* Gold Spot — from UPMA */}
+      {hasMetals && upmaRates.goldSpot !== null && (
+        <StatCard
+          title="Gold Spot"
+          value={`$${upmaRates.goldSpot.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          subtitle="PER TROY OUNCE"
+          color="amber"
+          delay={0.25}
+          actionLabel="UPMA LIVE"
+          trend={upmaRates.goldRateChange != null && upmaRates.goldRateChange !== 0 ? {
+            value: Math.abs(upmaRates.goldRateChange),
+            isPositive: upmaRates.goldRateChange >= 0
+          } : undefined}
+          icon={
+            <svg className="w-6 h-6 text-[#c9a84c]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          }
+        />
+      )}
+
+      {/* Silver Spot — from UPMA */}
+      {hasMetals && upmaRates.silverSpot !== null && (
+        <StatCard
+          title="Silver Spot"
+          value={`$${upmaRates.silverSpot.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          subtitle="PER TROY OUNCE"
+          color="green"
+          delay={0.3}
+          actionLabel="UPMA LIVE"
+          trend={upmaRates.silverRateChange != null && upmaRates.silverRateChange !== 0 ? {
+            value: Math.abs(upmaRates.silverRateChange),
+            isPositive: upmaRates.silverRateChange >= 0
+          } : undefined}
+          icon={
+            <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          }
+        />
+      )}
+
+      <StatCard
+        title="Reserves"
+        value={data.provenReserves.toLocaleString()}
+        subtitle="PHYSICALLY SECURED"
+        color="green"
+        delay={0.35}
+        actionLabel="AUDIT LIVE"
+        icon={
+          <img src="/AppAssets/PNG Renders/goldbar_black.png" alt="Reserves" className="w-6 h-6 object-contain drop-shadow-md" />
         }
       />
     </div>

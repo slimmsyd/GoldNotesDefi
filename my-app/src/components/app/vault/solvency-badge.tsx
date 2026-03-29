@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { UPMARatesData } from '@/hooks/useUPMARates';
 
 interface ProtocolStatus {
     success: boolean;
@@ -22,7 +23,7 @@ interface ProtocolStatus {
     };
 }
 
-export function SolvencyBadge() {
+export function SolvencyBadge({ upmaRates }: { upmaRates?: UPMARatesData | null }) {
     const [status, setStatus] = useState<ProtocolStatus | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -164,6 +165,39 @@ export function SolvencyBadge() {
                         </div>
                     </div>
                 </div>
+
+                {/* Commodity Backing — from UPMA */}
+                {upmaRates && upmaRates.goldSpot !== null && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+                        <div className="p-4 border border-white/5 bg-white/[0.02] rounded-[24px]">
+                            <p className="text-[#c9a84c] text-[10px] font-bold uppercase tracking-widest mb-1">Gold Spot</p>
+                            <h4 className="text-xl font-bold text-white tracking-tight">${upmaRates.goldSpot.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h4>
+                            <p className="text-gray-500 text-[10px]">per troy ounce</p>
+                        </div>
+                        {upmaRates.silverSpot !== null && (
+                            <div className="p-4 border border-white/5 bg-white/[0.02] rounded-[24px]">
+                                <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Silver Spot</p>
+                                <h4 className="text-xl font-bold text-white tracking-tight">${upmaRates.silverSpot.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h4>
+                                <p className="text-gray-500 text-[10px]">per troy ounce</p>
+                            </div>
+                        )}
+                        {upmaRates.goldbackRate !== null && (
+                            <div className="p-4 border border-white/5 bg-white/[0.02] rounded-[24px]">
+                                <p className="text-[#c9a84c] text-[10px] font-bold uppercase tracking-widest mb-1">Reserve Value</p>
+                                <h4 className="text-xl font-bold text-white tracking-tight">
+                                    ${(onChain.provenReserves * upmaRates.goldbackRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </h4>
+                                <p className="text-gray-500 text-[10px]">{onChain.provenReserves} GB x ${upmaRates.goldbackRate.toFixed(2)}</p>
+                            </div>
+                        )}
+                        <div className="col-span-full flex items-center gap-1.5 px-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                            <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+                                UPMA Live {upmaRates.dayOfRate ? `\u00B7 ${upmaRates.dayOfRate}` : ''}
+                            </span>
+                        </div>
+                    </div>
+                )}
 
                 {/* Footer: Merkle Root & Explorer Link */}
                 <div className="mt-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 bg-white/[0.02] border border-white/5 rounded-[24px]">

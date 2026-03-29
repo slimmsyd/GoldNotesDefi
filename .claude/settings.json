@@ -11,7 +11,24 @@
       "Bash(ls -la /Users/sydneysanders/Desktop/Code_Projects/GoldBackProject/my-app/.env*)",
       "Bash(node -e \"const d=require\\(''''fs''''\\).readFileSync\\(''''/dev/stdin'''',''''utf8''''\\);const p=JSON.parse\\(d\\);console.log\\(''''dev script:'''', p.scripts?.dev\\);console.log\\(''''next version:'''', p.dependencies?.next || p.devDependencies?.next\\);\")",
       "Bash(npx next:*)",
-      "Bash(node_modules/.bin/next --version)"
+      "Bash(node_modules/.bin/next --version)",
+      "WebFetch(domain:documenter.getpostman.com)",
+      "WebFetch(domain:www.postman.com)",
+      "WebSearch",
+      "WebFetch(domain:member.upma.org)",
+      "WebFetch(domain:usegoldcash.com)",
+      "WebFetch(domain:services.idealmsp.com)",
+      "WebFetch(domain:idealmanagedsolutions.com)",
+      "WebFetch(domain:goldbackinfo.com)",
+      "WebFetch(domain:upma.org)",
+      "WebFetch(domain:www.goldback.com)",
+      "WebFetch(domain:qa.api.upma.org)",
+      "WebFetch(domain:api.upma.org)",
+      "Bash(curl -s \"https://api.upma.org/api/public/rates\")",
+      "Bash(curl -s \"https://qa.api.upma.org/api/public/rates\")",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

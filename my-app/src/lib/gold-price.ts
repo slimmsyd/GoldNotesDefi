@@ -9,6 +9,7 @@ import {
   GOLD_PRICE_CACHE_TTL_MS,
   FALLBACK_GOLD_PRICE_PER_OZ,
 } from '@/config/gold-pricing-config';
+import { fetchUPMARates } from '@/lib/upma-client';
 
 interface GoldApiResponse {
   timestamp: number;
@@ -96,8 +97,29 @@ export async function getGoldSpotPrice(): Promise<CachedGoldPrice> {
     
   } catch (error) {
     console.error('[GoldPrice] Failed to fetch gold price:', error);
-    return useFallbackPrice();
+    return useUpmaFallback();
   }
+}
+
+/**
+ * Try UPMA gold_spot as intermediate fallback before hardcoded price
+ */
+async function useUpmaFallback(): Promise<CachedGoldPrice> {
+  try {
+    const upma = await fetchUPMARates();
+    if (upma && upma.goldSpot > 0) {
+      console.log('[GoldPrice] Using UPMA gold spot as fallback:', upma.goldSpot);
+      cachedGoldPrice = {
+        pricePerOz: upma.goldSpot,
+        timestamp: Date.now(),
+        source: 'api',
+      };
+      return cachedGoldPrice;
+    }
+  } catch (err) {
+    console.warn('[GoldPrice] UPMA fallback also failed:', err);
+  }
+  return useFallbackPrice();
 }
 
 /**

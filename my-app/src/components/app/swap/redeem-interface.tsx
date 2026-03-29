@@ -50,6 +50,8 @@ export function RedeemInterface() {
   const [txSignature, setTxSignature] = useState<string | null>(null);
   const [wgbBalance, setWgbBalance] = useState<bigint>(BigInt(0));
   const [wgbPriceUsd, setWgbPriceUsd] = useState<number>(DEFAULT_WGB_PRICE_USD);
+  const [buyBackRate, setBuyBackRate] = useState<number | null>(null);
+  const [rateSource, setRateSource] = useState<string | null>(null);
 
   // Shipping info
   const [shipping, setShipping] = useState<ShippingInfo>({
@@ -70,7 +72,11 @@ export function RedeemInterface() {
     fetch('/api/goldback-rate')
       .then(res => res.json())
       .then(data => {
-        if (data.success && data.rate) setWgbPriceUsd(data.rate);
+        if (data.success && data.rate) {
+          setWgbPriceUsd(data.rate);
+          setBuyBackRate(data.upma?.goldbackBuyBack ?? null);
+          setRateSource(data.upma ? 'upma' : data.source ?? null);
+        }
       })
       .catch(() => { });
   }, []);
@@ -504,6 +510,25 @@ export function RedeemInterface() {
                   <span className="text-gray-400">Points Earned</span>
                   <span className="text-[#c9a84c]">+{parseInt(redeemAmount || '0') * 2} pts (2x bonus)</span>
                 </div>
+                {buyBackRate !== null && (
+                  <>
+                    <div className="border-t border-gray-800 my-2" />
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">UPMA Buy Back</span>
+                      <span className="text-white">${buyBackRate.toFixed(2)}/WGB</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Spread</span>
+                      <span className="text-gray-500">${(wgbPriceUsd - buyBackRate).toFixed(2)} ({((wgbPriceUsd - buyBackRate) / wgbPriceUsd * 100).toFixed(1)}%)</span>
+                    </div>
+                    <div className="flex justify-end">
+                      <span className="flex items-center gap-1 text-[10px] text-gray-500">
+                        <span className={`w-1.5 h-1.5 rounded-full ${rateSource === 'upma' ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                        {rateSource === 'upma' ? 'UPMA Live' : 'Cached'}
+                      </span>
+                    </div>
+                  </>
+                )}
                 <div className="border-t border-gray-800 my-2" />
                 <div className="flex justify-between">
                   <span className="text-gray-400">Ship To</span>

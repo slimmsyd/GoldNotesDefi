@@ -92,6 +92,7 @@ export function SwapInterface() {
   const [isPriceVerifying, setIsPriceVerifying] = useState(false);
   const [priceMinutesSinceUpdate, setPriceMinutesSinceUpdate] = useState<number | null>(null);
   const [isPriceFallback, setIsPriceFallback] = useState(false);
+  const [upmaBuyBack, setUpmaBuyBack] = useState<number | null>(null);
   const [isPricingHealthy, setIsPricingHealthy] = useState(false);
   const [pricingHealthLoading, setPricingHealthLoading] = useState(true);
   const [pricingHealthMessage, setPricingHealthMessage] = useState<string | null>(null);
@@ -105,9 +106,11 @@ export function SwapInterface() {
         const res = await fetch('/api/goldback-rate');
         const data = await res.json();
         if (data.success && data.rate) {
-          setWgbPriceUsd(data.rate);
+          // Prefer UPMA rate when available
+          setWgbPriceUsd(data.upma?.goldbackRate ?? data.rate);
           setPriceMinutesSinceUpdate(data.minutesSinceUpdate);
-          setIsPriceFallback(data.source === 'fallback');
+          setIsPriceFallback(data.source === 'fallback' && !data.upma);
+          setUpmaBuyBack(data.upma?.goldbackBuyBack ?? null);
         }
       } catch (err) {
         console.error('Failed to fetch Goldback rate, using default');
@@ -186,11 +189,12 @@ export function SwapInterface() {
         return { verified: false, rate: null, error: 'Unable to verify current WGB price. Please try again.' };
       }
 
-      const isFallback = data.source === 'fallback';
+      const isFallback = data.source === 'fallback' && !data.upma;
       setIsPriceFallback(isFallback);
 
-      // Update state with verified price (fallback or fresh DB price)
-      setWgbPriceUsd(data.rate);
+      // Prefer UPMA rate for verified price
+      const verifiedRate = data.upma?.goldbackRate ?? data.rate;
+      setWgbPriceUsd(verifiedRate);
       setPriceVerifiedAt(new Date());
       setPriceMinutesSinceUpdate(data.minutesSinceUpdate);
 
@@ -774,8 +778,22 @@ export function SwapInterface() {
               <div className="bg-black/60 p-4 space-y-3 text-sm rounded-[16px] mb-4 border border-transparent hover:border-white/5 transition-colors">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Rate</span>
-                  <span className="text-white">1 WGB = {wgbPriceUsd} USD</span>
+                  <span className="text-white">1 WGB = ${wgbPriceUsd} USD</span>
                 </div>
+                {upmaBuyBack !== null && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Buy Back</span>
+                      <span className="text-gray-300">${upmaBuyBack.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Spread</span>
+                      <span className="text-gray-500">
+                        ${(wgbPriceUsd - upmaBuyBack).toFixed(2)} ({((wgbPriceUsd - upmaBuyBack) / wgbPriceUsd * 100).toFixed(1)}%)
+                      </span>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-400">Price Age</span>
                   <span className={`${isPriceFallback
